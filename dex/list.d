@@ -24,15 +24,15 @@ class List(T) {
 		return this;
 	}
 
-	T find(T search) {
+	bool find(T search) {
 		Item!(T) tmp = this.root;
 		while(tmp !is null) {
 			if(search == tmp.value) {
-				return tmp.value;
+				return true;
 			}
 			tmp = tmp.next;
 		}
-		return null;
+		return false;
 	}
 
 	List!(T) remove(T search) {
@@ -50,8 +50,7 @@ class List(T) {
 			}
 			tmp = tmp.next;
 		}
-				
-			
+		return this;	
 	}
 
 	List!(T) insert(T toIn) {
