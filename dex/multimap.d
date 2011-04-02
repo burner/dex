@@ -92,6 +92,10 @@ class MultiMap(T,S) {
 			return null;
 		}
 	}
+
+	T[] keys() {
+		return this.multi.keys();
+	}
 }
 
 unittest {
