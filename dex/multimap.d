@@ -103,5 +103,14 @@ unittest {
 	assert(mm1.find('t') == [12,22,32,42]);
 	mm1.remove('t', 0u);
 	assert(mm1.find('t') == [22,32,42]);
-
+	assert(mm1.find('r') is null);
+	mm1.insert('r', 92);
+	assert(mm1.find('r') !is null);
+	mm1.insert('r', 32);
+	mm1.insert('r', 82);
+	assert(mm1.find('r') == [92,32,82]);
+	mm1.remove('r', 1u);
+	assert(mm1.find('r') == [92,82]);
+	mm1.remove('t');
+	assert(mm1.find('t') is null);
 }
