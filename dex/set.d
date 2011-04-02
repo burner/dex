@@ -104,7 +104,7 @@ public class Set(T) {
 	}
 
 	public bool remove(T value) {
-		
+		return true;		
 	}
 		
 }
@@ -124,12 +124,6 @@ unittest {
 	intTest.validate();
 	foreach(idx,it;t) {
 		assert(!intTest.insert(it), conv!(int,string)(it));
-		foreach(jt;t[0..idx]) {
-			assert(!intTest.contains(jt));
-		}
-		foreach(jt;t[idx+1..$]) {
-			assert(intTest.contains(jt));
-		}
 	}
 	intTest.validate();
 }
