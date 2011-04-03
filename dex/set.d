@@ -69,14 +69,17 @@ public class Set(T) {
 
 	private Elem!(T) root;
 	bool function(T a, T b) cmp;
+	uint size;
 
 	this() {
 		this.root = null;
+		this.size = 0u;
 		this.cmp = function(in T a, in T b) { return a < b; };
 	}
 
 	this(bool function(in T a, in T b) cmp) {
 		this.root = null;
+		this.size = 0u;
 		this.cmp = cmp;
 	}
 
@@ -84,9 +87,14 @@ public class Set(T) {
 		// Root is null
 		if(this.root is null) {
 			this.root = new Elem!(T)(value);
+			this.size++;
 			return true;
 		} else {
-			return this.root.insert(value, cmp);
+			bool tmp = this.root.insert(value, cmp);
+			if(tmp)
+				this.size++;
+	
+			return tmp;
 		}
 	}
 
