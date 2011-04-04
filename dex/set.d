@@ -38,6 +38,30 @@ public class Set(T) {
 			}
 		}
 
+		bool insert(Elem!(T) value, bool function(in T a, in T b) cmp) {
+			if(this.value == value.value) {// opEquals is needed
+				return false;
+			} 
+			if(left !is null && left.value == value.value)
+				return false;
+			if(right !is null && right.value == value.value)
+				return false;
+
+			if(left is null) {
+				this.left = value;
+				return true;
+			} else if(left !is null && cmp(value.value, left.value)) {
+				return this.left.insert(value, cmp);
+			} else if(right is null) {
+				this.right = value;
+				return true;
+			} else if(right !is null){
+				return this.right.insert(value, cmp);
+			} else {
+				return false;
+			}
+		}
+
 		void validate() {
 			if(this.left !is null) {
 				assert(this.left.value < this.value);
@@ -65,6 +89,7 @@ public class Set(T) {
 				return false;
 			}
 		}
+		 
 	}
 
 	private Elem!(T) root;
@@ -98,6 +123,21 @@ public class Set(T) {
 		}
 	}
 
+	public bool insert(Elem!(T) value) {
+		// Root is null
+		if(this.root is null) {
+			this.root = value;
+			this.size++;
+			return true;
+		} else {
+			bool tmp = this.root.insert(value, cmp);
+			if(tmp)
+				this.size++;
+	
+			return tmp;
+		}
+	}
+
 	public void validate() {
 		if(this.root !is null) {
 			this.root.validate();
@@ -111,10 +151,100 @@ public class Set(T) {
 		return this.root.contains(value, cmp);
 	}
 
-	public bool remove(T value) {
-		return true;		
+	private void reInsert(Elem!(T) elem) {
+		if(elem !is null) {
+			Elem!(T)[256] stack;	
+			uint stackPtr = 0;
+			Elem!(T) cur = elem;
+			while(stackPtr != 0 || cur !is null) {
+				if(cur !is null) {
+					stack[stackPtr++] = cur;
+					cur = cur.left;	
+				} else {
+					cur = stack[--stackPtr];
+					this.insert(cur);
+					cur = cur.right;
+				}
+			}
+		}
 	}
-		
+
+	public bool remove(T value) {
+		if(root is null) {
+			return false;
+		}	
+		if(root.value == value) {
+			Elem!(T) tLeft = root.left;
+			Elem!(T) tRight = root.right;
+			this.root = null;
+			this.size = 0;
+			this.reInsert(tLeft.left);
+			this.reInsert(tRight.right);
+			return true;
+		}
+
+		Elem!(T) tmp = this.root;
+		while(tmp !is null) {
+			// left child is to be removed
+			if(tmp.left !is null && tmp.left.value == value
+					&& tmp.left.left is null && tmp.left.right is null) {
+				tmp.left = null;
+				this.size--;
+				return true;
+			// right child is to be removed
+			} else if(tmp.right !is null && tmp.right.value == value
+					&& tmp.right.left is null && tmp.right.right is null) {
+				tmp.right = null;
+				this.size--;
+				return true;
+			// left has left child
+			} else if(tmp.left !is null && tmp.left.value == value
+					&& tmp.left.left !is null && tmp.left.right is null) {
+				tmp.left = tmp.left.left;
+				this.size--;
+				return true;	
+			// left has right child
+			} else if(tmp.left !is null && tmp.left.value == value
+					&& tmp.left.left is null && tmp.left.right !is null) {
+				tmp.left = tmp.left.right;
+				this.size--;
+				return true;	
+			// rigth has left child
+			} else if(tmp.right !is null && tmp.right.value == value
+					&& tmp.right.left !is null && tmp.right.right is null) {
+				tmp.left = tmp.right.left;
+				this.size--;
+				return true;	
+			// rigth has right child
+			} else if(tmp.right !is null && tmp.right.value == value
+					&& tmp.right.left is null && tmp.right.right !is null) {
+				tmp.left = tmp.right.right;
+				this.size--;
+				return true;	
+			// other
+			} else if(tmp.left !is null && tmp.left.value == value
+					&& tmp.left.left !is null && tmp.left.right !is null) {
+				Elem!(T) tLeft = tmp.left.left;
+				Elem!(T) tRight = tmp.left.right;
+				tmp.left = null;
+				tmp.right = null;
+				this.reInsert(tLeft);
+				this.reInsert(tRight);
+				this.size--;
+				return true;
+			} else {
+				if(cmp(tmp.left.value, value)) {	
+					tmp = tmp.left;
+					continue;
+				} else if(tmp.right !is null) {
+					tmp = tmp.right;
+					continue;
+				}
+				return false;
+			}
+		}
+		return false;
+	}
 }
 
 unittest {
@@ -134,4 +264,8 @@ unittest {
 		assert(!intTest.insert(it), conv!(int,string)(it));
 	}
 	intTest.validate();
+	foreach(idx,it;t) {
+		writeln(it);
+		assert(intTest.remove(it), conv!(int,string)(it));
+	}
 }

@@ -1,10 +1,10 @@
 class Set(T) {
-	class bNode(T) {
+	private class BNode(T) {
 	    // By value storage of the data
 	    T key;
 	 
 	    // Combine the two branches into an array to optimize the logic
-	    bNode link[2];
+	    BNode link[2];
 	 
 	    // Null the branches so we don't have to do it in the implementation
 	    this() {
@@ -15,22 +15,21 @@ class Set(T) {
 	        link[1] = null;
 	    }
 	}
-}
  
-class BST(T) {
     // Number of nodes in the tree
     int count;
  
     // Pointer to the root of the tree
-    bNode!(T) root;
-	void clear(bNode!(T) ptr) {
+    BNode!(T) root;
+
+	void clear(BNode!(T) ptr) {
 	    if(ptr !is null) {
 	        clear(ptr.link[0]);
 	        clear(ptr.link[1]);
 	    }
 	}
 	 
-	bool search(const T item, bNode!(T) curr, bNode!(T) prev, ref bool lr) const {
+	bool search(T item, BNode!(T) curr, BNode!(T) prev, ref bool lr) {
 	    while (curr !is null) {
 	        if(item == curr.key)
 		    return true;
@@ -41,10 +40,10 @@ class BST(T) {
 	    return false;
 	}
 	 
-	T inOrder(bNode!(T) ptr) const {
+	T inOrder(BNode!(T) ptr) {
 	    bool lr = 1;
 	    T temp;
-	    bNode!(T) prev = ptr;
+	    BNode!(T) prev = ptr;
 	 
 	    ptr = ptr.link[1];
 	    while (ptr.link[0] !is null) {
@@ -57,7 +56,7 @@ class BST(T) {
 	    return temp;
 	}
 	 
-	int subNodes(bNode!(T) ptr) const {
+	int suBNodes(BNode!(T) ptr) {
 	    if(ptr.link[1] !is null) {
 	        if(ptr.link[0] !is null)
 	            return 3;
@@ -70,7 +69,7 @@ class BST(T) {
 	        return 0;
 	}
 	 
-	int height(bNode!(T) ptr) const {
+	int height(BNode!(T) ptr) {
 	    if(ptr is null)
 	        return 0;
 	 
@@ -81,7 +80,7 @@ class BST(T) {
 	    return lt + 1;
 	}
 	 
-	bNode!(T) minmax(bNode!(T) ptr, ref bool lr) const {
+	BNode!(T) minmax(BNode!(T) ptr, ref int lr) {
 	    while (ptr.link[lr] !is null)
 	        ptr = ptr.link[lr];
 	    return ptr;
@@ -106,31 +105,31 @@ class BST(T) {
 	    return (root is null);
 	}
 	 
-	bool insert(const T item) {
+	bool insert(T item) {
 	    if(root is null) {
-	        root = new bNode!(T);
+	        root = new BNode!(T);
 	        root.key = item;
 	        count++;
 	        return true;
 	    }
 	    bool lr;
-	    bNode!(T) curr = root, prev;
+	    BNode!(T) curr = root, prev;
 	 
 	    if(search(item, curr, prev, lr))
 	        return false;
-	    prev.link[lr] = new bNode!(T);
+	    prev.link[lr] = new BNode!(T);
 	    prev.link[lr].key = item;
 	    count++;
 	    return true;
 	}
 	 
-	bool remove(const T item) {
+	bool remove(T item) {
 	    bool lr = 1;
-	    bNode!(T) curr = root, prev;
+	    BNode!(T) curr = root, prev;
 	 
 	    if(!search(item, curr, prev, lr))
 	        return false;
-	    int s = subNodes(curr);
+	    int s = suBNodes(curr);
 	    switch(s) {
 	    	case 0:
 	    	case 1:
@@ -148,28 +147,49 @@ class BST(T) {
 	    return true;
 	}
 	 
-	bool search(const T item, ref T ptr) const {
+	bool search(T item, out T ptr) {
 	    bool found;
-	    bNode!(T) curr = root, prev;
+	    BNode!(T) curr = this.root, prev;
 	 
 	    found = search(item, curr, prev, found);
 	    ptr = curr.key;
 	    return found;
 	}
 	 
-	T min() const {
-	    return minmax(root, 0).key;
+	T min() {
+		int tmp = 0;
+	    return this.minmax(this.root, tmp).key;
 	}
 	 
-	T max() const {
-	    return minmax(root, 1).key;
+	T max() {
+		int tmp = 1;
+	    return this.minmax(this.root, tmp).key;
 	}
 	 
 	int size() const {
 	    return count;
 	}
 	 
-	int height() const {
+	int height() {
 	    return height(root);
 	}
+}
+
+unittest {
+	Set!(int) intTest = new Set!(int)();
+	int[] t = [123,13,5345,752,12,3,1,654,22];
+	foreach(idx,it;t) {
+		assert(intTest.insert(it));
+		foreach(jt;t[0..idx]) {
+			assert(intTest.search(jt, null));
+		}
+		foreach(jt;t[idx+1..$]) {
+			assert(!intTest.search(jt, null));
+		}
+	}
+	intTest.validate();
+	foreach(idx,it;t) {
+		assert(!intTest.insert(it), conv!(int,string)(it));
+	}
+	intTest.validate();
 }
