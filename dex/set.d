@@ -123,11 +123,11 @@ public class Set(T) {
 		}
 	}
 
-	public bool insert(Elem!(T) value) {
+	private bool insert(Elem!(T) value) {
 		// Root is null
 		if(this.root is null) {
+			writeln("insert : root is null");
 			this.root = value;
-			this.size++;
 			return true;
 		} else {
 			bool tmp = this.root.insert(value, cmp);
@@ -146,7 +146,7 @@ public class Set(T) {
 
 	public bool contains(T value) {
 		if(this.root is null) {
-			throw new Exception("element can't be found");
+			return false;
 		}
 		return this.root.contains(value, cmp);
 	}
@@ -170,80 +170,50 @@ public class Set(T) {
 	}
 
 	public bool remove(T value) {
-		if(root is null) {
+		if(this.root is null) {
+			writeln("remove root is null");
 			return false;
 		}	
-		if(root.value == value) {
-			Elem!(T) tLeft = root.left;
-			Elem!(T) tRight = root.right;
+		if(this.root.value == value) {
+			writeln("root.value == value");
+			Elem!(T) tLeft = this.root.left;
+			Elem!(T) tRight = this.root.right;
 			this.root = null;
-			this.size = 0;
-			this.reInsert(tLeft.left);
-			this.reInsert(tRight.right);
+			this.size--;
+			this.reInsert(tLeft);
+			this.reInsert(tRight);
 			return true;
 		}
-
 		Elem!(T) tmp = this.root;
-		while(tmp !is null) {
-			// left child is to be removed
-			if(tmp.left !is null && tmp.left.value == value
-					&& tmp.left.left is null && tmp.left.right is null) {
-				tmp.left = null;
-				this.size--;
-				return true;
-			// right child is to be removed
-			} else if(tmp.right !is null && tmp.right.value == value
-					&& tmp.right.left is null && tmp.right.right is null) {
-				tmp.right = null;
-				this.size--;
-				return true;
-			// left has left child
-			} else if(tmp.left !is null && tmp.left.value == value
-					&& tmp.left.left !is null && tmp.left.right is null) {
-				tmp.left = tmp.left.left;
-				this.size--;
-				return true;	
-			// left has right child
-			} else if(tmp.left !is null && tmp.left.value == value
-					&& tmp.left.left is null && tmp.left.right !is null) {
-				tmp.left = tmp.left.right;
-				this.size--;
-				return true;	
-			// rigth has left child
-			} else if(tmp.right !is null && tmp.right.value == value
-					&& tmp.right.left !is null && tmp.right.right is null) {
-				tmp.left = tmp.right.left;
-				this.size--;
-				return true;	
-			// rigth has right child
-			} else if(tmp.right !is null && tmp.right.value == value
-					&& tmp.right.left is null && tmp.right.right !is null) {
-				tmp.left = tmp.right.right;
-				this.size--;
-				return true;	
-			// other
-			} else if(tmp.left !is null && tmp.left.value == value
-					&& tmp.left.left !is null && tmp.left.right !is null) {
+		while(true) {
+			if(tmp.left !is null && tmp.left.value == value) {
+				writeln("tmp.left == value");
 				Elem!(T) tLeft = tmp.left.left;
 				Elem!(T) tRight = tmp.left.right;
 				tmp.left = null;
+				this.reInsert(tLeft);
+				this.reInsert(tRight);
+				this.size--;
+				return true;
+			} else if(tmp.left !is null && cmp(value, tmp.left.value)) {
+				writeln("tmp.left cmp");
+				tmp = tmp.left;
+			} else if(tmp.right !is null && tmp.right.value == value) {
+				writeln("tmp.right == value");
+				Elem!(T) tLeft = tmp.right.left;
+				Elem!(T) tRight = tmp.right.right;
 				tmp.right = null;
 				this.reInsert(tLeft);
 				this.reInsert(tRight);
 				this.size--;
 				return true;
+			} else if(tmp.right !is null && cmp(value, tmp.right.value)) {
+				writeln("tmp.right cmp");
+				tmp = tmp.right;
 			} else {
-				if(cmp(tmp.left.value, value)) {	
-					tmp = tmp.left;
-					continue;
-				} else if(tmp.right !is null) {
-					tmp = tmp.right;
-					continue;
-				}
 				return false;
 			}
 		}
-		return false;
 	}
 }
 
