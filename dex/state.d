@@ -7,9 +7,6 @@ import dex.util;
 import hurt.container.stack;
 
 class State {
-	MultiMap!(char,State) mTransition;	
-	Set!(State) mNFAStates;
-
 	int stateId;
 	bool acceptingState;
 
@@ -30,17 +27,4 @@ class State {
 		}
 		return false;
 	}
-
-	bool createNFA(string str) {
-		str = concatExpand!(char)(str);
-		char c;
-		foreach(idx,it;str) {
-			if(isInput(c)) {
-				this.push(c);
-			} else if(
-		}
-		return true;
-	}
-
 }
-
