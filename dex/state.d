@@ -2,6 +2,9 @@ module dex.state;
 
 import dex.multimap;
 import dex.set;
+import dex.util;
+
+import hurt.container.stack;
 
 class State {
 	MultiMap!(char,State) mTransition;	
@@ -26,6 +29,17 @@ class State {
 			return t.stateId == this.stateId;
 		}
 		return false;
+	}
+
+	bool createNFA(string str) {
+		str = concatExpand!(char)(str);
+		char c;
+		foreach(idx,it;str) {
+			if(isInput(c)) {
+				this.push(c);
+			} else if(
+		}
+		return true;
 	}
 
 }

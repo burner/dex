@@ -25,6 +25,7 @@ public pure immutable(T)[] concatExpand(T)(immutable(T)[] str)
 
 unittest {
 	assert("f\bd*\b(t|r)\bw" == concatExpand("fd*(t|r)w"));
+	assert("f\bd*\b(t|w|q|o|r)\bw" == concatExpand("fd*(t|w|q|o|r)w"));
 }
 
 public pure bool isOperator(T)(T ch)

@@ -25,7 +25,7 @@ string ConcatExpand(string strRegEx)
 		strRes	   += cLeft;
 		if((IsInput(cLeft)) || (IsRightParanthesis(cLeft)) || (cLeft == '*'))
 			if((IsInput(cRight)) || (IsLeftParanthesis(cRight)))
-				strRes += char(8);
+				strRes += char('_');
 	}
 	strRes += strRegEx[strRegEx.size()-1];
 
@@ -36,6 +36,9 @@ int main() {
 	string a = "ab*fz(t|u)t";	
 	string b = ConcatExpand(a);
 	cout<<(b == "a\bb*\bf\bz\b(t|u)\bt")<<endl;
+	cout<<b.size()<<" "<<b<<endl;
+	a = "ab*fz(t|r|w|u)t";	
+	b = ConcatExpand(a);
 	cout<<b.size()<<" "<<b<<endl;
 	return 0;
 }
