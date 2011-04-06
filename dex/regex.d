@@ -10,6 +10,8 @@ import hurt.container.dlst;
 import hurt.container.stack;
 import hurt.container.vector;
 
+import std.stdio;
+
 alias DLinkedList!(State) FSA_Table;
 
 class RegEx {
@@ -32,6 +34,7 @@ class RegEx {
 
 	bool createNFA(string str) {
 		str = concatExpand(str);
+		writeln(__FILE__,__LINE__, " ", str, " :length ",str.length);
 			
 		foreach(idx,it;str) {
 			if(isInput!(char)(it)) {
