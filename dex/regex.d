@@ -15,7 +15,6 @@ alias DLinkedList!(State) FSA_Table;
 class RegEx {
 	FSA_Table nfaTable;
 	FSA_Table dfaTable;
-	
 	Stack!(FSA_Table) operandStack;
 	Stack!(char) operatorStack;
 
