@@ -9,6 +9,7 @@ import hurt.container.stack;
 class State {
 	int stateId;
 	bool acceptingState;
+	MultiMap!(char,State) transition;
 
 	this(int nId = -1) {
 		this.stateId = nId;
@@ -27,4 +28,9 @@ class State {
 		}
 		return false;
 	}
+
+	void addTransition(char chInput, State state) {
+		assert(state !is null);
+		transition.insert(chInput, state);
+	};
 }

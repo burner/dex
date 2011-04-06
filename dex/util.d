@@ -47,3 +47,26 @@ public pure bool isLeftParanthesis(T)(T ch)
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	return ch == '(';
 }
+
+public pure bool presedence(T)(T opLeft, T opRight)
+		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
+	if(opLeft == opRight)
+		return true;
+
+	if(opLeft == '*')
+		return false;
+
+	if(opRight == '*')
+		return true;
+
+	if(opLeft == 8)
+		return false;
+
+	if(opRight == 8)
+		return true;
+
+	if(opLeft == '|')
+		return false;
+	
+	return true;
+}
