@@ -9,6 +9,9 @@ import dex.util;
 import hurt.container.dlst;
 import hurt.container.stack;
 import hurt.container.vector;
+import hurt.util.stacktrace;
+import hurt.util.array;
+import hurt.string.stringbuffer;
 
 import std.stdio;
 
@@ -32,18 +35,32 @@ class RegEx {
 
 	Vector!(int) vecPos;
 
+	this() {
+		this.nfaTable = new FSA_Table();
+		this.dfaTable = new FSA_Table();
+		this.operandStack = new Stack!(FSA_Table)();
+		this.operatorStack = new Stack!(char)();
+		this.inputSet = new Set!(char);
+		this.patternList = new List!(PatternState)();
+	}
+
 	bool createNFA(string str) {
 		str = concatExpand(str);
 		writeln(__FILE__,__LINE__, " ", str, " :length ",str.length);
 			
 		foreach(idx,it;str) {
+			debug(RegExDebug) writeln(__FILE__,__LINE__, " ", it, " ", idx);
 			if(isInput!(char)(it)) {
+				debug(RegExDebug) writeln(__FILE__,__LINE__, " isInput");
 				this.push(it);
 			} else if(operatorStack.empty()) {
+				debug(RegExDebug) writeln(__FILE__,__LINE__, " operatorStack.empty");
 				operatorStack.push(it);
 			} else if(isLeftParanthesis!(char)(it)) {
+				debug(RegExDebug) writeln(__FILE__,__LINE__, " isLeftParanthesis");
 				operatorStack.push(it);
 			} else if(isRightParanthesis!(char)(it)) {
+				debug(RegExDebug) writeln(__FILE__,__LINE__, " isRightParanthesis");
 				while(!isLeftParanthesis!(char)(operatorStack.top())) {
 					if(!this.eval()) {
 						return false;
@@ -51,11 +68,14 @@ class RegEx {
 				}
 				operatorStack.pop();
 			} else {
+				debug(RegExDebug) writeln(__FILE__,__LINE__, " else");
 				while(!operatorStack.empty() && presedence!(char)(it, operatorStack.top())) {
+					debug(RegExDebug) writeln(__FILE__,__LINE__, " !(if.eval)");
 					if(!this.eval()) {
 						return false;
 					}
 				}
+				debug(RegExDebug) writeln(__FILE__,__LINE__, " operatorStack.push ", it);
 				operatorStack.push(it);
 			}
 		}
@@ -76,41 +96,61 @@ class RegEx {
 	}
 
 	void push(char chInput) {
+		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
+			"push");
+		debug st.putArgs("char", "chInput", chInput);
+			
 		State s0 = new State(++nextStateId);
 		State s1 = new State(++nextStateId);
 		s0.addTransition(chInput, s1);
+		debug(RegExDebug) writeln(__FILE__,__LINE__, " after andTransition");
 
 		FSA_Table table = new FSA_Table();
 		table.pushBack(s0);
 		table.pushBack(s1);
+		debug(RegExDebug) writeln(__FILE__,__LINE__, " after table.push");
 
 		operandStack.push(table);
 
 		inputSet.insert(chInput);
 	}
 
-	bool pop(FSA_Table nfaTable) {
+	bool pop(ref FSA_Table nfaTable) {
+		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
+			"pop");
+
+		debug(RegExDebug) writeln(__FILE__,__LINE__, " this.operandStack.size ", this.operandStack.getSize());
+			
 		if(this.operandStack.getSize() > 0) {
 			nfaTable = operandStack.top();
 			operandStack.pop();
+			debug(RegExDebug) writeln(__FILE__,__LINE__, " nfaTable assigned");
 			return true;
 		}
 		return false;
 	}
 
 	bool eval() {
+		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
+			"eval");
+
 		// First pop the operator from the stack
+		debug(RegExDebug) writeln(__FILE__,__LINE__, " eval this.operatorStack.size ", this.operatorStack.getSize());
 		if(this.operatorStack.getSize()>0) {
 			char chOperator = this.operatorStack.top();
 			this.operatorStack.pop();
+			debug(RegExDebug) writeln(__FILE__,__LINE__, " chOperator ", chOperator);
 	
 			// Check which operator it is
 			switch(chOperator) {
 				case  '*':
+					debug(RegExDebug) writeln(__FILE__,__LINE__, " star");
 					return this.Star();
 				case '|':
+					debug(RegExDebug) writeln(__FILE__,__LINE__, " union");
 					return this.Union();
-				case '\b':
+				case '\a':
+					debug(RegExDebug) writeln(__FILE__,__LINE__, " concat");
 					return this.Concat();
 			}
 	
@@ -121,10 +161,14 @@ class RegEx {
 	}
 
 	bool Concat() {
+		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
+			"Concat");
 		// Pop 2 elements
 		FSA_Table A, B;
 		if(!this.pop(B) || !this.pop(A))
 			return false;
+
+		debug(RegExDebug) writeln(__FILE__,__LINE__, " after pop");
 	
 		// Now evaluate AB
 		// Basically take the last state from A
@@ -133,7 +177,10 @@ class RegEx {
 		// new NFA_TABLE and push it onto the stack
 
 		//A[A.size()-1].AddTransition(0, B[0]);
+		assert(A !is null, "A shouldn't be null");
+		assert(B !is null, "B shouldn't be null");
 		A.get(A.getSize()-1).addTransition(0, B.get(0));
+		debug(RegExDebug) writeln(__FILE__,__LINE__, " after A.get");
 		//A.insert(A.end(), B.begin(), B.end());
 	
 		// Push the result onto the stack
@@ -183,6 +230,8 @@ class RegEx {
 	}
 
 	bool Union() {
+		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
+			"Union");
 		// Pop 2 elements
 		FSA_Table A, B;
 		if(!this.pop(B) || !this.pop(A))
@@ -214,5 +263,17 @@ class RegEx {
 		this.operandStack.push(A);
 	
 		return true;
+	}
+
+	void writeNFATable() {
+		string[] strNFATable;
+		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
+		foreach(it; this.inputSet.values()) {
+			strNFALine.pushBack("\t\t").pushBack(it);
+		}
+		strNFALine.pushBack('\t').pushBack('\t').pushBack("epsilon");
+		append(strNFATable, strNFALine.toString());
+		strNFALine.clear();
+
 	}
 }

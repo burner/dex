@@ -15,7 +15,7 @@ public pure immutable(T)[] concatExpand(T)(immutable(T)[] str)
 		if(isInput!(T)(cLeft) || isRightParanthesis!(T)(cLeft) 
 				|| cLeft == '*') {
 			if(isInput(cRight) || isLeftParanthesis!(T)(cRight)) {
-				ret[retPtr++] = '\b';
+				ret[retPtr++] = '\a';
 			}
 		}
 	}
@@ -24,13 +24,13 @@ public pure immutable(T)[] concatExpand(T)(immutable(T)[] str)
 }
 
 unittest {
-	assert("f\bd*\b(t|r)\bw" == concatExpand("fd*(t|r)w"));
-	assert("f\bd*\b(t|w|q|o|r)\bw" == concatExpand("fd*(t|w|q|o|r)w"));
+	assert("f\ad*\a(t|r)\aw" == concatExpand("fd*(t|r)w"));
+	assert("f\ad*\a(t|w|q|o|r)\aw" == concatExpand("fd*(t|w|q|o|r)w"));
 }
 
 public pure bool isOperator(T)(T ch)
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
-	return ch == '*' || ch == '|' || ch == '(' || ch == ')' || ch == '\b';
+	return ch == '*' || ch == '|' || ch == '(' || ch == ')' || ch == '\a';
 }
 
 public pure bool isInput(T)(T ch)

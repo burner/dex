@@ -6,6 +6,8 @@ import dex.util;
 
 import hurt.container.stack;
 
+import std.stdio;
+
 class State {
 	int stateId;
 	bool acceptingState;
@@ -14,11 +16,12 @@ class State {
 	this(int nId = -1) {
 		this.stateId = nId;
 		this.acceptingState = false;
+		this.transition = new MultiMap!(char,State)();	
 	}
 
 	this(int nId, Set!(State) NFAState) {
 		this.stateId = nId;
-	
+		this.transition = new MultiMap!(char,State)();	
 	}
 
 	bool obEquals(Object o) {
@@ -31,6 +34,7 @@ class State {
 
 	void addTransition(char chInput, State state) {
 		assert(state !is null);
+		debug(StateDebug) writeln(__FILE__,__LINE__, " addTransition ", chInput , " ", state.stateId);
 		transition.insert(chInput, state);
 	};
 }

@@ -7,6 +7,6 @@ import std.stdio;
 void main() {
 	writeln("all unittest passed");
 	RegEx r1 = new RegEx();
-	r1.createNFA("ab(b|s)");
+	assert(r1.createNFA("ab(b|s)"));
 	return;
 }
