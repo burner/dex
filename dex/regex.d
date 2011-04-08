@@ -6,6 +6,7 @@ import dex.set;
 import dex.patternstate;
 import dex.util;
 
+import hurt.conv.conv;
 import hurt.container.dlst;
 import hurt.container.stack;
 import hurt.container.vector;
@@ -14,6 +15,7 @@ import hurt.util.array;
 import hurt.string.stringbuffer;
 
 import std.stdio;
+import std.stream;
 
 alias DLinkedList!(State) FSA_Table;
 
@@ -272,8 +274,59 @@ class RegEx {
 			strNFALine.pushBack("\t\t").pushBack(it);
 		}
 		strNFALine.pushBack('\t').pushBack('\t').pushBack("epsilon");
-		append(strNFATable, strNFALine.toString());
+		append(strNFATable, strNFALine.getString());
 		strNFALine.clear();
 
+	}
+
+	void writeNFAGraph() {
+		string[] strNFATable = ["digraph{\n"];
+		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
+		foreach(it;this.nfaTable) {
+			if(it.acceptingState) {
+				strNFALine.pushBack('\t').pushBack(conv!(int,string)(it.stateId));
+				strNFALine.pushBack("\t[shape=doublecircle];\n");
+				append(strNFATable, strNFALine.getString());
+				strNFALine.clear();
+			}
+		}
+		append(strNFATable, "\n");
+		strNFALine.clear();
+
+		// Record transitions
+		foreach(pState;this.nfaTable) {
+			State[] state = pState.getTransition(0);	
+
+			// Record transition
+			foreach(jt;state) {
+				string stateId1 = conv!(int,string)(pState.stateId);
+				string stateId2 = conv!(int,string)(jt.stateId);
+				strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
+				strNFALine.pushBack("\t[label=\"epsilon\"];\n");
+				append(strNFATable, strNFALine.getString());
+				strNFALine.clear();
+			}
+
+			foreach(jt;this.inputSet.values()) {
+				state = pState.getTransition(jt);
+				foreach(kt;state) {
+					string stateId1 = conv!(int,string)(pState.stateId);
+					string stateId2 = conv!(int,string)(kt.stateId);
+					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
+					strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
+					append(strNFATable, strNFALine.getString());
+					strNFALine.clear();
+				}
+			}	
+			
+		}
+
+		append(strNFATable, "}");
+		std.stream.File file = new std.stream.File("nfaGraph.dot", FileMode.Out);
+		foreach(it;strNFATable) {
+			file.writeString(it);
+		}
+		file.close();
+		
 	}
 }

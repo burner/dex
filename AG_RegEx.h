@@ -27,6 +27,8 @@
 #pragma warning(disable:4503)
 
 #include <string>
+#include <sstream>
+#include <cassert>
 #include <stack>
 #include <map>
 #include <deque>
@@ -34,12 +36,19 @@
 #include <set>
 #include <algorithm>
 #include <list>
+#include <iostream>
 
 using namespace std;
+		string IntToStr( int n ) {
+  			ostringstream result;
+  			result << n;
+  			return result.str();
+  		}
+
 
 class CAG_RegEx  
 {
-protected:
+public:
 	//! State Class
 	class CAG_State
 	{
@@ -55,10 +64,10 @@ protected:
 
 	public:
 		//! Default constructor
-		CAG_State() : m_nStateID(-1), m_bAcceptingState(FALSE) {};
+		CAG_State() : m_nStateID(-1), m_bAcceptingState(false) {};
 
 		//! parameterized constructor
-		CAG_State(int nID) : m_nStateID(nID), m_bAcceptingState(FALSE) {};
+		CAG_State(int nID) : m_nStateID(nID), m_bAcceptingState(false) {};
 
 		//! Constructs new state from the set of other states
 		/*! This is necessary for subset construction algorithm
@@ -72,11 +81,11 @@ protected:
 			
 			// DFA state is accepting state if it is constructed from 
 			// an accepting NFA state
-			m_bAcceptingState	= FALSE;
+			m_bAcceptingState	= false;
 			set<CAG_State*>::iterator iter;
 			for(iter=NFAState.begin(); iter!=NFAState.end(); ++iter)
 				if((*iter)->m_bAcceptingState)
-					m_bAcceptingState = TRUE;
+					m_bAcceptingState = true;
 		};
 
 		//! Copy Constructor
@@ -87,12 +96,12 @@ protected:
 		virtual ~CAG_State() {};
 
 		//! True if this state is accepting state
-		BOOL m_bAcceptingState;
+		bool m_bAcceptingState;
 
 		//! Adds a transition from this state to the other
 		void AddTransition(char chInput, CAG_State *pState)
 		{
-			ASSERT(pState != NULL);
+			assert(pState != NULL);
 			m_Transition.insert(make_pair(chInput, pState));
 		};
 
@@ -122,18 +131,23 @@ protected:
 				++iter)
 				{
 					CAG_State *pState = iter->second;
-					ASSERT(pState != NULL);
+					assert(pState != NULL);
 					States.push_back(pState);
 				}
 		};
 
+
 		//! Returns the state id in form of string
-		CString GetStateID()
+		string GetStateID()
 		{
-			CString strRes;
-			if(m_bAcceptingState)
-				strRes.Format(_T("{%d}"), m_nStateID);
-			else strRes.Format(_T("%d"), m_nStateID);
+			string strRes;
+			if(m_bAcceptingState) {
+				strRes += "{";
+				strRes += IntToStr(m_nStateID);
+				strRes += "}";
+			} else {
+				strRes += IntToStr(m_nStateID);
+			}
 			return strRes;
 		};
 
@@ -149,24 +163,23 @@ protected:
 			leading away from this state. This function
 			is used for reducing the DFA.
 		*/
-		BOOL IsDeadEnd()
+		bool IsDeadEnd()
 		{
 			if(m_bAcceptingState)
-				return FALSE;
+				return false;
 			if(m_Transition.empty())
-				return TRUE;
+				return true;
 			
 			multimap<char, CAG_State*>::iterator iter;
 			for(iter=m_Transition.begin(); iter!=m_Transition.end(); ++iter)
 			{
 				CAG_State *toState = iter->second;
 				if(toState != this)
-					return FALSE;
+					return false;
 			}
 
-			TRACE("State %d is dead end.\n", m_nStateID); 
 			
-			return TRUE;
+			return true;
 		};	
 
 		//! Override the assignment operator
@@ -178,7 +191,7 @@ protected:
 		};
 
 		//! Override the comparison operator
-		BOOL operator==(const CAG_State& other)
+		bool operator==(const CAG_State& other)
 		{
 			if(m_NFAStates.empty())
 				return(m_nStateID == other.m_nStateID);
@@ -209,7 +222,7 @@ protected:
 		//! Override the assignment operator
 		CAG_PatternState& operator=(const CAG_PatternState& other)
 		{
-			ASSERT(other.m_pState != NULL);
+			assert(other.m_pState != NULL);
 			m_pState		= other.m_pState;
 			m_nStartIndex	= other.m_nStartIndex;
 			return *this;
@@ -268,77 +281,77 @@ protected:
 	void Push(char chInput);
 
 	//! Pops an element from the operand stack
-	/*! The return value is TRUE if an element 
+	/*! The return value is true if an element 
 		was poped successfully, otherwise it is
-		FALSE (syntax error) 
+		false (syntax error) 
 	*/
-	BOOL Pop(FSA_TABLE &NFATable);
+	bool Pop(FSA_TABLE &NFATable);
 
 	//! Checks is a specific character and operator
-	BOOL IsOperator(char ch) { return((ch == 42) || (ch == 124) || (ch == 40) || (ch == 41) || (ch == 8)); };
+	bool IsOperator(char ch) { return((ch == 42) || (ch == 124) || (ch == 40) || (ch == 41) || (ch == 8)); };
 
 	//! Returns operator presedence
-	/*! Returns TRUE if presedence of opLeft <= opRight.
+	/*! Returns true if presedence of opLeft <= opRight.
 	
 			Kleens Closure	- highest
 			Concatenation	- middle
 			Union			- lowest
 	*/
-	BOOL Presedence(char opLeft, char opRight)
+	bool Presedence(char opLeft, char opRight)
 	{
 		if(opLeft == opRight)
-			return TRUE;
+			return true;
 
 		if(opLeft == '*')
-			return FALSE;
+			return false;
 
 		if(opRight == '*')
-			return TRUE;
+			return true;
 
 		if(opLeft == 8)
-			return FALSE;
+			return false;
 
 		if(opRight == 8)
-			return TRUE;
+			return true;
 
 		if(opLeft == '|')
-			return FALSE;
+			return false;
 		
-		return TRUE;
+		return true;
 	};
 
 	//! Checks if the specific character is input character
-	BOOL IsInput(char ch) { return(!IsOperator(ch)); };
+	bool IsInput(char ch) { return(!IsOperator(ch)); };
 
 	//! Checks is a character left parantheses
-	BOOL IsLeftParanthesis(char ch) { return(ch == 40); };
+	bool IsLeftParanthesis(char ch) { return(ch == 40); };
 
 	//! Checks is a character right parantheses
-	BOOL IsRightParanthesis(char ch) { return(ch == 41); };
+	bool IsRightParanthesis(char ch) { return(ch == 41); };
 
 	//! Evaluates the next operator from the operator stack
-	BOOL Eval();
+	bool Eval();
 
 	//! Evaluates the concatenation operator
 	/*! This function pops two operands from the stack 
 		and evaluates the concatenation on them, pushing
 		the result back on the stack.
 	*/
-	BOOL Concat();
+	bool Concat();
 
 	//! Evaluates the Kleen's closure - star operator
 	/*! Pops one operator from the stack and evaluates
 		the star operator on it. It pushes the result
 		on the operand stack again.
 	*/
-	BOOL Star();
+	bool Star();
 
 	//! Evaluates the union operator
 	/*! Pops 2 operands from the stack and evaluates
 		the union operator pushing the result on the
 		operand stack.
 	*/
-	BOOL Union();
+	bool Union();
 
 	//! Inserts char 8 where the concatenation needs to occur
 	/*! The method used to parse regular expression here is 
@@ -351,7 +364,7 @@ protected:
 	string ConcatExpand(string strRegEx);
 
 	//! Creates Nondeterministic Finite Automata from a Regular Expression
-	BOOL CreateNFA(string strRegEx);
+	bool CreateNFA(string strRegEx);
 
 	//! Calculates the Epsilon Closure 
 	/*! Returns epsilon closure of all states
@@ -386,7 +399,7 @@ protected:
 		m_NFATable.clear();
 
 		// Clean up all allocated memory for DFA
-		for(i=0; i<m_DFATable.size(); ++i)
+		for(int i=0; i<m_DFATable.size(); ++i)
 			delete m_DFATable[i];
 		m_DFATable.clear();
 
@@ -410,10 +423,10 @@ protected:
 	};
 
 	//! Searches the text for all occurences of the patterns
-	/*! Returns TRUE if single pattern is found or FALSE if 
+	/*! Returns true if single pattern is found or false if 
 	    no pattern sis found.
 	*/
-	BOOL Find();
+	bool Find();
 
 public:
 	//! Default Constructor
@@ -424,30 +437,29 @@ public:
 
 	//! Set Regular Expression
 	/*! Set the string pattern to be searched for.
-		Returns TRUE if success othewise it returns FALSE.
+		Returns true if success othewise it returns false.
 	*/
-	BOOL SetRegEx(string strRegEx);
+	bool SetRegEx(string strRegEx);
 
 	//! Searches for the first occurence of a text pattern
-	/*! If the pattern is found the function returns TRUE
+	/*! If the pattern is found the function returns true
 		together with starting positions (vecPos) and the patterns
 		(vecPattern) found. THIS FUNCTION MUST BE CALLED FIRST.
-		The return value is TRUE if a pattern is found or FALSE
+		The return value is true if a pattern is found or false
 		if nothing is found.
 	*/
-	BOOL FindFirst(string strText, int &nPos, string &strPattern);
+	bool FindFirst(string strText, int &nPos, string &strPattern);
 
 	//! Searches for the next occurence of a text pattern
-	/*! If the pattern is found the function returns TRUE
+	/*! If the pattern is found the function returns true
 		together with starting position array (vecPos) and the patterns
 		(vecPattern) found. THIS FUNCTION MUST BE CALLED AFTER 
 		THE FUNCTION FindFirst(...). 
-		The return value is TRUE if a pattern is found or FALSE
+		The return value is true if a pattern is found or false
 		if nothing is found.
 	*/
-	BOOL FindNext(int &nPos, string &strPattern);
-
-#ifdef _DEBUG
+	bool FindNext(int &nPos, string &strPattern);
+/*
 	//! For Debuging purposes only
 	void SaveNFATable()
 	{
@@ -551,10 +563,11 @@ public:
 		}
 		else AfxMessageBox(_T("Could not save DFA Table to c:\\DFATable.txt"));
 	};
-
+*/
 	void SaveNFAGraph() 
 	{
-		CString strNFAGraph = _T("digraph{\n");
+		cout<<"saveNFAGraph"<<endl;
+		string strNFAGraph = "digraph{\n";
 
 		// Final states are double circled
 		for(int i=0; i<m_NFATable.size(); ++i)
@@ -562,16 +575,15 @@ public:
 			CAG_State *pState = m_NFATable[i];
 			if(pState->m_bAcceptingState)
 			{
-				CString strStateID = pState->GetStateID();
-				strStateID.Remove('{'); strStateID.Remove('}');
-				strNFAGraph += _T("\t") + strStateID + _T("\t[shape=doublecircle];\n");
+				string strStateID = (pState->GetStateID());
+				strNFAGraph += "\t" + (strStateID) + "\t[shape=doublecircle];\n";
 			}
 		}
 		
-		strNFAGraph += _T("\n");
+		strNFAGraph += "\n";
 
 		// Record transitions
-		for(i=0; i<m_NFATable.size(); ++i)
+		for(int i=0; i<m_NFATable.size(); ++i)
 		{
 			CAG_State *pState = m_NFATable[i];
 			vector<CAG_State*> State;
@@ -580,12 +592,13 @@ public:
 			for(int j=0; j<State.size(); ++j)
 			{
 				// Record transition
-				CString strStateID1 = pState->GetStateID();
-				CString strStateID2 = State[j]->GetStateID();
-				strStateID1.Remove('{'); strStateID1.Remove('}');
-				strStateID2.Remove('{'); strStateID2.Remove('}');
-				strNFAGraph += _T("\t") + strStateID1 + _T(" -> ") + strStateID2;
-				strNFAGraph += _T("\t[label=\"epsilon\"];\n");
+				string strStateID1 = pState->GetStateID();
+				string strStateID2 = State[j]->GetStateID();
+				strNFAGraph += "\t";
+				strNFAGraph += (strStateID1);
+				strNFAGraph += " -> ";
+				strNFAGraph += (strStateID2);
+				strNFAGraph += "\t[label=\"epsilon\"];\n";
 			}
 
 			set<char>::iterator iter;
@@ -595,28 +608,25 @@ public:
 				for(int j=0; j<State.size(); ++j)
 				{
 					// Record transition
-					CString strStateID1 = pState->GetStateID();
-					CString strStateID2 = State[j]->GetStateID();
-					strStateID1.Remove('{'); strStateID1.Remove('}');
-					strStateID2.Remove('{'); strStateID2.Remove('}');
-					strNFAGraph += _T("\t") + strStateID1 + _T(" -> ") + strStateID2;
-					strNFAGraph += _T("\t[label=\"") + CString(*iter) + _T("\"];\n");
+					string strStateID1 = pState->GetStateID();
+					string strStateID2 = State[j]->GetStateID();
+					//strStateID1.Remove('{'); strStateID1.Remove('}');
+					//strStateID2.Remove('{'); strStateID2.Remove('}');
+					strNFAGraph += "\t" + (strStateID1) + " -> " + (strStateID2);
+					strNFAGraph += "\t[label=\"";
+					strNFAGraph += *iter;
+					strNFAGraph += "\"];\n";
 				}
 			}
 		}
 
-		strNFAGraph += _T("}");
+		strNFAGraph += "}";
+		cout<<strNFAGraph<<endl;
 
 		// Save table to the file
-		CStdioFile f;
-		if(f.Open("C:\\NFAGraph.dot", CFile::modeCreate | CFile::modeWrite))
-		{
-			f.WriteString(strNFAGraph);
-			f.Close();
-		}
-		else AfxMessageBox(_T("Could not save NFA Graph to c:\\NFAGraph.txt"));
+		cout<<"done"<<endl;
 	};
-	
+/*	
 	void SaveDFAGraph()
 	{
 		CString strDFAGraph = _T("digraph{\n");
@@ -680,11 +690,5 @@ public:
 			f.Close();
 		}
 		else AfxMessageBox(_T("Could not save DFA Graph to c:\\DFAGraph.txt"));
-	};
-#else
-	void SaveNFATable() { } ;
-	void SaveDFATable() { } ;
-	void SaveNFAGraph() { } ;
-	void SaveDFAGraph() { } ;
-#endif
+	}; */
 };

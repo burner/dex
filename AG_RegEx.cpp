@@ -3,8 +3,8 @@
 	\author Amer Gerzic
 */
 
-#include "stdafx.h"
-#include "RegExDemo.h"
+//#include "stdafx.h"
+//#include "RegExDemo.h"
 #include "AG_RegEx.h"
 
 #ifdef _DEBUG
@@ -24,14 +24,14 @@ CAG_RegEx::~CAG_RegEx()
 	CleanUp();
 }
 
-BOOL CAG_RegEx::SetRegEx(string strRegEx)
+bool CAG_RegEx::SetRegEx(string strRegEx)
 {
 	// 1. Clean up old regular expression
 	CleanUp();
 
 	// 2. Create NFA
 	if(!CreateNFA(strRegEx))
-		return FALSE;
+		return false;
 	
 	// 3. Convert to DFA
 	ConvertNFAtoDFA();
@@ -39,10 +39,10 @@ BOOL CAG_RegEx::SetRegEx(string strRegEx)
 	// 4. Reduce DFA
 	ReduceDFA();
 
-	return TRUE;
+	return true;
 }
 
-BOOL CAG_RegEx::FindFirst(string strText, int &nPos, string &strPattern)
+bool CAG_RegEx::FindFirst(string strText, int &nPos, string &strPattern)
 {
 	// Clean up all pattern states
 	list<CAG_PatternState*>::iterator iter;
@@ -59,27 +59,27 @@ BOOL CAG_RegEx::FindFirst(string strText, int &nPos, string &strPattern)
 		nPos			= m_vecPos[0];
 		strPattern		= m_vecPattern[0];
 		m_nPatternIndex	= 0;
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
-BOOL CAG_RegEx::FindNext(int &nPos, string &strPattern)
+bool CAG_RegEx::FindNext(int &nPos, string &strPattern)
 {
 	++m_nPatternIndex;
 	if(m_nPatternIndex<m_vecPos.size())
 	{
 		nPos			= m_vecPos[m_nPatternIndex];
 		strPattern		= m_vecPattern[m_nPatternIndex];
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
-BOOL CAG_RegEx::Find()
+bool CAG_RegEx::Find()
 {
-	BOOL bRes = FALSE;
+	bool bRes = false;
 
 	// Clean up for new search
 	m_vecPos.clear();
@@ -87,7 +87,7 @@ BOOL CAG_RegEx::Find()
 
 	// if there is no DFA then there is no matching
 	if(m_DFATable.empty())
-		return FALSE;
+		return false;
 
 	// Go through all input charactes 
 	for(int i=0; i<m_strText.size(); ++i)
@@ -157,7 +157,7 @@ BOOL CAG_RegEx::Find()
 	return(m_vecPos.size()>0);
 }
 
-BOOL CAG_RegEx::Eval()
+bool CAG_RegEx::Eval()
 {
 	// First pop the operator from the stack
 	if(m_OperatorStack.size()>0)
@@ -179,18 +179,18 @@ BOOL CAG_RegEx::Eval()
 			break;
 		}
 
-		return FALSE;
+		return false;
 	}
 
-	return FALSE;
+	return false;
 }
 
-BOOL CAG_RegEx::Concat()
+bool CAG_RegEx::Concat()
 {
 	// Pop 2 elements
 	FSA_TABLE A, B;
 	if(!Pop(B) || !Pop(A))
-		return FALSE;
+		return false;
 
 	// Now evaluate AB
 	// Basically take the last state from A
@@ -203,17 +203,17 @@ BOOL CAG_RegEx::Concat()
 	// Push the result onto the stack
 	m_OperandStack.push(A);
 
-	TRACE("CONCAT\n");
+	//TRACE("CONCAT\n");
 
-	return TRUE;
+	return true;
 }
 
-BOOL CAG_RegEx::Star()
+bool CAG_RegEx::Star()
 {
 	// Pop 1 element
 	FSA_TABLE A, B;
 	if(!Pop(A))
-		return FALSE;
+		return false;
 
 	// Now evaluate A*
 	// Create 2 new states which will be inserted 
@@ -243,17 +243,17 @@ BOOL CAG_RegEx::Star()
 	// Push the result onto the stack
 	m_OperandStack.push(A);
 
-	TRACE("STAR\n");
+	//TRACE("STAR\n");
 
-	return TRUE;
+	return true;
 }
 
-BOOL CAG_RegEx::Union()
+bool CAG_RegEx::Union()
 {
 	// Pop 2 elements
 	FSA_TABLE A, B;
 	if(!Pop(B) || !Pop(A))
-		return FALSE;
+		return false;
 
 	// Now evaluate A|B
 	// Create 2 new states, a start state and
@@ -276,9 +276,9 @@ BOOL CAG_RegEx::Union()
 	// Push the result onto the stack
 	m_OperandStack.push(A);
 
-	TRACE("UNION\n");
+	//TRACE("UNION\n");
 
-	return TRUE;
+	return true;
 }
 
 string CAG_RegEx::ConcatExpand(string strRegEx)
@@ -299,7 +299,7 @@ string CAG_RegEx::ConcatExpand(string strRegEx)
 	return strRes;
 }
 
-BOOL CAG_RegEx::CreateNFA(string strRegEx)
+bool CAG_RegEx::CreateNFA(string strRegEx)
 {
 	// Parse regular expresion using similar 
 	// method to evaluate arithmetic expressions
@@ -324,7 +324,7 @@ BOOL CAG_RegEx::CreateNFA(string strRegEx)
 			// Evaluate everyting in paranthesis
 			while(!IsLeftParanthesis(m_OperatorStack.top()))
 				if(!Eval())
-					return FALSE;
+					return false;
 			// Remove left paranthesis after the evaluation
 			m_OperatorStack.pop(); 
 		}
@@ -332,7 +332,7 @@ BOOL CAG_RegEx::CreateNFA(string strRegEx)
 		{
 			while(!m_OperatorStack.empty() && Presedence(c, m_OperatorStack.top()))
 				if(!Eval())
-					return FALSE;
+					return false;
 			m_OperatorStack.push(c);
 		}
 	}
@@ -340,16 +340,16 @@ BOOL CAG_RegEx::CreateNFA(string strRegEx)
 	// Evaluate the rest of operators
 	while(!m_OperatorStack.empty())
 		if(!Eval())
-			return FALSE;
+			return false;
 
 	// Pop the result from the stack
 	if(!Pop(m_NFATable))
-		return FALSE;
+		return false;
 
 	// Last NFA state is always accepting state
-	m_NFATable[m_NFATable.size()-1]->m_bAcceptingState = TRUE;
+	m_NFATable[m_NFATable.size()-1]->m_bAcceptingState = true;
 
-	return TRUE;
+	return true;
 }
 
 void CAG_RegEx::Push(char chInput)
@@ -372,20 +372,20 @@ void CAG_RegEx::Push(char chInput)
 	// Add this character to the input character set
 	m_InputSet.insert(chInput);
 
-	TRACE("PUSH %s\n", CString(chInput));
+	//TRACE("PUSH %s\n", CString(chInput));
 }
 
-BOOL CAG_RegEx::Pop(FSA_TABLE &NFATable)
+bool CAG_RegEx::Pop(FSA_TABLE &NFATable)
 {
 	// If the stack is empty we cannot pop anything
 	if(m_OperandStack.size()>0)
 	{
 		NFATable = m_OperandStack.top();
 		m_OperandStack.pop();
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 void CAG_RegEx::EpsilonClosure(set<CAG_State*> T, set<CAG_State*> &Res)
@@ -503,14 +503,14 @@ void CAG_RegEx::ConvertNFAtoDFA()
 			// set of DFA states (is any DFA state already constructed
 			// from this set of NFA states) or in pseudocode:
 			// is U in D-States already (U = EpsilonClosureSet)
-			BOOL bFound		= FALSE;
+			bool bFound		= false;
 			CAG_State *s	= NULL;
-			for(i=0; i<m_DFATable.size(); ++i)
+			for(int i=0; i<m_DFATable.size(); ++i)
 			{
 				s = m_DFATable[i];
 				if(s->GetNFAState() == EpsilonClosureRes)
 				{
-					bFound = TRUE;
+					bFound = true;
 					break;
 				}
 			}
@@ -550,7 +550,7 @@ void CAG_RegEx::ReduceDFA()
 	for(iter=DeadEndSet.begin(); iter!=DeadEndSet.end(); ++iter)
 	{
 		// Remove all transitions to this state
-		for(i=0; i<m_DFATable.size(); ++i)
+		for(int i=0; i<m_DFATable.size(); ++i)
 			m_DFATable[i]->RemoveTransition(*iter);
 
 		// Remove this state from the DFA Table
@@ -564,4 +564,14 @@ void CAG_RegEx::ReduceDFA()
 		// Now free the memory used by the element
 		delete *iter;
 	}
+}
+
+int main() {
+	cout<<"start"<<endl;
+	CAG_RegEx* t = new CAG_RegEx();
+	string str = "ab(b|s)";
+	t->CreateNFA(str);
+	cout<<str<<endl;
+	t->SaveNFAGraph();
+	cout<<"done"<<endl;
 }

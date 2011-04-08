@@ -36,6 +36,14 @@ public class Set(T) {
 	T[] values() {
 		return this.array.values();
 	}
+
+	Set!(T) dup() {
+		Set!(T) ret = new Set!(T)();
+		foreach(it;array.values()) {
+			ret.insert(it);
+		}
+		return ret;
+	}
 }
 
 unittest {
