@@ -48,9 +48,18 @@ class State {
 	}
 
 	int opCmp(Object o) {
-		State f = cast(State)o;
-		if(!f)
-			
+		if(is(o : State)) {
+			State f = cast(State)o;
+			size_t fHash = f.toHash();
+			size_t thisHash = this.toHash();
+			if(thisHash > fHash)
+				return 1;
+			else if(thisHash < fHash)
+				return -1;
+			else
+				return 0;
+		}
+		return 1;
 	}
 
 	void addTransition(char chInput, State state) {
