@@ -88,6 +88,10 @@ public:
 					m_bAcceptingState = true;
 		};
 
+		int getID() const {
+			return m_nStateID;
+		}
+
 		//! Copy Constructor
 		CAG_State(const CAG_State &other)
 		{ *this = other; };
@@ -288,7 +292,7 @@ public:
 	bool Pop(FSA_TABLE &NFATable);
 
 	//! Checks is a specific character and operator
-	bool IsOperator(char ch) { return((ch == 42) || (ch == 124) || (ch == 40) || (ch == 41) || (ch == 8)); };
+	bool IsOperator(char ch) { return((ch == 42) || (ch == 124) || (ch == 40) || (ch == 41) || (ch == '\a')); };
 
 	//! Returns operator presedence
 	/*! Returns true if presedence of opLeft <= opRight.
@@ -308,10 +312,10 @@ public:
 		if(opRight == '*')
 			return true;
 
-		if(opLeft == 8)
+		if(opLeft == '\a')
 			return false;
 
-		if(opRight == 8)
+		if(opRight == '\a')
 			return true;
 
 		if(opLeft == '|')
@@ -564,17 +568,14 @@ public:
 		else AfxMessageBox(_T("Could not save DFA Table to c:\\DFATable.txt"));
 	};
 */
-	void SaveNFAGraph() 
-	{
+	void SaveNFAGraph() {
 		cout<<"saveNFAGraph"<<endl;
 		string strNFAGraph = "digraph{\n";
 
 		// Final states are double circled
-		for(int i=0; i<m_NFATable.size(); ++i)
-		{
+		for(int i=0; i<m_NFATable.size(); ++i) {
 			CAG_State *pState = m_NFATable[i];
-			if(pState->m_bAcceptingState)
-			{
+			if(pState->m_bAcceptingState) {
 				string strStateID = (pState->GetStateID());
 				strNFAGraph += "\t" + (strStateID) + "\t[shape=doublecircle];\n";
 			}
@@ -583,14 +584,12 @@ public:
 		strNFAGraph += "\n";
 
 		// Record transitions
-		for(int i=0; i<m_NFATable.size(); ++i)
-		{
+		for(int i=0; i<m_NFATable.size(); ++i) {
 			CAG_State *pState = m_NFATable[i];
 			vector<CAG_State*> State;
 
 			pState->GetTransition(0, State);
-			for(int j=0; j<State.size(); ++j)
-			{
+			for(int j=0; j<State.size(); ++j) {
 				// Record transition
 				string strStateID1 = pState->GetStateID();
 				string strStateID2 = State[j]->GetStateID();
@@ -602,11 +601,9 @@ public:
 			}
 
 			set<char>::iterator iter;
-			for(iter = m_InputSet.begin(); iter != m_InputSet.end(); ++iter)
-			{
+			for(iter = m_InputSet.begin(); iter != m_InputSet.end(); ++iter) {
 				pState->GetTransition(*iter, State);
-				for(int j=0; j<State.size(); ++j)
-				{
+				for(int j=0; j<State.size(); ++j) {
 					// Record transition
 					string strStateID1 = pState->GetStateID();
 					string strStateID2 = State[j]->GetStateID();

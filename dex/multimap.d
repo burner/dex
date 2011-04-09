@@ -2,10 +2,15 @@ module dex.multimap;
 
 class MultiMap(T,S) {
 	private class Value(S) {
-		uint idx;
+		version(X86) {
+			int idx;
+		} else {
+			long idx;
+		}	
 		S[] multi;
 
 		this(S value) {
+			this.idx = 0;
 			this.multi = new S[16];
 			this.multi[this.idx++] = value;
 		}
@@ -18,7 +23,9 @@ class MultiMap(T,S) {
 		}
 
 		public S[] remove() {
-			return this.multi[0..this.idx].dup;
+			S[] ret = this.multi[0..this.idx].dup;
+			this.idx = 0;
+			return ret;
 		}
 
 		public S[] remove(uint rIdx) {
@@ -40,7 +47,7 @@ class MultiMap(T,S) {
 			}
 		}
 
-		public uint getSize() {
+		public size_t getSize() {
 			return this.idx;
 		}
 
@@ -86,7 +93,7 @@ class MultiMap(T,S) {
 
 	S[] find(T key) {
 		if(key in this.multi) {	
-			S[] tmp = this.multi[key].remove();	
+			S[] tmp = this.multi[key].values();	
 			return tmp;
 		} else {
 			return null;

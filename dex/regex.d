@@ -20,6 +20,8 @@ import std.stream;
 alias DLinkedList!(State) FSA_Table;
 
 class RegEx {
+	FSA_Table globalNfaTable;
+
 	FSA_Table nfaTable;
 	FSA_Table dfaTable;
 	Stack!(FSA_Table) operandStack;
@@ -30,6 +32,8 @@ class RegEx {
 	Set!(char) inputSet;
 
 	List!(PatternState) patternList;
+
+	State rootState;
 
 	int patternIndex;
 
@@ -44,6 +48,16 @@ class RegEx {
 		this.operatorStack = new Stack!(char)();
 		this.inputSet = new Set!(char);
 		this.patternList = new List!(PatternState)();
+		this.rootState = new State(nextStateId);
+		this.globalNfaTable = new FSA_Table();
+		this.globalNfaTable.pushBack(this.rootState);
+	}
+
+	void cleanUp() {
+		this.nfaTable = new FSA_Table();
+		this.operandStack = new Stack!(FSA_Table)();
+		this.operatorStack = new Stack!(char)();
+		this.patternList = new List!(PatternState)();
 	}
 
 	bool createNFA(string str) {
@@ -57,28 +71,28 @@ class RegEx {
 				this.push(it);
 			} else if(operatorStack.empty()) {
 				debug(RegExDebug) writeln(__FILE__,__LINE__, " operatorStack.empty");
-				operatorStack.push(it);
+				this.operatorStack.push(it);
 			} else if(isLeftParanthesis!(char)(it)) {
 				debug(RegExDebug) writeln(__FILE__,__LINE__, " isLeftParanthesis");
-				operatorStack.push(it);
+				this.operatorStack.push(it);
 			} else if(isRightParanthesis!(char)(it)) {
 				debug(RegExDebug) writeln(__FILE__,__LINE__, " isRightParanthesis");
-				while(!isLeftParanthesis!(char)(operatorStack.top())) {
+				while(!isLeftParanthesis!(char)(this.operatorStack.top())) {
 					if(!this.eval()) {
 						return false;
 					}
 				}
-				operatorStack.pop();
+				this.operatorStack.pop();
 			} else {
 				debug(RegExDebug) writeln(__FILE__,__LINE__, " else");
-				while(!operatorStack.empty() && presedence!(char)(it, operatorStack.top())) {
+				while(!this.operatorStack.empty() && presedence!(char)(it, this.operatorStack.top())) {
 					debug(RegExDebug) writeln(__FILE__,__LINE__, " !(if.eval)");
 					if(!this.eval()) {
 						return false;
 					}
 				}
 				debug(RegExDebug) writeln(__FILE__,__LINE__, " operatorStack.push ", it);
-				operatorStack.push(it);
+				this.operatorStack.push(it);
 			}
 		}
 
@@ -88,13 +102,35 @@ class RegEx {
 			}
 		}
 
+		// assign the operatorStack to the nfaTable
 		if(!this.pop(this.nfaTable)) {
 			return false;
 		}
 
-		this.nfaTable.get(this.nfaTable.getSize() - 1u).acceptingState = true;
+		//this.nfaTable.get(this.nfaTable.getSize() - 1u).acceptingState = true;
+		this.nfaTable.get(this.nfaTable.getSize()).acceptingState = true;
+
+		// save the current nfaTable to the globalNFATable. this is done to create a nfa
+		// from more than one regex. to connect all regex join them through the rootState
+		this.rootState.addTransition(0, this.nfaTable.get(0));
+		foreach(it;this.nfaTable) {
+			this.globalNfaTable.pushBack(it);
+		}
+
 		return true;
 		
+	}
+
+	private static State getLowestState(FSA_Table table) {
+		State ret = null;
+		foreach(it;table) {
+			if(ret is null) {
+				ret = it;
+			} else if(ret.stateId > it.stateId) {
+				ret = it;
+			}
+		}
+		return ret;
 	}
 
 	void push(char chInput) {
@@ -112,19 +148,30 @@ class RegEx {
 		table.pushBack(s1);
 		debug(RegExDebug) writeln(__FILE__,__LINE__, " after table.push");
 
-		operandStack.push(table);
+		this.operandStack.push(table);
+		
+		debug(RegExDebug) { writeln(__FILE__,__LINE__, " push operandStack");
+			foreach(it;this.operandStack.values()) {
+				foreach(jt;it) {
+					write(jt.stateId, " ");
+				}
+				writeln();
+			}
+			writeln("\n");
+		}
+			
 
-		inputSet.insert(chInput);
+		this.inputSet.insert(chInput);
 	}
 
-	bool pop(ref FSA_Table nfaTable) {
+	bool pop(ref FSA_Table table) {
 		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
 			"pop");
 
 		debug(RegExDebug) writeln(__FILE__,__LINE__, " this.operandStack.size ", this.operandStack.getSize());
 			
 		if(this.operandStack.getSize() > 0) {
-			nfaTable = operandStack.top();
+			table = operandStack.top();
 			operandStack.pop();
 			debug(RegExDebug) writeln(__FILE__,__LINE__, " nfaTable assigned");
 			return true;
@@ -181,9 +228,13 @@ class RegEx {
 		//A[A.size()-1].AddTransition(0, B[0]);
 		assert(A !is null, "A shouldn't be null");
 		assert(B !is null, "B shouldn't be null");
-		A.get(A.getSize()-1).addTransition(0, B.get(0));
+		//A.get(A.getSize()-1).addTransition(0, B.get(0));
+		A.get(A.getSize()).addTransition(0, B.get(0));
 		debug(RegExDebug) writeln(__FILE__,__LINE__, " after A.get");
 		//A.insert(A.end(), B.begin(), B.end());
+		foreach(it; B) {
+			A.pushBack(it);
+		}
 	
 		// Push the result onto the stack
 		this.operandStack.push(A);
@@ -215,11 +266,11 @@ class RegEx {
 	
 		// add epsilon transition from A last state to end state
 		//A[A.size()-1]->AddTransition(0, pEndState);
-		A.get(A.getSize()-1).addTransition(0, pEndState);
+		A.get(A.getSize()).addTransition(0, pEndState);
 	
 		// From A last to A first state
 		//A[A.size()-1]->AddTransition(0, A[0]);
-		A.get(A.getSize()-1).addTransition(0, A.get(0));
+		A.get(A.getSize()).addTransition(0, A.get(0));
 
 		// construct new DFA and store it onto the stack
 		A.pushBack(pEndState);
@@ -253,13 +304,16 @@ class RegEx {
 		pStartState.addTransition(0, B.get(0));
 		//A[A.size()-1]->AddTransition(0, pEndState);
 		//B[B.size()-1]->AddTransition(0, pEndState);
-		A.get(A.getSize()-1).addTransition(0, pEndState);
-		B.get(B.getSize()-1).addTransition(0, pEndState);
+		A.get(A.getSize()).addTransition(0, pEndState);
+		B.get(B.getSize()).addTransition(0, pEndState);
 	
 		// Create new NFA from A
 		B.pushBack(pEndState);
 		A.pushFront(pStartState);
 		//A.insert(A.end(), B.begin(), B.end()); TODO
+		foreach(it; B) {
+			A.pushBack(it);
+		}
 	
 		// Push the result onto the stack
 		this.operandStack.push(A);
@@ -282,7 +336,7 @@ class RegEx {
 	void writeNFAGraph() {
 		string[] strNFATable = ["digraph{\n"];
 		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
-		foreach(it;this.nfaTable) {
+		foreach(it;this.globalNfaTable) {
 			if(it.acceptingState) {
 				strNFALine.pushBack('\t').pushBack(conv!(int,string)(it.stateId));
 				strNFALine.pushBack("\t[shape=doublecircle];\n");
@@ -294,7 +348,7 @@ class RegEx {
 		strNFALine.clear();
 
 		// Record transitions
-		foreach(pState;this.nfaTable) {
+		foreach(pState;this.globalNfaTable) {
 			State[] state = pState.getTransition(0);	
 
 			// Record transition
@@ -322,11 +376,10 @@ class RegEx {
 		}
 
 		append(strNFATable, "}");
-		std.stream.File file = new std.stream.File("nfaGraph.dot", FileMode.Out);
+		std.stream.File file = new std.stream.File("nfaGraph.dot", FileMode.OutNew);
 		foreach(it;strNFATable) {
 			file.writeString(it);
 		}
 		file.close();
-		
 	}
 }

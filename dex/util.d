@@ -59,10 +59,10 @@ public pure bool presedence(T)(T opLeft, T opRight)
 	if(opRight == '*')
 		return true;
 
-	if(opLeft == 8)
+	if(opLeft == '\a')
 		return false;
 
-	if(opRight == 8)
+	if(opRight == '\a')
 		return true;
 
 	if(opLeft == '|')

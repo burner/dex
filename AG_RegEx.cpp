@@ -174,7 +174,7 @@ bool CAG_RegEx::Eval()
 		case 124:
 			return Union();
 			break;
-		case   8:
+		case   '\a':
 			return Concat();
 			break;
 		}
@@ -292,7 +292,7 @@ string CAG_RegEx::ConcatExpand(string strRegEx)
 		strRes	   += cLeft;
 		if((IsInput(cLeft)) || (IsRightParanthesis(cLeft)) || (cLeft == '*'))
 			if((IsInput(cRight)) || (IsLeftParanthesis(cRight)))
-				strRes += char(8);
+				strRes += char(7);
 	}
 	strRes += strRegEx[strRegEx.size()-1];
 
@@ -307,6 +307,7 @@ bool CAG_RegEx::CreateNFA(string strRegEx)
 	// insert char(8) at the position where 
 	// concatenation needs to occur
 	strRegEx = ConcatExpand(strRegEx);
+	cout<<strRegEx<<" : length "<<strRegEx.size()<<endl;
 
 	for(int i=0; i<strRegEx.size(); ++i)
 	{
@@ -368,6 +369,24 @@ void CAG_RegEx::Push(char chInput)
 
 	// push it onto the operand stack
 	m_OperandStack.push(NFATable);
+
+	cout<<__FILE__<<__LINE__<<endl;
+
+	vector<FSA_TABLE> tmp;	
+	while(!m_OperandStack.empty()) {
+		tmp.push_back(m_OperandStack.top());
+		m_OperandStack.pop();
+	}
+	
+	vector<FSA_TABLE>::iterator it = tmp.begin();
+	for(; it != tmp.end(); it++) {
+		m_OperandStack.push(*it);
+		deque<CAG_State*>::iterator jt = (*it).begin();
+		for(; jt != (*it).end(); jt++) {
+			cout<<(**jt).getID()<<" ";
+		}
+		cout<<"\n\n"<<endl;
+	}
 
 	// Add this character to the input character set
 	m_InputSet.insert(chInput);
