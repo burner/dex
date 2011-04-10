@@ -16,6 +16,7 @@ import hurt.string.stringbuffer;
 
 import std.stdio;
 import std.stream;
+import std.process;
 
 alias DLinkedList!(State) FSA_Table;
 
@@ -43,7 +44,6 @@ class RegEx {
 
 	this() {
 		this.nfaTable = new FSA_Table();
-		this.dfaTable = new FSA_Table();
 		this.operandStack = new Stack!(FSA_Table)();
 		this.operatorStack = new Stack!(char)();
 		this.inputSet = new Set!(char);
@@ -121,16 +121,116 @@ class RegEx {
 		
 	}
 
-	private static State getLowestState(FSA_Table table) {
-		State ret = null;
-		foreach(it;table) {
-			if(ret is null) {
-				ret = it;
-			} else if(ret.stateId > it.stateId) {
-				ret = it;
+	Set!(State) epsilonClosure(Set!(State) old) const {
+		// Initialize result with old because each state
+		// has epsilon closure to itself
+		Set!(State) res = new Set!(State)(old);
+
+		// Push all states to be processes on the stack hence
+		Stack!(State) unprocessedStack = new Stack!(State)();
+		foreach(it; old.values()) {
+			unprocessedStack.push(it);
+		}
+
+		// continue till there are no more events
+		while(!unprocessedStack.empty()) {
+			State t = unprocessedStack.pop();
+
+			foreach(it; t.getTransition(0)) {
+				if(!res.contains(it)) {
+					res.insert(it);
+					unprocessedStack.push(it);
+				}
 			}
 		}
-		return ret;
+		return res;	
+	}
+
+	Set!(State) move(char chInput, Set!(State) t) const {
+		Set!(State) res = new Set!(State)();
+	
+		/* This is very simple since I designed the NFA table
+		   structure in a way that we just need to loop through
+		   each state in T and recieve the transition on chInput.
+		   Then we will put all the results into the set, which
+		   will eliminate duplicates automatically for us. */
+		foreach(iter; t.values()) {
+			State[] states = iter.getTransition(chInput);
+			foreach(jter;states) {
+				res.insert(jter);
+			}
+		}
+		return res;
+	}
+
+	void convertNfaToDfa() {
+		this.dfaTable = new FSA_Table();
+		if(this.globalNfaTable.getSize() == 0) {
+			return;
+		}
+
+		// Reset the state id for new naming
+		this.nextStateId = 0;
+
+		// Vector of unprocessed DFA states
+		Vector!(State) unmarkedStates = new Vector!(State)(32);
+
+		// starting state of NFA state (set of states)
+		Set!(State) NFAStartState = new Set!(State)();
+		// the first state should have a stateId equal 0
+		// otherwise something is wrong with the globalNfaTable
+		assert(this.globalNfaTable.get(0).stateId == 0); 
+		NFAStartState.insert(this.globalNfaTable.get(0));
+
+		// Starting state of DFA is epsilon closure of 
+		Set!(State) DFAStartStateSet = this.epsilonClosure(NFAStartState);
+
+		// Create new DFA State (start state) from the NFA states
+		State DFAStartState = new State(++nextStateId, DFAStartStateSet);
+
+		// Add the start state to the DFA table because we should not lose it
+		this.dfaTable.pushBack(DFAStartState);
+
+		// Still need to process the state so add it to the unprocessed DFA state vector
+		unmarkedStates.append(DFAStartState);
+		
+		while(!unmarkedStates.empty()) {
+			// process an unprocessed state
+			State processingDFAState = unmarkedStates.popBack();
+
+			// foreach input signal
+			foreach(it;this.inputSet.values()) {
+				Set!(State) moveRes = this.move(it, processingDFAState.getNFAStates());
+				Set!(State) epsilonClosureRes = this.epsilonClosure(moveRes);
+				
+				// Check is the resulting set (EpsilonClosureSet) in the
+				// set of DFA states (is any DFA state already constructed
+				// from this set of NFA states) or in pseudocode:
+				// is U in D-States already (U = EpsilonClosureSet)
+				bool found = false;
+				State s;
+				foreach(jt; this.dfaTable) {
+					s = jt;
+					if(s.getNFAStates() == epsilonClosureRes) {
+						found = true;
+						break;
+					}
+				}
+				
+				if(!found) {
+					State u = new State(++this.nextStateId, epsilonClosureRes);
+					unmarkedStates.append(u);
+					this.dfaTable.pushBack(u);
+
+					// Add transition from processingDFAState to new state on the current character
+					processingDFAState.addTransition(it, u);
+				} else {
+					// This state already exists so add transition from 
+					// processingState to already processed state
+					processingDFAState.addTransition(it, s);
+				}
+			}
+		}
 	}
 
 	void push(char chInput) {
@@ -333,6 +433,57 @@ class RegEx {
 
 	}
 
+	void writeDFAGraph() {
+		string[] strNFATable = ["digraph{\n"];
+		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
+		foreach(it;this.dfaTable) {
+			if(it.acceptingState) {
+				strNFALine.pushBack('\t').pushBack(conv!(int,string)(it.stateId));
+				strNFALine.pushBack("\t[shape=doublecircle];\n");
+				append(strNFATable, strNFALine.getString());
+				strNFALine.clear();
+			}
+		}
+		append(strNFATable, "\n");
+		strNFALine.clear();
+
+		// Record transitions
+		foreach(pState;this.dfaTable) {
+			State[] state = pState.getTransition(0);	
+
+			// Record transition
+			foreach(jt;state) {
+				string stateId1 = conv!(int,string)(pState.stateId);
+				string stateId2 = conv!(int,string)(jt.stateId);
+				strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
+				strNFALine.pushBack("\t[label=\"epsilon\"];\n");
+				append(strNFATable, strNFALine.getString());
+				strNFALine.clear();
+			}
+
+			foreach(jt;this.inputSet.values()) {
+				state = pState.getTransition(jt);
+				foreach(kt;state) {
+					string stateId1 = conv!(int,string)(pState.stateId);
+					string stateId2 = conv!(int,string)(kt.stateId);
+					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
+					strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
+					append(strNFATable, strNFALine.getString());
+					strNFALine.clear();
+				}
+			}	
+			
+		}
+
+		append(strNFATable, "}");
+		std.stream.File file = new std.stream.File("dfaGraph.dot", FileMode.OutNew);
+		foreach(it;strNFATable) {
+			file.writeString(it);
+		}
+		file.close();
+		system("dot -T jpg dfaGraph.dot > dfaGraph.jpg");
+	}
+
 	void writeNFAGraph() {
 		string[] strNFATable = ["digraph{\n"];
 		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
@@ -381,5 +532,6 @@ class RegEx {
 			file.writeString(it);
 		}
 		file.close();
+		system("dot -T jpg nfaGraph.dot > nfaGraph.jpg");
 	}
 }

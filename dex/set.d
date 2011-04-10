@@ -6,6 +6,16 @@ import std.stdio;
 
 public class Set(T) {
 	T[T] array;
+
+	this(Set!(T) toCopy) {
+		foreach(it;toCopy.values()) {
+			this.insert(it);
+		}
+	}
+
+	this() {
+	
+	}
 	
 	bool insert(T value) {
 		if(value in this.array) {
@@ -25,7 +35,7 @@ public class Set(T) {
 		}
 	}
 
-	bool contains(T value) {
+	bool contains(T value) const {
 		if(value in this.array) {
 			return true;
 		} else {
@@ -38,22 +48,33 @@ public class Set(T) {
 	}
 
 	Set!(T) dup() {
-		Set!(T) ret = new Set!(T)();
-		foreach(it;array.values()) {
-			ret.insert(it);
-		}
+		Set!(T) ret = new Set!(T)(this);
 		return ret;
+	}
+
+	override bool opEquals(Object o) const {
+		Set!(T) f = cast(Set!(T))o;
+		foreach(it; f.values()) {
+			if(!this.contains(it)) {
+				return false;
+			}	
+		}
+		return f.values().length == this.array.length;
 	}
 }
 
 unittest {
 	Set!(int) intTest = new Set!(int)();
+	Set!(int) intTestCopy = intTest.dup();
+	assert(intTest == intTestCopy, "should be the same");
 	int[] t = [123,13,5345,752,12,3,1,654,22];
 	foreach(idx,it;t) {
 		assert(intTest.insert(it));
 		foreach(jt;t[0..idx]) {
 			assert(intTest.contains(jt));
 		}
+		intTestCopy = intTest.dup();
+		assert(intTest == intTestCopy, "should be the same");
 		foreach(jt;t[idx+1..$]) {
 			assert(!intTest.contains(jt));
 		}
@@ -61,6 +82,8 @@ unittest {
 	foreach(idx,it;t) {
 		assert(!intTest.insert(it), conv!(int,string)(it));
 		assert(intTest.contains(it), conv!(int,string)(it));
+		intTestCopy = intTest.dup();
+		assert(intTest == intTestCopy, "should be the same");
 	}
 	foreach(idx,it;t) {
 		assert(intTest.remove(it), conv!(int,string)(it));
@@ -71,5 +94,7 @@ unittest {
 		foreach(jt;t[idx+1..$]) {
 			assert(intTest.contains(jt));
 		}
+		intTestCopy = intTest.dup();
+		assert(intTest == intTestCopy, "should be the same");
 	}
 }

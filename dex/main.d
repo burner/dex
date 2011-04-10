@@ -7,11 +7,12 @@ import std.stdio;
 void main() {
 	writeln("all unittest passed");
 	RegEx r1 = new RegEx();
-	assert(r1.createNFA("ab(t|(if)s)*"));
+	assert(r1.createNFA("ab(t|s)*"));
 	r1.cleanUp();
-	assert(r1.createNFA("(t|(u)s)p"));
+	assert(r1.createNFA("abtz*"));
 	r1.cleanUp();
-	assert(r1.createNFA("tsp*"));
 	r1.writeNFAGraph();
+	r1.convertNfaToDfa();
+	r1.writeDFAGraph();
 	return;
 }

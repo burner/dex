@@ -62,6 +62,10 @@ class State {
 		return 1;
 	}
 
+	Set!(State) getNFAStates() {
+		return this.nfaStates;
+	}
+
 	void addTransition(char chInput, State state) {
 		assert(state !is null);
 		debug(StateDebug) writeln(__FILE__,__LINE__, " addTransition ", chInput , " ", state.stateId);
