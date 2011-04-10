@@ -103,6 +103,10 @@ class MultiMap(T,S) {
 	T[] keys() {
 		return this.multi.keys();
 	}
+
+	bool empty() const {
+		return this.multi.length == 0;
+	}
 }
 
 unittest {

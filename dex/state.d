@@ -66,6 +66,21 @@ class State {
 		return this.nfaStates;
 	}
 
+	bool isDeadEnd() {
+		if(this.acceptingState)
+			return false;
+		if(this.transition.empty())
+			return true;
+		foreach(it; this.transition.keys()) {
+			foreach(jt; this.transition.find(it)) {
+				if(this.stateId != jt.stateId) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	void addTransition(char chInput, State state) {
 		assert(state !is null);
 		debug(StateDebug) writeln(__FILE__,__LINE__, " addTransition ", chInput , " ", state.stateId);

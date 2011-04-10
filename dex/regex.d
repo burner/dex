@@ -5,6 +5,7 @@ import dex.list;
 import dex.set;
 import dex.patternstate;
 import dex.util;
+import dex.multimap;
 
 import hurt.conv.conv;
 import hurt.container.dlst;
@@ -231,6 +232,35 @@ class RegEx {
 				}
 			}
 		}
+		this.findErrorState();
+	}
+
+	/* One state is never left, this is the error state.
+	 * there should only be one. This states stateid will be set
+	 * to -1. This is done so in the created scanner knows which
+	 * state is the error state. */
+	void findErrorState() {
+		bool found = false;
+		outer: foreach(it; this.dfaTable) {
+			if(!it.acceptingState && !it.transition.empty()) {
+				foreach(jt; it.transition.keys()) {
+					foreach(kt; it.transition.find(jt)) {
+						if(it.stateId != kt.stateId) {
+							continue outer;	
+						}
+					}
+				}
+				if(found) {
+					assert(0, "error a dfa can't have to error states");
+				}
+				found = true;
+				it.stateId = -1;
+			}
+		}
+	}
+
+	void removeDeadStates() {
+
 	}
 
 	void push(char chInput) {
