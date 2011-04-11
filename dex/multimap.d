@@ -1,5 +1,7 @@
 module dex.multimap;
 
+import hurt.util.array;
+
 class MultiMap(T,S) {
 	private class Value(S) {
 		version(X86) {
@@ -47,7 +49,7 @@ class MultiMap(T,S) {
 			}
 		}
 
-		public size_t getSize() {
+		public object.size_t getSize() {
 			return this.idx;
 		}
 
@@ -91,6 +93,18 @@ class MultiMap(T,S) {
 		}
 	}
 
+	bool remove(S value) {
+		foreach(ref it; this.multi.values()) {
+			foreach(idx, jt; it.values()) {
+				if(jt == value) {
+					it.multi = hurt.util.array.remove!(S)(it.values(), idx);	
+					it.idx--;
+				}
+			}
+		}
+		return true;
+	}
+
 	S[] find(T key) {
 		if(key in this.multi) {	
 			S[] tmp = this.multi[key].values();	
@@ -98,6 +112,16 @@ class MultiMap(T,S) {
 		} else {
 			return null;
 		}
+	}
+
+	bool find(S value) {
+		foreach(it; this.multi.values()) {
+			foreach(jt; it.values()) {
+				if(jt == value)
+					return true;
+			}
+		}
+		return true;
 	}
 
 	T[] keys() {

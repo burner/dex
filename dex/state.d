@@ -86,6 +86,10 @@ class State {
 		debug(StateDebug) writeln(__FILE__,__LINE__, " addTransition ", chInput , " ", state.stateId);
 		transition.insert(chInput, state);
 	}
+
+	void removeTransition(State toRemove) {
+		this.transition.remove(toRemove);
+	}
 	
 	State[] getTransition(char chInput) {
 		State[] ret = this.transition.find(chInput);	

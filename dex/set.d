@@ -61,6 +61,10 @@ public class Set(T) {
 		}
 		return f.values().length == this.array.length;
 	}
+
+	bool empty() const {
+		return this.array.length == 0;
+	}	
 }
 
 unittest {

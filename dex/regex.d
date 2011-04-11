@@ -233,6 +233,7 @@ class RegEx {
 			}
 		}
 		this.findErrorState();
+		this.removeDeadStates();
 	}
 
 	/* One state is never left, this is the error state.
@@ -260,7 +261,33 @@ class RegEx {
 	}
 
 	void removeDeadStates() {
+		scope Set!(State) deadEndSet = new Set!(State)();
+		foreach(it; this.dfaTable) {
+			if(it.isDeadEnd()) {
+				deadEndSet.insert(it);
+			}
+		}
 
+		if(deadEndSet.empty()) {
+			return;
+		}
+
+		foreach(it; deadEndSet.values()) {
+			foreach(jt; this.dfaTable) {
+				jt.removeTransition(it);	
+			}
+		}
+
+		foreach(jt; deadEndSet.values()) {
+			size_t idx = 0;
+			foreach(it; this.dfaTable) {
+				if(it == jt) {
+					this.dfaTable.remove(idx);
+					break;
+				}	
+				idx++;
+			}
+		}
 	}
 
 	void push(char chInput) {
