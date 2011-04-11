@@ -232,7 +232,6 @@ class RegEx {
 				}
 			}
 		}
-		this.findErrorState();
 		this.removeDeadStates();
 	}
 
