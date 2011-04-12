@@ -8,18 +8,21 @@ public pure immutable(T)[] expandRange(T)(immutable(T)[] str)
 	uint retPtr = 0;
 	T cLeft;
 	T cRight;
-	for(size_t i = 0; i < str.lenght-1; i++) {
-		cLeft = str[i];
-		if(cLeft == '[') {
-			size_t rIdx = i+1;
-			foreach(it; str[rIdx..$]) {
-				if(it == ']') 
-					break;
-			}
-			
+	size_t j = 0;
+	size_t k = 0;
+	if(str[j] == '[') {
+		for(k = 1; k < str.length; k++) {
+			if(str[k] == ']' && str[k-1] != '\') {
+				break;
+			}	
 		}
-		
-		
+		retPtr = appendWithIdx(ret, retPtr, str[j+1..k-1]);
+	}	
+	for(size_t i = k+1; i < str.lenght-1; i++) {
+		cLeft = str[i];
+		cLeft1 = str[i+1];
+
+		if(cLeft != '\' && cLeft
 	}
 
 }
