@@ -1,13 +1,12 @@
 module dex.regex;
 
 import dex.state;
-import dex.list;
-import dex.set;
-import dex.patternstate;
 import dex.strutil;
-import dex.multimap;
 
 import hurt.conv.conv;
+import hurt.container.multimap;
+import hurt.container.list;
+import hurt.container.set;
 import hurt.container.dlst;
 import hurt.container.stack;
 import hurt.container.vector;
@@ -33,8 +32,6 @@ class RegEx {
 
 	Set!(char) inputSet;
 
-	List!(PatternState) patternList;
-
 	State rootState;
 
 	int patternIndex;
@@ -48,7 +45,6 @@ class RegEx {
 		this.operandStack = new Stack!(FSA_Table)();
 		this.operatorStack = new Stack!(char)();
 		this.inputSet = new Set!(char);
-		this.patternList = new List!(PatternState)();
 		this.rootState = new State(nextStateId);
 		this.globalNfaTable = new FSA_Table();
 		this.globalNfaTable.pushBack(this.rootState);
@@ -58,7 +54,6 @@ class RegEx {
 		this.nfaTable = new FSA_Table();
 		this.operandStack = new Stack!(FSA_Table)();
 		this.operatorStack = new Stack!(char)();
-		this.patternList = new List!(PatternState)();
 	}
 
 	bool createNFA(string str) {
