@@ -348,13 +348,16 @@ class RegEx {
 	
 			// Check which operator it is
 			switch(chOperator) {
-				case  '*':
+				//case  '*':
+				case  ST:
 					debug(RegExDebug) writeln(__FILE__,__LINE__, " star");
 					return this.Star();
-				case '|':
+				//case '|':
+				case UN:
 					debug(RegExDebug) writeln(__FILE__,__LINE__, " union");
 					return this.Union();
-				case '\a':
+				//case '\a':
+				case CC:
 					debug(RegExDebug) writeln(__FILE__,__LINE__, " concat");
 					return this.Concat();
 			}
