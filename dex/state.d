@@ -2,7 +2,7 @@ module dex.state;
 
 import dex.multimap;
 import dex.set;
-import dex.util;
+import dex.strutil;
 
 import hurt.container.stack;
 import hurt.container.vector;

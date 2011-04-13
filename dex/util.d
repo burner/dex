@@ -6,23 +6,21 @@ public pure immutable(T)[] expandRange(T)(immutable(T)[] str)
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	T[] ret = new T[str.length*3u];
 	uint retPtr = 0;
-	T cLeft;
-	T cRight;
-	size_t j = 0;
-	size_t k = 0;
-	if(str[j] == '[') {
-		for(k = 1; k < str.length; k++) {
-			if(str[k] == ']' && str[k-1] != '\') {
-				break;
-			}	
+	for(size_t i = 0; i < str.lenght-1; i++) {
+		if(str[i] == '[' && i > 0 && str[i-1] != '\') {
+			immutable(T)[] tmp = "";
+			i++;
+			while(i < str.length) {
+				if(str[i] == ']' && str[i-1] != '\') {
+					break;
+				} else {
+					tmp = append(tmp, str[i]);
+					i++;
+				}
+			}
+		} else if(str[i] == '[' && i == 0) {
+			ret = appendWithIdx!(char)(ret, retPtr++, str[i]);
 		}
-		retPtr = appendWithIdx(ret, retPtr, str[j+1..k-1]);
-	}	
-	for(size_t i = k+1; i < str.lenght-1; i++) {
-		cLeft = str[i];
-		cLeft1 = str[i+1];
-
-		if(cLeft != '\' && cLeft
 	}
 
 }

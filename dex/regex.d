@@ -4,7 +4,7 @@ import dex.state;
 import dex.list;
 import dex.set;
 import dex.patternstate;
-import dex.util;
+import dex.strutil;
 import dex.multimap;
 
 import hurt.conv.conv;
