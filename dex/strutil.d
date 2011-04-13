@@ -17,7 +17,7 @@ public immutable(T)[] expandRange(T)(immutable(T)[] str)
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	StringBuffer!(T) ret = new StringBuffer!(T)(str.length*3);	
 	for(size_t i = 0; i < str.length; i++) {
-		//writeln(i, " ", ret.getString());
+		writeln(i, " ", ret.getString());
 		// in case you find the union char [ . Search till you find the matching ]
 		if(str[i] == '[' && i > 0 && str[i-1] == '\\') {
 			ret.popBack();
@@ -124,7 +124,7 @@ public int stringCompare(string a, string b) {
 
 public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
-	//writeln(str);
+	writeln(__LINE__, " ",str);
 	T[] upperChar = ['A','B','C','D','E','F','G','H','I','J','K','L',
 		'M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
 	T[] lowChar = ['a','b','c','d','e','f','g','h','i','j','k','l',
@@ -162,7 +162,9 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 
 public immutable(T)[] concatExpand(T)(immutable(T)[] str) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
+	writeln(__LINE__, " ", str);
 	str = expandRange!(T)(str);
+	writeln(__LINE__, " ", str);
 	T[] ret = new T[str.length*3u];
 	uint retPtr = 0;
 	T cLeft;
