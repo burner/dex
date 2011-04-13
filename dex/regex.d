@@ -63,7 +63,7 @@ class RegEx {
 
 	bool createNFA(string str) {
 		str = concatExpand(str);
-		writeln(__FILE__,__LINE__, " ", str, " :length ",str.length);
+		debug(RegExDebug) writeln(__FILE__,__LINE__, " ", str, " :length ",str.length);
 			
 		foreach(idx,it;str) {
 			debug(RegExDebug) writeln(__FILE__,__LINE__, " ", it, " ", idx);

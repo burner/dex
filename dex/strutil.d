@@ -17,7 +17,7 @@ public immutable(T)[] expandRange(T)(immutable(T)[] str)
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	StringBuffer!(T) ret = new StringBuffer!(T)(str.length*3);	
 	for(size_t i = 0; i < str.length; i++) {
-		writeln(i, " ", ret.getString());
+		//writeln(i, " ", ret.getString());
 		// in case you find the union char [ . Search till you find the matching ]
 		if(str[i] == '[' && i > 0 && str[i-1] == '\\') {
 			ret.popBack();
@@ -30,18 +30,22 @@ public immutable(T)[] expandRange(T)(immutable(T)[] str)
 			ret.pushBack(str[i]);
 		} else if(str[i] == '*' && i > 0 && str[i-1] != '\\') {
 			ret.pushBack(ST);
-		} else if(str[i] == '[' && i > 0 && str[i-1] != '\\') {
+		} else if((str[i] == '[' && i > 0 && str[i-1] != '\\')
+				|| (str[i] == '[' && i == 0)) {
 			StringBuffer!(T) tmp = new StringBuffer!(T)();
 			while(i < str.length) {
-				if(str[i] == ']' && str[i-1] != '\\') {
+				if(str[i] == ']' && i > 0 && str[i-1] != '\\') {
 					tmp = tmp.pushBack(str[i]);
 					break;
-				} else if(str[i] == '[' && str[i-1] == '\\') {
+				} else if(str[i] == '[' && i > 0  && str[i-1] == '\\') {
 					tmp.popBack();
 					tmp.pushBack(str[i]);
 					i++;
-				} else if(str[i] == ']' && str[i-1] == '\\') {
+				} else if(str[i] == ']'  && i > 0 && str[i-1] == '\\') {
 					tmp.popBack();
+					tmp.pushBack(str[i]);
+					i++;
+				} else if(str[i] == '[' && i == 0) {
 					tmp.pushBack(str[i]);
 					i++;
 				} else {
@@ -64,9 +68,9 @@ public immutable(T)[] expandRange(T)(immutable(T)[] str)
 }
 
 unittest {
-	assert("[]"~ST == expandRange!(char)("[]*"), 
-			expandRange!(char)("[]*"));
-	assert("[]" == expandRange!(char)("[]"), 
+	assert("\v\f"~ST == expandRange!(char)("[]*"), 
+			stringWrite!(char)(expandRange!(char)("[]*")));
+	assert("\v\f" == expandRange!(char)("[]"), 
 			expandRange!(char)("[]"));
 	assert("rt\v\frt" == expandRange!(char)("rt[]rt"), 
 			expandRange!(char)("rt[]rt"));
@@ -124,7 +128,7 @@ public int stringCompare(string a, string b) {
 
 public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
-	writeln(__LINE__, " ",str);
+	//writeln(__LINE__, " ",str);
 	T[] upperChar = ['A','B','C','D','E','F','G','H','I','J','K','L',
 		'M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
 	T[] lowChar = ['a','b','c','d','e','f','g','h','i','j','k','l',
@@ -162,9 +166,9 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 
 public immutable(T)[] concatExpand(T)(immutable(T)[] str) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
-	writeln(__LINE__, " ", str);
+	//writeln(__LINE__, " ", str);
 	str = expandRange!(T)(str);
-	writeln(__LINE__, " ", str);
+	//writeln(__LINE__, " ", str);
 	T[] ret = new T[str.length*3u];
 	uint retPtr = 0;
 	T cLeft;
@@ -207,11 +211,6 @@ immutable(T)[] stringWrite(T)(immutable(T)[] str) {
 unittest {
 	assert("f\ad"~ST == concatExpand("fd*"), 
 		concatExpand("fd*"));
-
-	//writeln("\n\n");
-	//writeln(stringCompare("f\ad"~ST~"\a\vt"~UN~"r\f\aw",concatExpand("fd*[tr]w"))); 
-	//writeln("\n\n");
-
 	assert("f\ad"~ST~"\a\vt"~UN~"r\f\aw" == concatExpand("fd*[tr]w"), 
 		stringWrite(concatExpand("fd*[tr]w")));
 }
