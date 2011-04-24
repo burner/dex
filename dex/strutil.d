@@ -146,6 +146,8 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 		case ":alpha:": 
 		case "a-zA-Z":
 			return ('\v' ~ setUnionSymbol!(T)(lowChar ~ upperChar) ~ '\f').idup;
+		case "a-z":
+			return ('\v' ~ setUnionSymbol!(T)(lowChar) ~ '\f').idup;
 		case ":digit:": 
 		case "0-9":
 			return ('\v' ~ setUnionSymbol!(T)(digits) ~ '\f').idup;
