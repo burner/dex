@@ -18,7 +18,7 @@ import std.stdio;
 import std.stream;
 import std.process;
 
-alias DLinkedList!(State) FSA_Table;
+public alias DLinkedList!(State) FSA_Table;
 
 class RegEx {
 	FSA_Table globalNfaTable;
@@ -56,7 +56,7 @@ class RegEx {
 		this.operatorStack = new Stack!(char)();
 	}
 
-	bool createNFA(string str) {
+	bool createNFA(string str, int action) {
 		str = concatExpand(str);
 		debug(RegExDebug) writeln(__FILE__,__LINE__, " ", str, " :length ",str.length);
 			
@@ -104,7 +104,8 @@ class RegEx {
 		}
 
 		//this.nfaTable.get(this.nfaTable.getSize() - 1u).acceptingState = true;
-		this.nfaTable.get(this.nfaTable.getSize()).acceptingState = true;
+		//this.nfaTable.get(this.nfaTable.getSize()).acceptingState = true;
+		this.nfaTable.get(this.nfaTable.getSize()).setAcceptingState(action);
 
 		// save the current nfaTable to the globalNFATable. this is done to create a nfa
 		// from more than one regex. to connect all regex join them through the rootState
@@ -136,6 +137,11 @@ class RegEx {
 				if(!res.contains(it)) {
 					res.insert(it);
 					unprocessedStack.push(it);
+				} else {
+					State i = res.get(it);
+					foreach(jt; i.getAcceptingStates()) {
+						i.setAcceptingState(jt);
+					}
 				}
 			}
 		}
@@ -382,10 +388,8 @@ class RegEx {
 		//A[A.size()-1].AddTransition(0, B[0]);
 		assert(A !is null, "A shouldn't be null");
 		assert(B !is null, "B shouldn't be null");
-		//A.get(A.getSize()-1).addTransition(0, B.get(0));
 		A.get(A.getSize()).addTransition(0, B.get(0));
 		debug(RegExDebug) writeln(__FILE__,__LINE__, " after A.get");
-		//A.insert(A.end(), B.begin(), B.end());
 		foreach(it; B) {
 			A.pushBack(it);
 		}
@@ -415,15 +419,12 @@ class RegEx {
 		pStartState.addTransition(0, pEndState);
 	
 		// add epsilon transition from start state to the first state of A
-		//pStartState.addTransition(0, A[0]);
 		pStartState.addTransition(0, A.get(0));
 	
 		// add epsilon transition from A last state to end state
-		//A[A.size()-1]->AddTransition(0, pEndState);
 		A.get(A.getSize()).addTransition(0, pEndState);
 	
 		// From A last to A first state
-		//A[A.size()-1]->AddTransition(0, A[0]);
 		A.get(A.getSize()).addTransition(0, A.get(0));
 
 		// construct new DFA and store it onto the stack
@@ -452,19 +453,14 @@ class RegEx {
 		// states of A and B to the new end state
 		State pStartState = new State(++nextStateId);
 		State pEndState	= new State(++nextStateId);
-		//pStartState.addTransition(0, A[0]);
-		//pStartState.addTransition(0, B[0]);
 		pStartState.addTransition(0, A.get(0));
 		pStartState.addTransition(0, B.get(0));
-		//A[A.size()-1]->AddTransition(0, pEndState);
-		//B[B.size()-1]->AddTransition(0, pEndState);
 		A.get(A.getSize()).addTransition(0, pEndState);
 		B.get(B.getSize()).addTransition(0, pEndState);
 	
 		// Create new NFA from A
 		B.pushBack(pEndState);
 		A.pushFront(pStartState);
-		//A.insert(A.end(), B.begin(), B.end()); TODO
 		foreach(it; B) {
 			A.pushBack(it);
 		}
@@ -492,7 +488,8 @@ class RegEx {
 		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
 		foreach(it;this.dfaTable) {
 			if(it.acceptingState) {
-				strNFALine.pushBack('\t').pushBack(conv!(int,string)(it.stateId));
+				//strNFALine.pushBack('\t').pushBack(conv!(int,string)(it.stateId));
+				strNFALine.pushBack('\t').pushBack(it.toString());
 				strNFALine.pushBack("\t[shape=doublecircle];\n");
 				append(strNFATable, strNFALine.getString());
 				strNFALine.clear();
@@ -507,8 +504,10 @@ class RegEx {
 
 			// Record transition
 			foreach(jt;state) {
-				string stateId1 = conv!(int,string)(pState.stateId);
-				string stateId2 = conv!(int,string)(jt.stateId);
+				//string stateId1 = conv!(int,string)(pState.stateId);
+				//string stateId2 = conv!(int,string)(jt.stateId);
+				string stateId1 = (pState.toString());
+				string stateId2 = (jt.toString());
 				strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
 				strNFALine.pushBack("\t[label=\"epsilon\"];\n");
 				append(strNFATable, strNFALine.getString());
@@ -518,8 +517,10 @@ class RegEx {
 			foreach(jt;this.inputSet.values()) {
 				state = pState.getTransition(jt);
 				foreach(kt;state) {
-					string stateId1 = conv!(int,string)(pState.stateId);
-					string stateId2 = conv!(int,string)(kt.stateId);
+					//string stateId1 = conv!(int,string)(pState.stateId);
+					//string stateId2 = conv!(int,string)(kt.stateId);
+					string stateId1 = (pState.toString());
+					string stateId2 = (kt.toString());
 					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
 					strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
 					append(strNFATable, strNFALine.getString());
@@ -543,7 +544,8 @@ class RegEx {
 		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
 		foreach(it;this.globalNfaTable) {
 			if(it.acceptingState) {
-				strNFALine.pushBack('\t').pushBack(conv!(int,string)(it.stateId));
+				//strNFALine.pushBack('\t').pushBack(conv!(int,string)(it.stateId));
+				strNFALine.pushBack('\t').pushBack(it.toString());
 				strNFALine.pushBack("\t[shape=doublecircle];\n");
 				append(strNFATable, strNFALine.getString());
 				strNFALine.clear();
@@ -558,8 +560,10 @@ class RegEx {
 
 			// Record transition
 			foreach(jt;state) {
-				string stateId1 = conv!(int,string)(pState.stateId);
-				string stateId2 = conv!(int,string)(jt.stateId);
+				//string stateId1 = conv!(int,string)(pState.stateId);
+				string stateId1 = (pState.toString());
+				//string stateId2 = conv!(int,string)(jt.stateId);
+				string stateId2 = (jt.toString());
 				strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
 				strNFALine.pushBack("\t[label=\"epsilon\"];\n");
 				append(strNFATable, strNFALine.getString());
@@ -569,8 +573,10 @@ class RegEx {
 			foreach(jt;this.inputSet.values()) {
 				state = pState.getTransition(jt);
 				foreach(kt;state) {
-					string stateId1 = conv!(int,string)(pState.stateId);
-					string stateId2 = conv!(int,string)(kt.stateId);
+					//string stateId1 = conv!(int,string)(pState.stateId);
+					//string stateId2 = conv!(int,string)(kt.stateId);
+					string stateId1 = (pState.toString());
+					string stateId2 = (kt.toString());
 					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
 					strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
 					append(strNFATable, strNFALine.getString());
