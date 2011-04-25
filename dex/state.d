@@ -35,6 +35,10 @@ class State {
 		}
 	}
 
+	bool compare(State toCmp) {
+
+	}
+
 	bool obEquals(Object o) {
 		if(is(o == State)) {
 			State t = cast(State)o;
