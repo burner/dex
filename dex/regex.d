@@ -139,7 +139,7 @@ class RegEx {
 					unprocessedStack.push(it);
 				} else {
 					State i = res.get(it);
-					foreach(jt; i.getAcceptingStates()) {
+					foreach(jt; i.getAcceptingStates().values()) {
 						i.setAcceptingState(jt);
 					}
 				}

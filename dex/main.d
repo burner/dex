@@ -4,18 +4,10 @@ import dex.regex;
 
 import std.stdio;
 
-long getTicks() {
-	asm {
-		naked;
-		rdtsc;
-		ret;
-	}
-}
-
 void main() {
 	writeln("all unittest passed");
-	long st = getTicks();
 	RegEx r1 = new RegEx();
+	writeln("regex object created");
 	assert(r1.createNFA("[a-z][a-z]*", 1));
 	r1.cleanUp();
 	assert(r1.createNFA("if", 2));
@@ -31,12 +23,6 @@ void main() {
 	assert(r1.createNFA("module", 7));
 	r1.cleanUp();
 	assert(r1.createNFA("unittest", 8));
-	r1.cleanUp();
-	assert(r1.createNFA("char", 9));
-	r1.cleanUp();
-	assert(r1.createNFA("\\[", 10));
-	r1.cleanUp();
-	assert(r1.createNFA("\\]", 11));
 	r1.cleanUp();
 	writeln("nfa's created");
 	r1.writeNFAGraph();

@@ -14,7 +14,7 @@ import std.stdio;
 class State {
 	int stateId;
 	bool acceptingState;
-	int[] aStates;
+	Set!(int) aStates;
 	MultiMap!(char,State) transition;
 	Set!(State) nfaStates;
 
@@ -23,6 +23,7 @@ class State {
 		this.acceptingState = false;
 		this.transition = new MultiMap!(char,State)();	
 		this.nfaStates = new Set!(State)();
+		this.aStates = new Set!(int)();
 	}
 
 	this(int nId, Set!(State) NFAState) {
@@ -30,9 +31,10 @@ class State {
 		this.acceptingState = false;
 		this.transition = new MultiMap!(char,State)();	
 		this.nfaStates = NFAState.dup();
+		this.aStates = new Set!(int)();
 		foreach(it;NFAState.values()) {
 			if(it.acceptingState) {
-				foreach(jt;it.getAcceptingStates()) {
+				foreach(jt;it.getAcceptingStates().values()) {
 					this.setAcceptingState(jt);
 				}	
 			}
@@ -40,7 +42,9 @@ class State {
 	}
 
 	bool compare(State toCmp) {
-
+		if(this.acceptingState != toCmp.isAcceptingState()) {
+			return false;
+		}
 	}
 
 	bool obEquals(Object o) {
@@ -76,18 +80,15 @@ class State {
 
 	void setAcceptingState(int sId) {
 		this.acceptingState = true;
-		if(this.aStates !is null) {
-			foreach(it; this.aStates) {
-				if(it == sId) {
-					return;
-				}
-			}
-		}
-		append(this.aStates, sId);	
+		this.aStates.insert(sId);;	
 	}
 
-	int[] getAcceptingStates() {
+	Set!(int) getAcceptingStates() {
 		return this.aStates;
+	}
+
+	bool isAcceptionState() const {
+		return this.acceptingState;
 	}
 
 	bool isDeadEnd() {
@@ -129,8 +130,8 @@ class State {
 		immutable startStop = '\"';
 		char[] tmp;
 		size_t idx = 0;
-		if(this.aStates !is null) {
-			tmp = new char[2+this.aStates.length*3];
+		if(!this.aStates.empty()) {
+			tmp = new char[2+this.aStates.getSize()*3];
 		} else {
 			return "\"" ~ conv!(int,string)(this.stateId) ~ "\"";
 		}
@@ -141,7 +142,7 @@ class State {
 			tmp = appendWithIdx!(char)(tmp, idx++, it);
 
 
-		foreach(it;this.aStates) {
+		foreach(it; this.aStates.constValues()) {
 			tmp = appendWithIdx!(char)(tmp, idx++, deli);
 			string jt = conv!(int,string)(it);
 			foreach(kt; jt)
