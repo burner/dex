@@ -472,26 +472,6 @@ class RegEx {
 	}
 		
 	void minimize() {
-		bool changes = true;
-		Vector!(State) sameStates = new Vector!(State)(32);
-		//while(changes) {
-			foreach(it; this.dfaTable) {
-				sameStates.clean();	
-				sameStates.append(it);
-				foreach(jt; this.dfaTable) {
-					if(it.getStateId() == jt.getStateId()) {
-						continue;
-					}
-					if(it.compare(jt)) {
-						sameStates.append(jt);
-					}
-				}
-				if(sameStates.getSize() > 1) {
-					writeln(it.getStateId(), " has ", sameStates.getSize(), 
-						" brother");
-				}
-			}
-		//}
 	}
 
 	void writeDFAGraph() {
