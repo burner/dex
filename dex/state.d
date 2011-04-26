@@ -42,9 +42,10 @@ class State {
 	}
 
 	bool compare(State toCmp) {
-		if(this.acceptingState != toCmp.isAcceptingState()) {
+		if(this.acceptingState != toCmp.isAcceptionState()) {
 			return false;
 		}
+		return this.aStates == toCmp.getAcceptingStates();
 	}
 
 	bool obEquals(Object o) {

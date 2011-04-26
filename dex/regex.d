@@ -470,17 +470,28 @@ class RegEx {
 	
 		return true;
 	}
-
-	void writeNFATable() {
-		string[] strNFATable;
-		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
-		foreach(it; this.inputSet.values()) {
-			strNFALine.pushBack("\t\t").pushBack(it);
-		}
-		strNFALine.pushBack('\t').pushBack('\t').pushBack("epsilon");
-		append(strNFATable, strNFALine.getString());
-		strNFALine.clear();
-
+		
+	void minimize() {
+		bool changes = true;
+		Vector!(State) sameStates = new Vector!(State)(32);
+		//while(changes) {
+			foreach(it; this.dfaTable) {
+				sameStates.clean();	
+				sameStates.append(it);
+				foreach(jt; this.dfaTable) {
+					if(it.getStateId() == jt.getStateId()) {
+						continue;
+					}
+					if(it.compare(jt)) {
+						sameStates.append(jt);
+					}
+				}
+				if(sameStates.getSize() > 1) {
+					writeln(it.getStateId(), " has ", sameStates.getSize(), 
+						" brother");
+				}
+			}
+		//}
 	}
 
 	void writeDFAGraph() {
