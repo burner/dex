@@ -45,15 +45,13 @@ class State {
 		if(this.acceptingState != toCmp.isAcceptionState()) {
 			return false;
 		}
-		return this.aStates == toCmp.getAcceptingStates();
+		return this.aStates == toCmp.getAcceptingStates() &&
+			this.transition == toCmp.getTransitions();
 	}
 
 	bool obEquals(Object o) {
-		if(is(o == State)) {
-			State t = cast(State)o;
-			return t.stateId == this.stateId;
-		}
-		return false;
+		State t = cast(State)o;
+		return t.stateId == this.stateId;
 	}
 
 	hash_t toHash() {
@@ -111,10 +109,18 @@ class State {
 		return this.stateId;
 	}
 
+	MultiMap!(char,State) getTransitions() {
+		return this.transition;
+	}	
+
 	void addTransition(char chInput, State state) {
 		assert(state !is null);
 		debug(StateDebug) writeln(__FILE__,__LINE__, " addTransition ", chInput , " ", state.stateId);
 		transition.insert(chInput, state);
+	}
+
+	void overrideTransition(State old, State toReplaceWith) {
+		this.transition.replace(old, toReplaceWith);		
 	}
 
 	void removeTransition(State toRemove) {

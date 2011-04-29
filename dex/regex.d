@@ -2,6 +2,7 @@ module dex.regex;
 
 import dex.state;
 import dex.strutil;
+import dex.minimizer;
 
 import hurt.conv.conv;
 import hurt.container.multimap;
@@ -472,6 +473,8 @@ class RegEx {
 	}
 		
 	void minimize() {
+		auto min = dex.minimizer.minimize!(char)(this.dfaTable);
+		writeGraph(min, "min");
 	}
 
 	void writeDFAGraph() {
@@ -479,7 +482,6 @@ class RegEx {
 		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
 		foreach(it;this.dfaTable) {
 			if(it.acceptingState) {
-				//strNFALine.pushBack('\t').pushBack(conv!(int,string)(it.stateId));
 				strNFALine.pushBack('\t').pushBack(it.toString());
 				strNFALine.pushBack("\t[shape=doublecircle];\n");
 				append(strNFATable, strNFALine.getString());
@@ -495,8 +497,6 @@ class RegEx {
 
 			// Record transition
 			foreach(jt;state) {
-				//string stateId1 = conv!(int,string)(pState.stateId);
-				//string stateId2 = conv!(int,string)(jt.stateId);
 				string stateId1 = (pState.toString());
 				string stateId2 = (jt.toString());
 				strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
@@ -508,8 +508,6 @@ class RegEx {
 			foreach(jt;this.inputSet.values()) {
 				state = pState.getTransition(jt);
 				foreach(kt;state) {
-					//string stateId1 = conv!(int,string)(pState.stateId);
-					//string stateId2 = conv!(int,string)(kt.stateId);
 					string stateId1 = (pState.toString());
 					string stateId2 = (kt.toString());
 					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
@@ -584,5 +582,47 @@ class RegEx {
 		}
 		file.close();
 		system("dot -T jpg nfaGraph.dot > nfaGraph.jpg");
+	}
+
+	void writeGraph(DLinkedList!(State) graph, string name) {
+		string[] strNFATable = ["digraph{\n"];
+		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
+		foreach(it;graph) {
+			if(it.acceptingState) {
+				strNFALine.pushBack('\t').pushBack(it.toString());
+				strNFALine.pushBack("\t[shape=doublecircle];\n");
+				append(strNFATable, strNFALine.getString());
+				strNFALine.clear();
+			}
+		}
+		append(strNFATable, "\n");
+		strNFALine.clear();
+
+		// Record transitions
+		State[] state;
+		foreach(pState;graph) {
+			MultiMap!(State, char) trans = new MultiMap!(State, char)();
+			foreach(jt;this.inputSet.values()) {
+				state = pState.getTransition(jt);
+				foreach(kt;state) {
+					//string stateId1 = conv!(int,string)(pState.stateId);
+					//string stateId2 = conv!(int,string)(kt.stateId);
+					string stateId1 = (pState.toString());
+					string stateId2 = (kt.toString());
+					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
+					strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
+					append(strNFATable, strNFALine.getString());
+					strNFALine.clear();
+				}
+			}	
+		}
+
+		append(strNFATable, "}");
+		std.stream.File file = new std.stream.File(name ~ ".dot", FileMode.OutNew);
+		foreach(it;strNFATable) {
+			file.writeString(it);
+		}
+		file.close();
+		system("dot -T jpg " ~ name ~ ".dot > " ~ name ~ ".jpg");
 	}
 }

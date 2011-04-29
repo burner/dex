@@ -26,7 +26,7 @@ void main() {
 	writeln("nfa to dfa convertions done");
 	r1.minimize();
 	writeln("dfa minimized");
-	r1.writeDFAGraph();
-	writeln("dfa's graph created");
+	//r1.writeDFAGraph();
+	//writeln("dfa's graph created");
 	return;
 }
