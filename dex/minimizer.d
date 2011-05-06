@@ -5,131 +5,51 @@ import dex.state;
 import hurt.conv.conv;
 import hurt.container.vector;
 import hurt.container.dlst;
-import hurt.container.multimap;
+import hurt.container.set;
 
 import std.stdio;
 
-public State merge(T)(ref DLinkedList!(State) toMerge) {
-	State begin = toMerge.popFront();
-	State ret = new State(begin.getStateId());
-	// save all the accepting States
-	foreach(it; toMerge) {
-		foreach(jt; it.getAcceptingStates().values()) {
-			ret.setAcceptingState(jt);
-		}
-	}
-
-	// fix all the old transtion to the member of toMerge
-	T[] keys = begin.getTransitions().keys();	
-	foreach(it; keys) {
-		State[] u = begin.getTransition(it);	
-		outer: foreach(jt; u) {
-			foreach(kt; toMerge) {
-				if(jt.getStateId() == kt.getStateId()) {
-					ret.addTransition(it, ret);
-					continue outer;
-				}
-			}
-			ret.addTransition(it, jt);
-		}
-	}
-	return ret;
-}
-
-public void changeTransition(DLinkedList!(State) oldStates, 
-		DLinkedList!(State) mergedStates, State toSetTo) {
+public void makeFirstPartition(DLinkedList!(State) oldStates, DLinkedList!(Set!(State)) partitions) {
+	auto aState = partitions.pushBack(new Set!(State)());
+	auto oState = partitions.pushBack(new Set!(State)());
 	foreach(it; oldStates) {
-		foreach(jt; mergedStates) {
-			it.overrideTransition(jt, toSetTo);
-		}
-	}
-}
-
-public DLinkedList!(State) minimize(T)(DLinkedList!(State) oldStates) {
-	bool changes = true;
-	// list names should be clear
-	DLinkedList!(State) copy = new DLinkedList!(State)(oldStates);
-	DLinkedList!(State) ret = new DLinkedList!(State)();
-	DLinkedList!(State) sameStates = new DLinkedList!(State)();
-
-	// the first state should be saved allways
-	ret.pushBack(copy.popFront());
-
-	State tmp;
-	while(!copy.empty()) {
-		sameStates.clean();	
-		sameStates.pushBack(copy.popFront());
-		tmp = sameStates.begin().getValue();
-		for(auto it = copy.begin(); it.isValid();) {
-			if(tmp.compare(*it)) {
-				sameStates.pushBack(copy.remove(it));
-			} else {
-				it++;
-			}
-		}
-		if(sameStates.getSize() > 1) {
-			State merged = merge!(T)(sameStates);
-			ret.pushBack(merged);
-			changeTransition(copy, sameStates, merged);
-			changeTransition(ret, sameStates, merged);
+		if(it.isAccepting()) {
+			(*aState).insert(it);
 		} else {
-			ret.pushBack(tmp);
+			(*oState).insert(it);
 		}
-		assert(check(ret, copy));
 	}
-	return ret;
+	assert( (*aState).getSize() + (*oState).getSize() == oldStates.getSize(), 
+		"not all states placed in a partition");
 }
 
-public bool check(DLinkedList!(State) merged, DLinkedList!(State) toMerge) {
-	//writeln("\n\n");
-	//foreach(it; merged)
-	//	write(it.getStateId, " ");
-	//writeln(":merged");
-	//foreach(it; toMerge)
-	//	write(it.getStateId, " ");
-	//writeln(":toMerge");
+public DLinkedList!(State) minimize(T)(DLinkedList!(State) oldStates, Set!(T) inputSet) {
+	DLinkedList!(Set!(State)) partitions = new DLinkedList!(Set!(State))();	
+	makeFirstPartition(oldStates, partitions);
+	assert(partitions.getSize() == 2, "should have size of 2");
+	size_t oldSize = partitions.getSize();
+	// as long as there are new partitions
+	while(oldSize != partitions.getSize()) {
+		// check every input character
+		foreach(charIt; inputSet.values()) {
+			// against every partition
+			foreach(parIt; partitions) {
+				// and in every partition against every state
+				foreach(stateIt; parIt.values()) {
+					State next = stateIt.getTransition(charIt)[0];
+					if(next is null || !parIt.contains(next)) {
+						Set!(State) tmp = new Set!(State)();
+						tmp.insert(stateIt);
+						parIt.remove(stateIt);
+						break;
+					}
+
+				}
+			}
+		}
+
+	}
 	
-	foreach(it; merged) {
-		MultiMap!(char, State) tmp = it.getTransitions();
-		label: foreach(jt; tmp.keys()) {
-			State[] tsa = tmp.find(jt);
-			if(tsa.length != 1) {
-				assert(0, "epislon");
-			}
-			State ts = tsa[0];
-			foreach(kt; merged) {
-				if(ts.getStateId() == kt.getStateId()) {
-					continue label;
-				}
-			}
-			foreach(kt; toMerge) {
-				if(ts.getStateId() == kt.getStateId()) {
-					continue label;
-				}
-			}
-			assert(0, conv!(int,string)(it.getStateId()) ~ "state not valid any more");
-		}
-	}
-	foreach(it; toMerge) {
-		MultiMap!(char, State) tmp = it.getTransitions();
-		label: foreach(jt; tmp.keys()) {
-			State[] tsa = tmp.find(jt);
-			if(tsa.length != 1) {
-				assert(0, "epislon");
-			}
-			State ts = tsa[0];
-			foreach(kt; merged) {
-				if(ts == kt) {
-					continue label;
-				}
-			}
-			foreach(kt; toMerge) {
-				if(ts == kt) {
-					continue label;
-				}
-			}
-			assert(0, conv!(int,string)(it.getStateId()) ~ "state not valid any more");
-		}
-	}
-	return true;
+	return null;
 }
+

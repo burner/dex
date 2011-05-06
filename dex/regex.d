@@ -473,7 +473,7 @@ class RegEx {
 	}
 		
 	void minimize() {
-		auto min = dex.minimizer.minimize!(char)(this.dfaTable);
+		auto min = dex.minimizer.minimize!(char)(this.dfaTable, this.inputSet);
 		writeGraph(min, "min");
 	}
 

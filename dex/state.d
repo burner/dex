@@ -42,7 +42,7 @@ class State {
 	}
 
 	bool compare(State toCmp) {
-		if(this.acceptingState != toCmp.isAcceptionState()) {
+		if(this.acceptingState != toCmp.isAccepting()) {
 			return false;
 		}
 		return this.aStates == toCmp.getAcceptingStates() &&
@@ -86,7 +86,7 @@ class State {
 		return this.aStates;
 	}
 
-	bool isAcceptionState() const {
+	bool isAccepting() const {
 		return this.acceptingState;
 	}
 
