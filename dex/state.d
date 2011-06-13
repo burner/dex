@@ -117,7 +117,9 @@ class State {
 	void addTransition(char chInput, State state) {
 		assert(state !is null);
 		debug(StateDebug) writeln(__FILE__,__LINE__, " addTransition ", chInput , " ", state.stateId);
-		transition.insert(chInput, state);
+		size_t oldSize = this.transition.getSize();
+		this.transition.insert(chInput, state);
+		assert(oldSize != this.transition.getSize());
 	}
 
 	/*void overrideTransition(State old, State toReplaceWith) {
@@ -131,8 +133,11 @@ class State {
 			writeln(__LINE__, it == this.transition.end(), (*it) != toRemove);
 			it++;
 		}
-		if(it.isValid())
+		if(it.isValid()) {
+			size_t oldSize = this.transition.getSize();
 			this.transition.remove(it);
+			assert(oldSize != this.transition.getSize());
+		}
 	}
 	
 	State[] getTransition(char chInput) {
