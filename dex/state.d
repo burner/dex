@@ -96,8 +96,9 @@ class State {
 		if(this.transition.empty())
 			return true;
 		foreach(it; this.transition.keys()) {
-			foreach(jt; this.transition.find(it)) {
-				if(this.stateId != jt.stateId) {
+			//foreach(jt; this.transition.find(it)) {
+			for(auto jt = this.transition.range(it); jt.isValid(); jt++) {
+				if(this.stateId != (*jt).stateId) {
 					return false;
 				}
 			}
@@ -119,17 +120,29 @@ class State {
 		transition.insert(chInput, state);
 	}
 
-	void overrideTransition(State old, State toReplaceWith) {
+	/*void overrideTransition(State old, State toReplaceWith) {
+		auto it = this.transition.find(old);
 		this.transition.replace(old, toReplaceWith);		
-	}
+	}*/
 
 	void removeTransition(State toRemove) {
-		this.transition.remove(toRemove);
+		auto it = this.transition.begin();
+		while(it.isValid() && (*it) != toRemove)
+			it++;
+		this.transition.remove(it);
 	}
 	
 	State[] getTransition(char chInput) {
-		State[] ret = this.transition.find(chInput);	
-		return ret;
+		auto it = this.transition.range(chInput);	
+		State[] ret = new State[10];
+		size_t idx = 0;
+		while(it.isValid()) {
+			ret[idx++] = *it;
+			if(idx == ret.length)
+				ret.length = ret.length*2;
+			it++;
+		}
+		return ret[0..idx];
 	}
 
 	string toString() const {

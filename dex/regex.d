@@ -246,8 +246,9 @@ class RegEx {
 		outer: foreach(it; this.dfaTable) {
 			if(!it.acceptingState && !it.transition.empty()) {
 				foreach(jt; it.transition.keys()) {
-					foreach(kt; it.transition.find(jt)) {
-						if(it.stateId != kt.stateId) {
+					//foreach(kt; it.transition.find(jt)) {
+					for(auto kt = it.transition.range(jt); kt.isValid(); kt++) {
+						if(it.stateId != (*kt).stateId) {
 							continue outer;	
 						}
 					}
@@ -473,8 +474,10 @@ class RegEx {
 	}
 		
 	void minimize() {
+		writeln("start to minimize");
+		writeln("\n");
 		auto min = dex.minimizer.minimize!(char)(this.dfaTable, this.inputSet);
-		writeGraph(min, "min");
+		//writeGraph(min, "min");
 	}
 
 	void writeDFAGraph() {

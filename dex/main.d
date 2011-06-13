@@ -10,13 +10,11 @@ void main() {
 	writeln("regex object created");
 	assert(r1.createNFA("[a-z][a-z]*", 1));
 	r1.cleanUp();
-	assert(r1.createNFA("if", 2));
+	assert(r1.createNFA("[:digit:]", 2));
 	r1.cleanUp();
-	assert(r1.createNFA("immutable", 3));
+	assert(r1.createNFA("function", 3));
 	r1.cleanUp();
-	assert(r1.createNFA("function", 4));
-	r1.cleanUp();
-	assert(r1.createNFA("delegate", 5));
+	assert(r1.createNFA("delegate", 4));
 	r1.cleanUp();
 	r1.cleanUp();
 	writeln("nfa's created");
@@ -24,9 +22,10 @@ void main() {
 	writeln("nfa's graph created");
 	r1.convertNfaToDfa();
 	writeln("nfa to dfa convertions done");
+	//r1.writeDFAGraph();
+	writeln("dfa's graph created");
+	writeln("next up minimize");
 	r1.minimize();
 	writeln("dfa minimized");
-	//r1.writeDFAGraph();
-	//writeln("dfa's graph created");
 	return;
 }
