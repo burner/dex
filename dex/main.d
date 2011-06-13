@@ -8,8 +8,8 @@ void main() {
 	writeln("all unittest passed");
 	RegEx r1 = new RegEx();
 	writeln("regex object created");
-	assert(r1.createNFA("[a-z][a-z]*", 1));
-	r1.cleanUp();
+	//assert(r1.createNFA("[a-z][a-z]*", 1));
+	//r1.cleanUp();
 	assert(r1.createNFA("[:digit:]", 2));
 	r1.cleanUp();
 	assert(r1.createNFA("function", 3));
@@ -22,10 +22,10 @@ void main() {
 	writeln("nfa's graph created");
 	r1.convertNfaToDfa();
 	writeln("nfa to dfa convertions done");
-	//r1.writeDFAGraph();
+	r1.writeDFAGraph();
 	writeln("dfa's graph created");
 	writeln("next up minimize");
-	r1.minimize();
+	//r1.minimize();
 	writeln("dfa minimized");
 	return;
 }
