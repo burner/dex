@@ -235,9 +235,7 @@ class RegEx {
 				}
 			}
 		}
-		writeln(__LINE__);
-		this.removeDeadStates();
-		writeln(__LINE__);
+		//this.removeDeadStates();
 	}
 
 	/* One state is never left, this is the error state.
