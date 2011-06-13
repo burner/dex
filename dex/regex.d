@@ -196,7 +196,6 @@ class RegEx {
 
 		// Still need to process the state so add it to the unprocessed DFA state vector
 		unmarkedStates.append(DFAStartState);
-		writeln(__LINE__);
 		
 		while(!unmarkedStates.empty()) {
 			// process an unprocessed state
@@ -277,9 +276,7 @@ class RegEx {
 
 		foreach(it; deadEndSet.values()) {
 			foreach(jt; this.dfaTable) {
-				writeln(__LINE__);
 				jt.removeTransition(it);	
-				writeln(__LINE__);
 			}
 		}
 
