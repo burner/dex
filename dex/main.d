@@ -25,7 +25,7 @@ void main() {
 	r1.writeDFAGraph();
 	writeln("dfa's graph created");
 	writeln("next up minimize");
-	//r1.minimize();
+	r1.minimize();
 	writeln("dfa minimized");
 	return;
 }

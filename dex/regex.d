@@ -243,7 +243,7 @@ class RegEx {
 	 * state is the error state. */
 	void findErrorState() {
 		bool found = false;
-		outer: foreach(it; this.dfaTable) {
+		outer: foreach(ref it; this.dfaTable) {
 			if(!it.acceptingState && !it.transition.empty()) {
 				foreach(jt; it.transition.keys()) {
 					//foreach(kt; it.transition.find(jt)) {
@@ -254,12 +254,15 @@ class RegEx {
 					}
 				}
 				if(found) {
-					assert(0, "error a dfa can't have to error states");
+					assert(0, "error a dfa can't have two error states");
 				}
 				found = true;
 				it.stateId = -1;
 			}
 		}
+		foreach(it;this.dfaTable)
+			write(it.getStateId(), " ");
+		writeln();
 	}
 
 	void removeDeadStates() {
