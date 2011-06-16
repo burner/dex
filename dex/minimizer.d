@@ -31,16 +31,8 @@ public DLinkedList!(State) minimize(T)(DLinkedList!(State) oldStates, Set!(T) in
 	MultiMap!(int,State) par = new MultiMap!(int,State);
 	Map!(State,int) states = new Map!(State,int);
 	makeInitPartitions(oldStates, par, states);
-	foreach(it; oldStates)
-		write(it, " ");
-	writeln();
-
-	foreach(key; par.keys()) {
-		write(key, ": ");
-		for(auto it = par.range(key); it.isValid(); it++) {
-			write(*it, " ");
-		}
-		writeln();
-	}
+	assert(par.getSize() == states.getSize() 
+		&& par.getSize() == oldStates.getSize(), 
+		"not all states have been placed in a partitions");
 	return null;	
 }

@@ -260,9 +260,6 @@ class RegEx {
 				it.stateId = -1;
 			}
 		}
-		foreach(it;this.dfaTable)
-			write(it.getStateId(), " ");
-		writeln();
 	}
 
 	void removeDeadStates() {
