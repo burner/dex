@@ -96,8 +96,9 @@ class State {
 		if(this.transition.empty())
 			return true;
 		foreach(it; this.transition.keys()) {
-			foreach(jt; this.transition.find(it)) {
-				if(this.stateId != jt.stateId) {
+			//foreach(jt; this.transition.find(it)) {
+			for(auto jt = this.transition.range(it); jt.isValid(); jt++) {
+				if(this.stateId != (*jt).stateId) {
 					return false;
 				}
 			}
@@ -116,20 +117,40 @@ class State {
 	void addTransition(char chInput, State state) {
 		assert(state !is null);
 		debug(StateDebug) writeln(__FILE__,__LINE__, " addTransition ", chInput , " ", state.stateId);
-		transition.insert(chInput, state);
+		size_t oldSize = this.transition.getSize();
+		this.transition.insert(chInput, state);
+		assert(oldSize != this.transition.getSize());
 	}
 
-	void overrideTransition(State old, State toReplaceWith) {
+	/*void overrideTransition(State old, State toReplaceWith) {
+		auto it = this.transition.find(old);
 		this.transition.replace(old, toReplaceWith);		
-	}
+	}*/
 
 	void removeTransition(State toRemove) {
-		this.transition.remove(toRemove);
+		auto it = this.transition.begin();
+		while(it.isValid() && (*it) != toRemove) {
+			writeln(__LINE__, it == this.transition.end(), (*it) != toRemove);
+			it++;
+		}
+		if(it.isValid()) {
+			size_t oldSize = this.transition.getSize();
+			this.transition.remove(it);
+			assert(oldSize != this.transition.getSize());
+		}
 	}
 	
 	State[] getTransition(char chInput) {
-		State[] ret = this.transition.find(chInput);	
-		return ret;
+		auto it = this.transition.range(chInput);	
+		State[] ret = new State[10];
+		size_t idx = 0;
+		while(it.isValid()) {
+			ret[idx++] = *it;
+			if(idx == ret.length)
+				ret.length = ret.length*2;
+			it++;
+		}
+		return ret[0..idx];
 	}
 
 	string toString() const {
