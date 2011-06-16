@@ -234,7 +234,7 @@ class RegEx {
 				}
 			}
 		}
-		this.removeDeadStates();
+		//this.removeDeadStates();
 	}
 
 	/* One state is never left, this is the error state.
