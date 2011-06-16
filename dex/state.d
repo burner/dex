@@ -130,7 +130,6 @@ class State {
 	void removeTransition(State toRemove) {
 		auto it = this.transition.begin();
 		while(it.isValid() && (*it) != toRemove) {
-			writeln(__LINE__, it == this.transition.end(), (*it) != toRemove);
 			it++;
 		}
 		if(it.isValid()) {
