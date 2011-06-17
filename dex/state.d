@@ -1,6 +1,7 @@
 module dex.state;
 
 import dex.strutil;
+import dex.oldset;
 
 import hurt.conv.conv;
 import hurt.container.multimap;
@@ -15,6 +16,7 @@ class State {
 	int stateId;
 	bool acceptingState;
 	Set!(int) aStates;
+	OldSet!(int) aStatesOld;
 	MultiMap!(char,State) transition;
 	Set!(State) nfaStates;
 
@@ -24,6 +26,7 @@ class State {
 		this.transition = new MultiMap!(char,State)();	
 		this.nfaStates = new Set!(State)();
 		this.aStates = new Set!(int)();
+		this.aStatesOld = new OldSet!(int)();
 	}
 
 	this(int nId, Set!(State) NFAState) {
@@ -32,6 +35,7 @@ class State {
 		this.transition = new MultiMap!(char,State)();	
 		this.nfaStates = NFAState.dup();
 		this.aStates = new Set!(int)();
+		this.aStatesOld = new OldSet!(int)();
 		foreach(it;NFAState) {
 			if(it.acceptingState) {
 				foreach(jt;it.getAcceptingStates()) {
@@ -45,6 +49,7 @@ class State {
 		if(this.acceptingState != toCmp.isAccepting()) {
 			return false;
 		}
+		assert(same(aStatesOld, aStates));	
 		return this.aStates == toCmp.getAcceptingStates() &&
 			this.transition == toCmp.getTransitions();
 	}
@@ -80,9 +85,12 @@ class State {
 	void setAcceptingState(int sId) {
 		this.acceptingState = true;
 		this.aStates.insert(sId);;	
+		this.aStatesOld.insert(sId);;	
+		assert(same(aStatesOld, aStates));	
 	}
 
 	Set!(int) getAcceptingStates() {
+		assert(same(aStatesOld, aStates));	
 		return this.aStates;
 	}
 
@@ -91,6 +99,7 @@ class State {
 	}
 
 	bool isDeadEnd() {
+		assert(same(aStatesOld, aStates));	
 		if(this.acceptingState)
 			return false;
 		if(this.transition.empty())
@@ -107,14 +116,17 @@ class State {
 	}
 
 	int getStateId() {
+		assert(same(aStatesOld, aStates));	
 		return this.stateId;
 	}
 
 	MultiMap!(char,State) getTransitions() {
+		assert(same(aStatesOld, aStates));	
 		return this.transition;
 	}	
 
 	void addTransition(char chInput, State state) {
+		assert(same(aStatesOld, aStates));	
 		assert(state !is null);
 		debug(StateDebug) writeln(__FILE__,__LINE__, " addTransition ", chInput , " ", state.stateId);
 		size_t oldSize = this.transition.getSize();
@@ -129,6 +141,7 @@ class State {
 
 	void removeTransition(State toRemove) {
 		auto it = this.transition.begin();
+		assert(same(aStatesOld, aStates));	
 		while(it.isValid() && (*it) != toRemove) {
 			it++;
 		}
@@ -140,6 +153,7 @@ class State {
 	}
 	
 	State[] getTransition(char chInput) {
+		assert(same(aStatesOld, aStates));	
 		auto it = this.transition.range(chInput);	
 		State[] ret = new State[10];
 		size_t idx = 0;
@@ -161,6 +175,7 @@ class State {
 		immutable startStop = '\"';
 		char[] tmp;
 		size_t idx = 0;
+		assert(same(aStatesOld, aStates));	
 		if(!this.aStates.empty()) {
 			tmp = new char[2+this.aStates.getSize()*3];
 		} else {

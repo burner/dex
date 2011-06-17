@@ -3,6 +3,7 @@ module dex.regex;
 import dex.state;
 import dex.strutil;
 import dex.minimizer;
+import dex.oldset;
 
 import hurt.conv.conv;
 import hurt.container.multimap;
@@ -32,6 +33,7 @@ class RegEx {
 	int nextStateId;
 
 	Set!(char) inputSet;
+	OldSet!(char) inputSetOld;
 
 	State rootState;
 
@@ -46,6 +48,7 @@ class RegEx {
 		this.operandStack = new Stack!(FSA_Table)();
 		this.operatorStack = new Stack!(char)();
 		this.inputSet = new Set!(char);
+		this.inputSetOld = new OldSet!(char);
 		this.rootState = new State(nextStateId);
 		this.globalNfaTable = new FSA_Table();
 		this.globalNfaTable.pushBack(this.rootState);
@@ -123,8 +126,12 @@ class RegEx {
 		// Initialize result with old because each state
 		// has epsilon closure to itself
 		Set!(State) res = new Set!(State)();
-		foreach(it; old)
+		OldSet!(State) resOld = new OldSet!(State)();
+		foreach(it; old) {
 			res.insert(it);
+			resOld.insert(it);
+			assert(same(resOld, res));
+		}
 
 		// Push all states to be processes on the stack hence
 		Stack!(State) unprocessedStack = new Stack!(State)();
@@ -138,7 +145,10 @@ class RegEx {
 
 			foreach(it; t.getTransition(0)) {
 				if(!res.contains(it)) {
+					assert(!resOld.contains(it));
 					res.insert(it);
+					resOld.insert(it);
+					assert(same(resOld, res));
 					unprocessedStack.push(it);
 				} else {
 					State i = *res.find(it);
@@ -207,6 +217,7 @@ class RegEx {
 			writeln(__LINE__, " ",unmarkedStates.getSize(), " ", processingDFAState);
 
 			// foreach input signal
+			assert(same(inputSetOld, inputSet));
 			foreach(it;this.inputSet) {
 				Set!(State) moveRes = this.move(it, processingDFAState.getNFAStates());
 				Set!(State) epsilonClosureRes = this.epsilonClosure(moveRes);
@@ -326,6 +337,8 @@ class RegEx {
 			
 
 		this.inputSet.insert(chInput);
+		this.inputSetOld.insert(chInput);
+		assert(same(inputSetOld, inputSet));
 	}
 
 	bool pop(ref FSA_Table table) {
