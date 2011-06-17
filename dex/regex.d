@@ -122,11 +122,13 @@ class RegEx {
 	Set!(State) epsilonClosure(Set!(State) old) const {
 		// Initialize result with old because each state
 		// has epsilon closure to itself
-		Set!(State) res = new Set!(State)(old);
+		Set!(State) res = new Set!(State)();
+		foreach(it; old)
+			res.insert(it);
 
 		// Push all states to be processes on the stack hence
 		Stack!(State) unprocessedStack = new Stack!(State)();
-		foreach(it; old.values()) {
+		foreach(it; old) {
 			unprocessedStack.push(it);
 		}
 
@@ -139,8 +141,8 @@ class RegEx {
 					res.insert(it);
 					unprocessedStack.push(it);
 				} else {
-					State i = res.get(it);
-					foreach(jt; i.getAcceptingStates().values()) {
+					State i = *res.find(it);
+					foreach(jt; i.getAcceptingStates()) {
 						i.setAcceptingState(jt);
 					}
 				}
@@ -157,7 +159,7 @@ class RegEx {
 		   each state in T and recieve the transition on chInput.
 		   Then we will put all the results into the set, which
 		   will eliminate duplicates automatically for us. */
-		foreach(iter; t.values()) {
+		foreach(iter; t) {
 			State[] states = iter.getTransition(chInput);
 			foreach(jter;states) {
 				res.insert(jter);
@@ -197,12 +199,15 @@ class RegEx {
 		// Still need to process the state so add it to the unprocessed DFA state vector
 		unmarkedStates.append(DFAStartState);
 		
+		int count = 0;	
 		while(!unmarkedStates.empty()) {
 			// process an unprocessed state
+			writeln(__LINE__, " ",unmarkedStates.getSize());
 			State processingDFAState = unmarkedStates.popBack();
+			writeln(__LINE__, " ",unmarkedStates.getSize(), " ", processingDFAState);
 
 			// foreach input signal
-			foreach(it;this.inputSet.values()) {
+			foreach(it;this.inputSet) {
 				Set!(State) moveRes = this.move(it, processingDFAState.getNFAStates());
 				Set!(State) epsilonClosureRes = this.epsilonClosure(moveRes);
 				
@@ -274,13 +279,13 @@ class RegEx {
 			return;
 		}
 
-		foreach(it; deadEndSet.values()) {
+		foreach(it; deadEndSet) {
 			foreach(jt; this.dfaTable) {
 				jt.removeTransition(it);	
 			}
 		}
 
-		foreach(jt; deadEndSet.values()) {
+		foreach(jt; deadEndSet) {
 			size_t idx = 0;
 			foreach(it; this.dfaTable) {
 				if(it == jt) {
@@ -508,7 +513,7 @@ class RegEx {
 				strNFALine.clear();
 			}
 
-			foreach(jt;this.inputSet.values()) {
+			foreach(jt;this.inputSet) {
 				state = pState.getTransition(jt);
 				foreach(kt;state) {
 					string stateId1 = (pState.toString());
@@ -562,7 +567,7 @@ class RegEx {
 				strNFALine.clear();
 			}
 
-			foreach(jt;this.inputSet.values()) {
+			foreach(jt;this.inputSet) {
 				state = pState.getTransition(jt);
 				foreach(kt;state) {
 					//string stateId1 = conv!(int,string)(pState.stateId);
@@ -605,7 +610,7 @@ class RegEx {
 		State[] state;
 		foreach(pState;graph) {
 			MultiMap!(State, char) trans = new MultiMap!(State, char)();
-			foreach(jt;this.inputSet.values()) {
+			foreach(jt;this.inputSet) {
 				state = pState.getTransition(jt);
 				foreach(kt;state) {
 					//string stateId1 = conv!(int,string)(pState.stateId);

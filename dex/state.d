@@ -32,9 +32,9 @@ class State {
 		this.transition = new MultiMap!(char,State)();	
 		this.nfaStates = NFAState.dup();
 		this.aStates = new Set!(int)();
-		foreach(it;NFAState.values()) {
+		foreach(it;NFAState) {
 			if(it.acceptingState) {
-				foreach(jt;it.getAcceptingStates().values()) {
+				foreach(jt;it.getAcceptingStates()) {
 					this.setAcceptingState(jt);
 				}	
 			}
@@ -152,7 +152,11 @@ class State {
 		return ret[0..idx];
 	}
 
-	string toString() const {
+	State getSingleTransition(char chInput) {
+		return *this.transition.begin();
+	}
+
+	string toString() {
 		immutable deli = '_';
 		immutable startStop = '\"';
 		char[] tmp;
@@ -169,7 +173,7 @@ class State {
 			tmp = appendWithIdx!(char)(tmp, idx++, it);
 
 
-		foreach(it; this.aStates.constValues()) {
+		foreach(it; this.aStates) {
 			tmp = appendWithIdx!(char)(tmp, idx++, deli);
 			string jt = conv!(int,string)(it);
 			foreach(kt; jt)
