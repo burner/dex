@@ -25,13 +25,14 @@ bool same(T)(OldSet!(T) old, Set!(T) ne) {
 		return false;
 	}
 	int runsOld = 0;
-	foreach(it;old.values()) {
-		if(!ne.contains(it)) {
-			writeln(__FILE__,__LINE__);
+	int runsNew = 0;
+	foreach(it;ne) {
+		writeln(__FILE__,__LINE__,": ",it);
+		if(!old.contains(it)) {
 			print(old, ne);
 			return false;
 		}
-		runsOld++;
+		runsNew++;
 	}
 	outer: foreach(it;old.values()) {
 		foreach(jt; ne) {
@@ -43,14 +44,14 @@ bool same(T)(OldSet!(T) old, Set!(T) ne) {
 		print(old, ne);
 		return false;
 	}
-	int runsNew = 0;
-	foreach(it;ne) {
+	foreach(it;old.values()) {
+		writeln(__FILE__,__LINE__,": ",it);
 		if(!ne.contains(it)) {
-			writeln(__FILE__,__LINE__);
 			print(old, ne);
+			writeln(__FILE__,__LINE__,": ",**ne.begin(), " ", **ne.end());
 			return false;
 		}
-		runsNew++;
+		runsOld++;
 	}
 	if(runsOld != runsNew) {
 		writeln(__FILE__,__LINE__);

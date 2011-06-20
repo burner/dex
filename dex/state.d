@@ -9,6 +9,7 @@ import hurt.container.set;
 import hurt.container.stack;
 import hurt.container.vector;
 import hurt.util.array;
+import hurt.container.rbtree;
 
 import std.stdio;
 
@@ -63,14 +64,19 @@ class State {
 		return this.stateId;
 	}
 
+	bool compare(const Node o) {
+		State f = cast(State)o;
+		return this.toHash() < f.toHash();
+	}	
+
 	int opCmp(Object o) {
 		if(is(o : State)) {
 			State f = cast(State)o;
 			size_t fHash = f.toHash();
 			size_t thisHash = this.toHash();
-			if(thisHash > fHash)
+			if(thisHash < fHash)
 				return 1;
-			else if(thisHash < fHash)
+			else if(thisHash > fHash)
 				return -1;
 			else
 				return 0;
