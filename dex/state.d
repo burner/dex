@@ -9,6 +9,7 @@ import hurt.container.set;
 import hurt.container.stack;
 import hurt.container.vector;
 import hurt.util.array;
+import hurt.container.rbtree;
 
 import std.stdio;
 
@@ -71,7 +72,10 @@ class State {
 			return -1;
 		else
 			return 0;
-	}
+	bool compare(const Node o) {
+		State f = cast(State)o;
+		return this.toHash() < f.toHash();
+	}	
 
 	Set!(State) getNFAStates() {
 		return this.nfaStates;
