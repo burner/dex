@@ -72,10 +72,7 @@ class State {
 			return -1;
 		else
 			return 0;
-	bool compare(const Node o) {
-		State f = cast(State)o;
-		return this.toHash() < f.toHash();
-	}	
+	}
 
 	Set!(State) getNFAStates() {
 		return this.nfaStates;

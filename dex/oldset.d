@@ -24,6 +24,8 @@ bool same(T)(OldSet!(T) old, Set!(T) ne) {
 		print(old, ne);
 		return false;
 	}
+
+	int runsNew = 0;
 	int runsOld = 0;
 	foreach(it;old.values()) {
 		if(!ne.contains(it)) {
@@ -44,10 +46,10 @@ bool same(T)(OldSet!(T) old, Set!(T) ne) {
 		return false;
 	}
 	foreach(it;old.values()) {
-		writeln(__FILE__,__LINE__,": ",it);
+		//writeln(__FILE__,__LINE__,": ",it);
 		if(!ne.contains(it)) {
 			print(old, ne);
-			writeln(__FILE__,__LINE__,": ",**ne.begin(), " ", **ne.end());
+			writeln(__FILE__,__LINE__,": ");
 			return false;
 		}
 		runsOld++;
