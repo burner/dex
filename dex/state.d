@@ -54,28 +54,23 @@ class State {
 			this.transition == toCmp.getTransitions();
 	}
 
-	bool obEquals(Object o) {
+	bool obEquals(Object o) const {
 		State t = cast(State)o;
 		return t.stateId == this.stateId;
 	}
 
-	hash_t toHash() {
+	hash_t toHash() const {
 		return this.stateId;
 	}
 
-	int opCmp(Object o) {
-		if(is(o : State)) {
-			State f = cast(State)o;
-			size_t fHash = f.toHash();
-			size_t thisHash = this.toHash();
-			if(thisHash > fHash)
-				return 1;
-			else if(thisHash < fHash)
-				return -1;
-			else
-				return 0;
-		}
-		return 1;
+	int opCmp(Object o) const {
+		State f = cast(State)o;
+		if(this.toHash() < f.toHash())
+			return 1;
+		else if(this.toHash() > f.toHash())
+			return -1;
+		else
+			return 0;
 	}
 
 	Set!(State) getNFAStates() {
@@ -102,7 +97,7 @@ class State {
 		assert(same(aStatesOld, aStates));	
 		if(this.acceptingState)
 			return false;
-		if(this.transition.empty())
+		if(this.transition.isEmpty())
 			return true;
 		foreach(it; this.transition.keys()) {
 			//foreach(jt; this.transition.find(it)) {
@@ -175,8 +170,8 @@ class State {
 		immutable startStop = '\"';
 		char[] tmp;
 		size_t idx = 0;
-		assert(same(aStatesOld, aStates));	
-		if(!this.aStates.empty()) {
+		//assert(same(aStatesOld, aStates));	
+		if(!this.aStates.isEmpty()) {
 			tmp = new char[2+this.aStates.getSize()*3];
 		} else {
 			return "\"" ~ conv!(int,string)(this.stateId) ~ "\"";
@@ -186,7 +181,6 @@ class State {
 		string ut = conv!(int,string)(this.stateId);
 		foreach(it; ut)
 			tmp = appendWithIdx!(char)(tmp, idx++, it);
-
 
 		foreach(it; this.aStates) {
 			tmp = appendWithIdx!(char)(tmp, idx++, deli);

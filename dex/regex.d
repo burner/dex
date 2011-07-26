@@ -212,9 +212,7 @@ class RegEx {
 		int count = 0;	
 		while(!unmarkedStates.empty()) {
 			// process an unprocessed state
-			writeln(__LINE__, " ",unmarkedStates.getSize());
 			State processingDFAState = unmarkedStates.popBack();
-			writeln(__LINE__, " ",unmarkedStates.getSize(), " ", processingDFAState);
 
 			// foreach input signal
 			assert(same(inputSetOld, inputSet));
@@ -260,7 +258,7 @@ class RegEx {
 	void findErrorState() {
 		bool found = false;
 		outer: foreach(ref it; this.dfaTable) {
-			if(!it.acceptingState && !it.transition.empty()) {
+			if(!it.acceptingState && !it.transition.isEmpty()) {
 				foreach(jt; it.transition.keys()) {
 					//foreach(kt; it.transition.find(jt)) {
 					for(auto kt = it.transition.range(jt); kt.isValid(); kt++) {
@@ -286,7 +284,7 @@ class RegEx {
 			}
 		}
 
-		if(deadEndSet.empty()) {
+		if(deadEndSet.isEmpty()) {
 			return;
 		}
 
