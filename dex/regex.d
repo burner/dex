@@ -359,7 +359,8 @@ class RegEx {
 			"eval");
 
 		// First pop the operator from the stack
-		debug(RegExDebug) writeln(__FILE__,__LINE__, " eval this.operatorStack.size ", this.operatorStack.getSize());
+		debug(RegExDebug) writeln(__FILE__,__LINE__, " eval this.operatorStack.size ", 
+			this.operatorStack.getSize());
 		if(this.operatorStack.getSize()>0) {
 			char chOperator = this.operatorStack.top();
 			this.operatorStack.pop();
@@ -492,7 +493,7 @@ class RegEx {
 	void minimize() {
 		writeln("start to minimize");
 		writeln("\n");
-		auto min = dex.minimizer.minimize!(char)(this.dfaTable, this.inputSet);
+		auto min = dex.minimizer.minimize(this.dfaTable, this.inputSet);
 		//writeGraph(min, "min");
 	}
 

@@ -7,50 +7,69 @@ import hurt.container.dlst;
 import hurt.container.list;
 import hurt.container.set;
 import hurt.container.map;
+import hurt.container.isr;
 import hurt.container.multimap;
 
 import std.stdio;
 
-private void makeInitPartitions(DLinkedList!(State) oldStates, 
-		MultiMap!(int,State) par, hurt.container.map.Map!(State,int) states) {
-	foreach(it; oldStates) {
+Map!(State,int) initGroups(DLinkedList!(State) os, MultiMap!(int,State) gr) {
+	Map!(State,int) ret = new Map!(State,int)(ISRType.HashTable);
+	foreach(it; os) {
 		if(it.getStateId() == -1) {
-			states.insert(it, 0);
-			par.insert(0, it);
-		} else if(it.isAccepting()) {
-			states.insert(it, 1);
-			par.insert(1, it);
+			ret.insert(it, 0);
+			gr.insert(0,it);
+		}
+		if(it.isAccepting()) {
+			ret.insert(it, 1);
+			gr.insert(1,it);
 		} else {
-			states.insert(it, 2);
-			par.insert(2, it);
+			ret.insert(it, 2);
+			gr.insert(2,it);
 		}
 	}
+	return ret;
 }
 
-public DLinkedList!(State) minimize(T)(DLinkedList!(State) oldStates, Set!(T) inputSet) {
-	MultiMap!(int,State) par = new MultiMap!(int,State);
-	Map!(State,int) states = new Map!(State,int)();
-	makeInitPartitions(oldStates, par, states);
-	assert(par.getSize() == states.getSize() 
-		&& par.getSize() == oldStates.getSize(), 
-		"not all states have been placed in a partitions");
-	size_t oldSize = par.getCountKeys();
-	assert(oldSize == 3, "there should be 3 partitions by now");
-	outer: do {
-		int[] keys = par.keys();
-		foreach(it; keys) {
-			List!(State) newGroup = new List!(State)();
-			auto first = par.range(it);
-			auto second = par.range(it);
-			second++;
-			while(second.isValid()) {
-				foreach(jt; inputSet) {
+DLinkedList!(State) mergeMemberOfGroup(MultiMap!(int,State) mm) {
+	DLinkedList!(State) ret = new DLinkedList!(State)();
+	foreach(group; mm.keys()) {
+			
+	}
+	return ret;
+}
 
+DLinkedList!(State) minimize(DLinkedList!(State) old, Set!(char) ic) {
+	MultiMap!(int,State) gr = new MultiMap!(int,State)();
+	Map!(State,int) lo = initGroups(old, gr);
+	size_t os;
+
+	do {
+		os = gr.getCountKeys();
+		foreach(grIt; gr.keys()) {
+			DLinkedList!(State) ne = new DLinkedList!(State)();
+			hurt.container.multimap.Iterator!(int,State) fi = gr.lower(grIt);
+			hurt.container.multimap.Iterator!(int,State) it = gr.range(grIt); it++;
+			while(it.isValid()) {
+				foreach(icIt; ic) {
+					int fiNe = *lo.find((*fi).getSingleTransition(icIt));
+					int itNe = *lo.find((*it).getSingleTransition(icIt));
+					if(fiNe != itNe) {
+						State re = *it;	
+						gr.remove(it);
+						ne.pushBack(re);
+						it = gr.range(grIt); it++;
+					}
+				}
+				it++;
+			}
+			if(!ne.isEmpty()) {
+				foreach(neIt; ne) {
+					lo.insert(neIt, conv!(size_t,int)(os));
+					gr.insert(conv!(size_t,int)(os), neIt);
 				}
 			}
 		}
-		
-		
-	} while(oldSize != par.getCountKeys());
-	return null;	
+
+	} while(os != gr.getCountKeys());
+	return null;
 }

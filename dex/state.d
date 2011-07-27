@@ -50,7 +50,7 @@ class State {
 		if(this.acceptingState != toCmp.isAccepting()) {
 			return false;
 		}
-		assert(same(aStatesOld, aStates));	
+		//assert(same(aStatesOld, aStates));	
 		return this.aStates == toCmp.getAcceptingStates() &&
 			this.transition == toCmp.getTransitions();
 	}
