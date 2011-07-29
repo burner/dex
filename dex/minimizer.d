@@ -27,7 +27,8 @@ private void makeInitPartitions(DLinkedList!(State) oldStates,
 	}
 }
 
-public DLinkedList!(State) minimize(T)(DLinkedList!(State) oldStates, Set!(T) inputSet) {
+public DLinkedList!(State) minimize(T)(DLinkedList!(State) oldStates, 
+		Set!(T) inputSet) {
 	MultiMap!(int,State) par = new MultiMap!(int,State);
 	Map!(State,int) states = new Map!(State,int)();
 	makeInitPartitions(oldStates, par, states);
@@ -37,8 +38,7 @@ public DLinkedList!(State) minimize(T)(DLinkedList!(State) oldStates, Set!(T) in
 	size_t oldSize = par.getCountKeys();
 	assert(oldSize == 3, "there should be 3 partitions by now");
 	outer: do {
-		int[] keys = par.keys();
-		foreach(it; keys) {
+		foreach(it; par.keys()) {
 			List!(State) newGroup = new List!(State)();
 			auto first = par.range(it);
 			auto second = par.range(it);
