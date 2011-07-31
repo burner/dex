@@ -40,12 +40,13 @@ private Vector!(State) finalizeGroups(Vector!(Vector!(State)) old,
 	foreach(idx,it; old)
 		ret.append(new State(conv!(ulong,int)(idx)));
 
-	assert(ret.getSize() == old.getSize());
+	assert(ret.getSize() == old.getSize(), conv!(size_t,string)(ret.getSize()) 
+		~ " " ~ conv!(size_t,string)(old.getSize()));
 
 	for(size_t i; i < old.getSize(); i++) {
 		foreach(c; inputSet) {
 			ret[i].addTransition(c, 
-				ret[states.find(old[0][0].getSingleTransition(c)).getData()]);
+				ret[states.find(old[i][0].getSingleTransition(c)).getData()]);
 		}
 	}
 
