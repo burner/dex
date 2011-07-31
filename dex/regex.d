@@ -62,7 +62,8 @@ class RegEx {
 
 	bool createNFA(string str, int action) {
 		str = concatExpand(str);
-		debug(RegExDebug) writeln(__FILE__,__LINE__, " ", str, " :length ",str.length);
+		debug(RegExDebug) writeln(__FILE__,__LINE__, " ", str, " :length ",
+			str.length);
 			
 		foreach(idx,it;str) {
 			debug(RegExDebug) writeln(__FILE__,__LINE__, " ", it, " ", idx);
@@ -70,13 +71,16 @@ class RegEx {
 				debug(RegExDebug) writeln(__FILE__,__LINE__, " isInput");
 				this.push(it);
 			} else if(operatorStack.empty()) {
-				debug(RegExDebug) writeln(__FILE__,__LINE__, " operatorStack.empty");
+				debug(RegExDebug) writeln(__FILE__,__LINE__, 
+					" operatorStack.empty");
 				this.operatorStack.push(it);
 			} else if(isLeftParanthesis!(char)(it)) {
-				debug(RegExDebug) writeln(__FILE__,__LINE__, " isLeftParanthesis");
+				debug(RegExDebug) writeln(__FILE__,__LINE__, 
+					" isLeftParanthesis");
 				this.operatorStack.push(it);
 			} else if(isRightParanthesis!(char)(it)) {
-				debug(RegExDebug) writeln(__FILE__,__LINE__, " isRightParanthesis");
+				debug(RegExDebug) writeln(__FILE__,__LINE__, 
+					" isRightParanthesis");
 				while(!isLeftParanthesis!(char)(this.operatorStack.top())) {
 					if(!this.eval()) {
 						return false;
@@ -85,13 +89,15 @@ class RegEx {
 				this.operatorStack.pop();
 			} else {
 				debug(RegExDebug) writeln(__FILE__,__LINE__, " else");
-				while(!this.operatorStack.empty() && presedence!(char)(it, this.operatorStack.top())) {
+				while(!this.operatorStack.empty() && presedence!(char)(it, 
+						this.operatorStack.top())) {
 					debug(RegExDebug) writeln(__FILE__,__LINE__, " !(if.eval)");
 					if(!this.eval()) {
 						return false;
 					}
 				}
-				debug(RegExDebug) writeln(__FILE__,__LINE__, " operatorStack.push ", it);
+				debug(RegExDebug) writeln(__FILE__,__LINE__, 
+					" operatorStack.push ", it);
 				this.operatorStack.push(it);
 			}
 		}
@@ -111,8 +117,10 @@ class RegEx {
 		//this.nfaTable.get(this.nfaTable.getSize()).acceptingState = true;
 		this.nfaTable.get(this.nfaTable.getSize()).setAcceptingState(action);
 
-		// save the current nfaTable to the globalNFATable. this is done to create a nfa
-		// from more than one regex. to connect all regex join them through the rootState
+		// save the current nfaTable to the globalNFATable. 
+		// this is done to create a nfa
+		// from more than one regex. to connect all regex join them 
+		//through the rootState
 		this.rootState.addTransition(0, this.nfaTable.get(0));
 		foreach(it;this.nfaTable) {
 			this.globalNfaTable.pushBack(it);
@@ -206,7 +214,8 @@ class RegEx {
 		// Add the start state to the DFA table because we should not lose it
 		this.dfaTable.pushBack(DFAStartState);
 
-		// Still need to process the state so add it to the unprocessed DFA state vector
+		// Still need to process the state so add it to the unprocessed 
+		//DFA state vector
 		unmarkedStates.append(DFAStartState);
 		
 		int count = 0;	
@@ -217,7 +226,8 @@ class RegEx {
 			// foreach input signal
 			assert(same(inputSetOld, inputSet));
 			foreach(it;this.inputSet) {
-				Set!(State) moveRes = this.move(it, processingDFAState.getNFAStates());
+				Set!(State) moveRes = this.move(it, 
+					processingDFAState.getNFAStates());
 				Set!(State) epsilonClosureRes = this.epsilonClosure(moveRes);
 				
 				// Check is the resulting set (EpsilonClosureSet) in the
@@ -239,7 +249,8 @@ class RegEx {
 					unmarkedStates.append(u);
 					this.dfaTable.pushBack(u);
 
-					// Add transition from processingDFAState to new state on the current character
+					// Add transition from processingDFAState to new state on 
+					//the current character
 					processingDFAState.addTransition(it, u);
 				} else {
 					// This state already exists so add transition from 
@@ -343,7 +354,8 @@ class RegEx {
 		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
 			"pop");
 
-		debug(RegExDebug) writeln(__FILE__,__LINE__, " this.operandStack.size ", this.operandStack.getSize());
+		debug(RegExDebug) writeln(__FILE__,__LINE__, " this.operandStack.size ",
+			this.operandStack.getSize());
 			
 		if(this.operandStack.getSize() > 0) {
 			table = operandStack.top();
@@ -359,11 +371,13 @@ class RegEx {
 			"eval");
 
 		// First pop the operator from the stack
-		debug(RegExDebug) writeln(__FILE__,__LINE__, " eval this.operatorStack.size ", this.operatorStack.getSize());
+		debug(RegExDebug) writeln(__FILE__,__LINE__, 
+			" eval this.operatorStack.size ", this.operatorStack.getSize());
 		if(this.operatorStack.getSize()>0) {
 			char chOperator = this.operatorStack.top();
 			this.operatorStack.pop();
-			debug(RegExDebug) writeln(__FILE__,__LINE__, " chOperator ", chOperator);
+			debug(RegExDebug) writeln(__FILE__,__LINE__, " chOperator ", 
+				chOperator);
 	
 			// Check which operator it is
 			switch(chOperator) {

@@ -124,7 +124,8 @@ class State {
 	void addTransition(char chInput, State state) {
 		assert(same(aStatesOld, aStates));	
 		assert(state !is null);
-		debug(StateDebug) writeln(__FILE__,__LINE__, " addTransition ", chInput , " ", state.stateId);
+		debug(StateDebug) writeln(__FILE__,__LINE__, 
+			" addTransition ", chInput , " ", state.stateId);
 		size_t oldSize = this.transition.getSize();
 		this.transition.insert(chInput, state);
 		assert(oldSize != this.transition.getSize());
