@@ -108,9 +108,12 @@ public Vector!(State) minimize(T)(DLinkedList!(State) oldStates,
 					State gotoFirst = first.getSingleTransition(c);
 					State gotoNext = next.getSingleTransition(c);
 					if(states.find(gotoFirst).getData() != 
-							states.find(gotoNext).getData()) {
-						/*writeln(__LINE__," ",c, " ",gotoFirst.getStateId()," ",
-							gotoNext.getStateId()," ", 
+							states.find(gotoNext).getData() ||
+							(first.isAccepting() && next.isAccepting() &&
+							first.getAcceptingStates() !=
+							next.getAcceptingStates())) {
+						/*writeln(__LINE__," ",c, " ",gotoFirst.getStateId(),
+							" ", gotoNext.getStateId()," ", 
 							states.find(gotoFirst).getData(), " ",
 							states.find(gotoNext).getData());*/
 						transGroup.remove(j);

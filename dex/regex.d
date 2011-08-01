@@ -515,7 +515,7 @@ class RegEx {
 	void writeMinDFAGraph(Vector!(State) states) {
 		string[] strNFATable = ["digraph{\n"];
 		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
-		foreach(it;this.dfaTable) {
+		foreach(it;states) {
 			if(it.acceptingState) {
 				strNFALine.pushBack('\t').pushBack(it.toString());
 				strNFALine.pushBack("\t[shape=doublecircle];\n");
