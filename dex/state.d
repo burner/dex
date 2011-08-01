@@ -111,18 +111,19 @@ class State {
 		return true;
 	}
 
-	int getStateId() {
-		assert(same(aStatesOld, aStates));	
+	int getStateId() const {
 		return this.stateId;
 	}
 
+	void setStateId(int id) {
+		return this.stateId = id;
+	}
+
 	MultiMap!(char,State) getTransitions() {
-		assert(same(aStatesOld, aStates));	
 		return this.transition;
 	}	
 
 	void addTransition(char chInput, State state) {
-		assert(same(aStatesOld, aStates));	
 		assert(state !is null);
 		debug(StateDebug) writeln(__FILE__,__LINE__, 
 			" addTransition ", chInput , " ", state.stateId);
@@ -138,7 +139,6 @@ class State {
 
 	void removeTransition(State toRemove) {
 		auto it = this.transition.begin();
-		assert(same(aStatesOld, aStates));	
 		while(it.isValid() && (*it) != toRemove) {
 			it++;
 		}
@@ -150,7 +150,6 @@ class State {
 	}
 	
 	State[] getTransition(char chInput) {
-		assert(same(aStatesOld, aStates));	
 		auto it = this.transition.range(chInput);	
 		State[] ret = new State[10];
 		size_t idx = 0;

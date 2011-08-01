@@ -68,6 +68,13 @@ private Vector!(State) finalizeGroups(Vector!(Vector!(State)) old,
 		}
 	}
 
+	foreach(it; ret) {
+		if(it.transition.getSize() == 0) {
+			it.setStateId(-1);
+			break;
+		}
+	}
+
 	//printStates(states);
 	return ret;
 }
