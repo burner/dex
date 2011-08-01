@@ -12,6 +12,7 @@ import hurt.container.set;
 import hurt.container.dlst;
 import hurt.container.stack;
 import hurt.container.vector;
+import hurt.container.isr;
 import hurt.util.stacktrace;
 import hurt.util.array;
 import hurt.string.stringbuffer;
@@ -61,6 +62,7 @@ class RegEx {
 	}
 
 	bool createNFA(string str, int action) {
+		this.cleanUp();
 		str = concatExpand(str);
 		debug(RegExDebug) writeln(__FILE__,__LINE__, " ", str, " :length ",
 			str.length);
@@ -133,12 +135,9 @@ class RegEx {
 	Set!(State) epsilonClosure(Set!(State) old) const {
 		// Initialize result with old because each state
 		// has epsilon closure to itself
-		Set!(State) res = new Set!(State)();
-		OldSet!(State) resOld = new OldSet!(State)();
+		Set!(State) res = new Set!(State)(ISRType.HashTable);
 		foreach(it; old) {
 			res.insert(it);
-			resOld.insert(it);
-			assert(same(resOld, res));
 		}
 
 		// Push all states to be processes on the stack hence
@@ -153,10 +152,7 @@ class RegEx {
 
 			foreach(it; t.getTransition(0)) {
 				if(!res.contains(it)) {
-					assert(!resOld.contains(it));
 					res.insert(it);
-					resOld.insert(it);
-					assert(same(resOld, res));
 					unprocessedStack.push(it);
 				} else {
 					State i = *res.find(it);
@@ -170,7 +166,7 @@ class RegEx {
 	}
 
 	Set!(State) move(char chInput, Set!(State) t) const {
-		Set!(State) res = new Set!(State)();
+		Set!(State) res = new Set!(State)(ISRType.HashTable);
 	
 		/* This is very simple since I designed the NFA table
 		   structure in a way that we just need to loop through
@@ -220,11 +216,11 @@ class RegEx {
 		
 		int count = 0;	
 		while(!unmarkedStates.empty()) {
+			//writeln(count, " ",unmarkedStates.getSize()); count++;
 			// process an unprocessed state
 			State processingDFAState = unmarkedStates.popBack();
 
 			// foreach input signal
-			assert(same(inputSetOld, inputSet));
 			foreach(it;this.inputSet) {
 				Set!(State) moveRes = this.move(it, 
 					processingDFAState.getNFAStates());
@@ -504,10 +500,9 @@ class RegEx {
 	}
 		
 	void minimize() {
-		writeln("start to minimize");
-		writeln("\n");
+		writeln("start to minimize with ", this.dfaTable.getSize(), " states");
 		auto min = dex.minimizer.minimize!(char)(this.dfaTable, this.inputSet);
-		writeln(min.getSize());
+		writeln("minimized to ", min.getSize(), " states");
 		writeMinDFAGraph(min);
 		//writeGraph(min, "min");
 	}

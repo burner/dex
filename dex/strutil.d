@@ -139,10 +139,12 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 	switch(str) {
 		case ":alnum:": 
 		case "a-zA-Z0-9":
-			return ('\v' ~ setUnionSymbol!(T)(lowChar ~ upperChar ~ digits) ~ '\f').idup;
+			return ('\v' ~ setUnionSymbol!(T)(lowChar ~ upperChar ~ digits) 
+				~ '\f').idup;
 		case ":word:": 
 		case "a-zA-Z0-9_":
-			return ('\v' ~ setUnionSymbol!(T)(lowChar ~ upperChar ~ digits) ~ '_' ~ '\f').idup;
+			return ('\v' ~ setUnionSymbol!(T)(lowChar ~ upperChar ~ digits) 
+				~ '_' ~ '\f').idup;
 		case ":alpha:": 
 		case "a-zA-Z":
 			return ('\v' ~ setUnionSymbol!(T)(lowChar ~ upperChar) ~ '\f').idup;

@@ -17,7 +17,6 @@ private Vector!(Vector!(State)) makeInitPartitions(
 	Vector!(Vector!(State)) ret = new Vector!(Vector!(State))();
 	ret.append(new Vector!(State)());
 	ret.append(new Vector!(State)());
-	ret.append(new Vector!(State)());
 	foreach(it; oldStates) {
 		if(it.getStateId() == -1) {
 			states.insert(it, 0);
@@ -27,12 +26,16 @@ private Vector!(Vector!(State)) makeInitPartitions(
 			ret[1].append(it);
 		} else {
 			states.insert(it, 2);
+			if(ret.getSize() == 2) {
+				ret.append(new Vector!(State)());
+			}
 			ret[2].append(it);
 		}
 	}
 	
 	// test if the created mapping is ok
 	foreach(idx,it;ret) {
+		assert(it.getSize() > 0, conv!(size_t,string)(idx));
 		foreach(jt;it)
 			assert(states.find(jt).getData() == idx);
 	}
@@ -82,15 +85,12 @@ public Vector!(State) minimize(T)(DLinkedList!(State) oldStates,
 	Vector!(Vector!(State)) groups = makeInitPartitions(oldStates, states);
 	//printStates(states);
 	size_t oldSize = 0;
-	assert(groups.getSize() == 3, "there should be 3 partitions by now");
+	assert(groups.getSize() > 1, "there should at least 2 partitions by now");
 	assert(inputSet.getSize() > 0);
 	size_t grCnt = groups.getSize();
 	int rounds = 0;
 	while(oldSize != grCnt) {
 		oldSize = groups.getSize();
-		if(rounds == 0) {
-			assert(grCnt == 3);
-		}
 		for(size_t i = 0; i < grCnt; i++) {
 			Vector!(State) transGroup = groups[i];
 			size_t groupSize = transGroup.getSize();
