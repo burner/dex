@@ -164,7 +164,7 @@ class State {
 	}
 
 	State getSingleTransition(char chInput) {
-		return *this.transition.begin();
+		return *this.transition.range(chInput);
 	}
 
 	string toString() {

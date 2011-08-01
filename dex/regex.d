@@ -507,7 +507,51 @@ class RegEx {
 		writeln("start to minimize");
 		writeln("\n");
 		auto min = dex.minimizer.minimize!(char)(this.dfaTable, this.inputSet);
+		writeln(min.getSize());
+		writeMinDFAGraph(min);
 		//writeGraph(min, "min");
+	}
+
+	void writeMinDFAGraph(Vector!(State) states) {
+		string[] strNFATable = ["digraph{\n"];
+		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
+		foreach(it;this.dfaTable) {
+			if(it.acceptingState) {
+				strNFALine.pushBack('\t').pushBack(it.toString());
+				strNFALine.pushBack("\t[shape=doublecircle];\n");
+				append(strNFATable, strNFALine.getString());
+				strNFALine.clear();
+			}
+		}
+		append(strNFATable, "\n");
+		strNFALine.clear();
+
+		// Record transitions
+		foreach(pState;states) {
+			State[] state;	
+
+			foreach(jt;this.inputSet) {
+				state = pState.getTransition(jt);
+				foreach(kt;state) {
+					string stateId1 = (pState.toString());
+					string stateId2 = (kt.toString());
+					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
+					strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
+					append(strNFATable, strNFALine.getString());
+					strNFALine.clear();
+				}
+			}	
+			
+		}
+
+		append(strNFATable, "}");
+		std.stream.File file = new std.stream.File("minDfaGraph.dot", 
+			FileMode.OutNew);
+		foreach(it;strNFATable) {
+			file.writeString(it);
+		}
+		file.close();
+		system("dot -T jpg minDfaGraph.dot > minDfaGraph.jpg");
 	}
 
 	void writeDFAGraph() {
@@ -529,14 +573,14 @@ class RegEx {
 			State[] state = pState.getTransition(0);	
 
 			// Record transition
-			foreach(jt;state) {
+			/*foreach(jt;state) {
 				string stateId1 = (pState.toString());
 				string stateId2 = (jt.toString());
 				strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
 				strNFALine.pushBack("\t[label=\"epsilon\"];\n");
 				append(strNFATable, strNFALine.getString());
 				strNFALine.clear();
-			}
+			}*/
 
 			foreach(jt;this.inputSet) {
 				state = pState.getTransition(jt);
@@ -553,7 +597,8 @@ class RegEx {
 		}
 
 		append(strNFATable, "}");
-		std.stream.File file = new std.stream.File("dfaGraph.dot", FileMode.OutNew);
+		std.stream.File file = new std.stream.File("dfaGraph.dot", 
+			FileMode.OutNew);
 		foreach(it;strNFATable) {
 			file.writeString(it);
 		}

@@ -29,7 +29,8 @@ bool same(T)(OldSet!(T) old, Set!(T) ne) {
 	int runsOld = 0;
 	foreach(it;old.values()) {
 		if(!ne.contains(it)) {
-			writeln(__FILE__,__LINE__," ", it, " ", ne.contains(it), " ", *ne.end());
+			writeln(__FILE__,__LINE__," ", it, " ", ne.contains(it), " ", 
+				*ne.end());
 			print(old, ne);
 			return false;
 		}

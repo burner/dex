@@ -17,7 +17,7 @@ void main() {
 	assert(r1.createNFA("delegate", 4));
 	r1.cleanUp();
 	writeln("nfa's created");
-	r1.writeNFAGraph();
+	//r1.writeNFAGraph();
 	writeln("nfa's graph created");
 	r1.convertNfaToDfa();
 	r1.findErrorState();	
