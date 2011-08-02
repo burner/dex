@@ -2,14 +2,18 @@ all: fine
 
 #CFLAGS=-m64 -offsm -unittest -d-debug -gc
 #CFLAGS=-m64 -offsm -unittest -debug -gc -debug=RegExDebug -debug=StateDebug
-CFLAGS=-m64 -unittest -debug -gc -I../libhurt/
+CFLAGS=-m64 -unittest -debug -gc -I../libhurt/ -wi
 #CFLAGS=-m64 -offsm -unittest
 
 FILES = dex/main.d dex/fsm.d dex/strutil.d  \
 dex/regex.d dex/state.d dex/parseerror.d dex/minimizer.d \
 dex/oldset.d
 
-OBJS=dex.main.o dex.strutil.o dex.regex.o dex.state.o dex.parseerror.o dex.minimizer.o dex.oldset.o
+OBJS=dex.main.o dex.strutil.o dex.regex.o dex.state.o dex.parseerror.o \
+dex.minimizer.o
+
+count:
+	wc -l `find dex -name \*.d`
 
 clean:
 	rm *.o
@@ -38,6 +42,3 @@ dex.parseerror.o: dex/parseerror.d
 
 dex.minimizer.o: dex/minimizer.d dex.state.o
 	dmd $(CFLAGS) -c dex/minimizer.d -ofdex.minimizer.o
-
-dex.oldset.o: dex/oldset.d
-	dmd $(CFLAGS) -c dex/oldset.d -ofdex.oldset.o

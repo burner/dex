@@ -47,31 +47,36 @@ private Vector!(State) finalizeGroups(Vector!(Vector!(State)) old,
 	Vector!(State) ret = new Vector!(State)();
 	//writeln(__LINE__," ",old.getSize());
 	// make the states gone fill them later
-	foreach(idx,it; old)
-		ret.append(new State(conv!(ulong,int)(idx)));
+	int idCnt = 1;
+	outer: foreach(idx,it; old) {
+		foreach(jt; it) {
+			if(jt.getStateId() == 1) {
+				ret.append(new State(0));
+				continue outer;
+			} else if(jt.getStateId() == -1) {
+				ret.append(new State(-1));
+				continue outer;
+			}
+		}
+		ret.append(new State(idCnt++));
+	}
 
 	assert(ret.getSize() == old.getSize(), conv!(size_t,string)(ret.getSize()) 
 		~ " " ~ conv!(size_t,string)(old.getSize()));
 
 	for(size_t i; i < old.getSize(); i++) {
+		if(ret[i].getStateId() == -1)
+			continue;
+		// create the output transition for every input
 		foreach(c; inputSet) {
 			ret[i].addTransition(c, 
 				ret[states.find(old[i][0].getSingleTransition(c)).getData()]);
 		}
-	}
 
-	for(size_t i; i < old.getSize(); i++) {
 		foreach(it; old[i]) {
 			foreach(jt; it.getAcceptingStates()) {
 				ret[i].setAcceptingState(jt);
 			}
-		}
-	}
-
-	foreach(it; ret) {
-		if(it.transition.getSize() == 0) {
-			it.setStateId(-1);
-			break;
 		}
 	}
 

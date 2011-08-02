@@ -17,8 +17,9 @@ public immutable(T)[] expandRange(T)(immutable(T)[] str)
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	StringBuffer!(T) ret = new StringBuffer!(T)(str.length*3);	
 	for(size_t i = 0; i < str.length; i++) {
-		//writeln(i, " ", ret.getString());
-		// in case you find the union char [ . Search till you find the matching ]
+		// writeln(i, " ", ret.getString());
+		// in case you find the union char [ . 
+		// Search till you find the matching ]
 		if(str[i] == '[' && i > 0 && str[i-1] == '\\') {
 			ret.popBack();
 			ret.pushBack(str[i]);
@@ -69,25 +70,28 @@ public immutable(T)[] expandRange(T)(immutable(T)[] str)
 
 unittest {
 	assert("\v\f"~ST == expandRange!(char)("[]*"), 
-			stringWrite!(char)(expandRange!(char)("[]*")));
+		stringWrite!(char)(expandRange!(char)("[]*")));
 	assert("\v\f" == expandRange!(char)("[]"), 
-			expandRange!(char)("[]"));
+		expandRange!(char)("[]"));
 	assert("rt\v\frt" == expandRange!(char)("rt[]rt"), 
-			expandRange!(char)("rt[]rt"));
+		expandRange!(char)("rt[]rt"));
 	assert("rt[]rt" == expandRange!(char)("rt\\[\\]rt"), 
-			expandRange!(char)("rt\\[\\]rt"));
+		expandRange!(char)("rt\\[\\]rt"));
 	assert("rt\v[" ~ UN ~ "]\frt" == expandRange!(char)("rt[\\[\\]]rt"), 
-			expandRange!(char)("rt[\\[\\]]rt"));
-	assert("rt\va" ~ UN ~ 'b' ~ UN ~ 'c' ~ UN ~ '[' ~ UN ~ ']' ~ "\frt" == expandRange!(char)("rt[abc\\[\\]]rt"), 
-			expandRange!(char)("rt[abc\\[\\]]rt"));
-	assert("rt\v0"~UN~'1'~UN~'2'~UN~'3'~UN~'4'~UN~'5'~UN~'6'~UN~"7\frt" == expandRange!(char)("rt[:odigit:]rt"), 
-			expandRange!(char)("rt[:odigit:]rt"));
+		expandRange!(char)("rt[\\[\\]]rt"));
+	assert("rt\va" ~ UN ~ 'b' ~ UN ~ 'c' ~ UN ~ '[' ~ UN ~ ']' ~ "\frt" 
+		== expandRange!(char)("rt[abc\\[\\]]rt"), 
+		expandRange!(char)("rt[abc\\[\\]]rt"));
+	assert("rt\v0"~UN~'1'~UN~'2'~UN~'3'~UN~'4'~UN~'5'~UN~'6'~UN~"7\frt" 
+		== expandRange!(char)("rt[:odigit:]rt"), 
+		expandRange!(char)("rt[:odigit:]rt"));
 	assert("rt\v0"~UN~'1'~UN~"2\frt" == expandRange!(char)("rt[012]rt"), 
-			expandRange!(char)("rt[012]rt"));
+		expandRange!(char)("rt[012]rt"));
 	assert("rt\va"~UN~'t'~UN~"h\frt" == expandRange!(char)("rt[ath]rt"), 
-			expandRange!(char)("rt[ath]rt"));
-	assert("rt\va"~UN~'t'~UN~"h\f[]rt" == expandRange!(char)("rt[ath]\\[\\]rt"), 
-			expandRange!(char)("rt[ath]\\[\\]rt"));
+		expandRange!(char)("rt[ath]rt"));
+	assert("rt\va"~UN~'t'~UN~"h\f[]rt" 
+		== expandRange!(char)("rt[ath]\\[\\]rt"), 
+		expandRange!(char)("rt[ath]\\[\\]rt"));
 }
 
 public immutable(T)[] setUnionSymbol(T)(T[] str) 
@@ -165,7 +169,6 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 			return ('\v' ~ setUnionSymbol!(T)(str.dup) ~ '\f').idup;	
 		}
 	}
-	return null;
 }
 
 public immutable(T)[] concatExpand(T)(immutable(T)[] str) 

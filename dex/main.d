@@ -8,11 +8,11 @@ void main() {
 	writeln("all unittest passed");
 	RegEx r1 = new RegEx();
 	writeln("regex object created");
-	//assert(r1.createNFA("[a-z][a-z]*", 1));
-	//r1.cleanUp();
-	//assert(r1.createNFA("[012]*", 2));
-	assert(r1.createNFA("[:digit:][:digit:]*", 1));
-	assert(r1.createNFA("[:alpha:][:alpha:]*", 2));
+	assert(r1.createNFA("if", 1));
+	assert(r1.createNFA("function", 2));
+	assert(r1.createNFA("delegate", 3));
+	assert(r1.createNFA("[:digit:][:digit:]*", 4));
+	assert(r1.createNFA("[:alpha:][:alpha:]*", 5));
 	writeln("nfa's created");
 	//r1.writeNFAGraph();
 	writeln("nfa's graph created");

@@ -1,7 +1,6 @@
 module dex.state;
 
 import dex.strutil;
-import dex.oldset;
 
 import hurt.conv.conv;
 import hurt.container.multimap;
@@ -17,7 +16,6 @@ class State {
 	int stateId;
 	bool acceptingState;
 	Set!(int) aStates;
-	OldSet!(int) aStatesOld;
 	MultiMap!(char,State) transition;
 	Set!(State) nfaStates;
 
@@ -27,16 +25,15 @@ class State {
 		this.transition = new MultiMap!(char,State)();	
 		this.nfaStates = new Set!(State)();
 		this.aStates = new Set!(int)();
-		this.aStatesOld = new OldSet!(int)();
 	}
 
 	this(int nId, Set!(State) NFAState) {
-		this.stateId = nId;
+		this(nId);
+		/*this.stateId = nId;
 		this.acceptingState = false;
-		this.transition = new MultiMap!(char,State)();	
-		this.nfaStates = NFAState.dup();
 		this.aStates = new Set!(int)();
-		this.aStatesOld = new OldSet!(int)();
+		this.transition = new MultiMap!(char,State)();	*/
+		this.nfaStates = NFAState.dup();
 		foreach(it;NFAState) {
 			if(it.acceptingState) {
 				foreach(jt;it.getAcceptingStates()) {
@@ -50,21 +47,20 @@ class State {
 		if(this.acceptingState != toCmp.isAccepting()) {
 			return false;
 		}
-		assert(same(aStatesOld, aStates));	
 		return this.aStates == toCmp.getAcceptingStates() &&
 			this.transition == toCmp.getTransitions();
 	}
 
-	bool obEquals(Object o) const {
+	public bool obEquals(Object o) const {
 		State t = cast(State)o;
 		return t.stateId == this.stateId;
 	}
 
-	hash_t toHash() const {
+	public override hash_t toHash() const {
 		return this.stateId;
 	}
 
-	int opCmp(Object o) const {
+	public override int opCmp(Object o) const {
 		State f = cast(State)o;
 		if(this.toHash() < f.toHash())
 			return 1;
@@ -81,12 +77,9 @@ class State {
 	void setAcceptingState(int sId) {
 		this.acceptingState = true;
 		this.aStates.insert(sId);;	
-		this.aStatesOld.insert(sId);;	
-		assert(same(aStatesOld, aStates));	
 	}
 
 	Set!(int) getAcceptingStates() {
-		assert(same(aStatesOld, aStates));	
 		return this.aStates;
 	}
 
@@ -95,7 +88,6 @@ class State {
 	}
 
 	bool isDeadEnd() {
-		assert(same(aStatesOld, aStates));	
 		if(this.acceptingState)
 			return false;
 		if(this.transition.isEmpty())
@@ -132,11 +124,6 @@ class State {
 		assert(oldSize != this.transition.getSize());
 	}
 
-	/*void overrideTransition(State old, State toReplaceWith) {
-		auto it = this.transition.find(old);
-		this.transition.replace(old, toReplaceWith);		
-	}*/
-
 	void removeTransition(State toRemove) {
 		auto it = this.transition.begin();
 		while(it.isValid() && (*it) != toRemove) {
@@ -166,7 +153,7 @@ class State {
 		return *this.transition.range(chInput);
 	}
 
-	string toString() {
+	public override string toString() {
 		immutable deli = '_';
 		immutable startStop = '\"';
 		char[] tmp;

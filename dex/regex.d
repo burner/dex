@@ -3,7 +3,6 @@ module dex.regex;
 import dex.state;
 import dex.strutil;
 import dex.minimizer;
-import dex.oldset;
 
 import hurt.conv.conv;
 import hurt.container.multimap;
@@ -34,7 +33,6 @@ class RegEx {
 	int nextStateId;
 
 	Set!(char) inputSet;
-	OldSet!(char) inputSetOld;
 
 	State rootState;
 
@@ -49,7 +47,6 @@ class RegEx {
 		this.operandStack = new Stack!(FSA_Table)();
 		this.operatorStack = new Stack!(char)();
 		this.inputSet = new Set!(char);
-		this.inputSetOld = new OldSet!(char);
 		this.rootState = new State(nextStateId);
 		this.globalNfaTable = new FSA_Table();
 		this.globalNfaTable.pushBack(this.rootState);
@@ -342,8 +339,6 @@ class RegEx {
 			
 
 		this.inputSet.insert(chInput);
-		this.inputSetOld.insert(chInput);
-		assert(same(inputSetOld, inputSet));
 	}
 
 	bool pop(ref FSA_Table table) {
@@ -536,7 +531,6 @@ class RegEx {
 					strNFALine.clear();
 				}
 			}	
-			
 		}
 
 		append(strNFATable, "}");
