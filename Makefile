@@ -7,10 +7,9 @@ CFLAGS=-m64 -unittest -debug -gc -I../libhurt/ -wi
 
 FILES = dex/main.d dex/fsm.d dex/strutil.d  \
 dex/regex.d dex/state.d dex/parseerror.d dex/minimizer.d \
-dex/oldset.d
 
 OBJS=dex.main.o dex.strutil.o dex.regex.o dex.state.o dex.parseerror.o \
-dex.minimizer.o
+dex.minimizer.o dex.emit.o
 
 count:
 	wc -l `find dex -name \*.d`
@@ -28,13 +27,16 @@ fine: $(OBJS)
 dex.main.o: dex/main.d dex.regex.o
 	dmd $(CFLAGS) -c dex/main.d -ofdex.main.o
 
+dex.emit.o: dex/emit.d dex.regex.o
+	dmd $(CFLAGS) -c dex/emit.d -ofdex.emit.o
+
 dex.strutil.o: dex/strutil.d
 	dmd $(CFLAGS) -c dex/strutil.d -ofdex.strutil.o
 
-dex.regex.o: dex/regex.d dex/state.d dex.strutil.o dex.minimizer.o dex.oldset.o
+dex.regex.o: dex/regex.d dex/state.d dex.strutil.o dex.minimizer.o
 	dmd $(CFLAGS) -c dex/regex.d -ofdex.regex.o
 
-dex.state.o: dex/state.d dex.strutil.o dex.oldset.o
+dex.state.o: dex/state.d dex.strutil.o
 	dmd $(CFLAGS) -c dex/state.d -ofdex.state.o
 
 dex.parseerror.o: dex/parseerror.d

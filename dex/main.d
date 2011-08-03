@@ -12,14 +12,14 @@ void main() {
 	assert(r1.createNFA("function", 2));
 	assert(r1.createNFA("delegate", 3));
 	assert(r1.createNFA("[:digit:][:digit:]*", 4));
-	assert(r1.createNFA("[:alpha:][:alpha:]*", 5));
+	//assert(r1.createNFA("[:alpha:][:alpha:]*", 5));
 	writeln("nfa's created");
-	//r1.writeNFAGraph();
+	r1.writeNFAGraph();
 	writeln("nfa's graph created");
 	r1.convertNfaToDfa();
 	r1.findErrorState();	
 	writeln("nfa to dfa convertions done");
-	//r1.writeDFAGraph();
+	r1.writeDFAGraph();
 	writeln("dfa's graph created");
 	r1.minimize();
 	return;

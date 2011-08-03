@@ -3,44 +3,61 @@ module dex.emit;
 import dex.state;
 
 import hurt.container.iterator;
+import hurt.container.set;
+import hurt.string.stringbuffer;
+import hurt.util.array;
 
-void writeMinDFAGraph(Iterable!(State) states) {
-	string[] strNFATable = ["digraph{\n"];
-	StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
+import std.stream;
+import std.process;
+
+void writeGraph(Iterable!(State) states, Set!(char) inputSet,
+		string fileName) {
+	string[] strTable = ["digraph{\n"];
+	StringBuffer!(char) strLine = new StringBuffer!(char)(16);
 	foreach(it;states) {
 		if(it.acceptingState) {
-			strNFALine.pushBack('\t').pushBack(it.toString());
-			strNFALine.pushBack("\t[shape=doublecircle];\n");
-			append(strNFATable, strNFALine.getString());
-			strNFALine.clear();
+			strLine.pushBack('\t').pushBack(it.toString());
+			strLine.pushBack("\t[shape=doublecircle];\n");
+			append(strTable, strLine.getString());
+			strLine.clear();
 		}
 	}
-	append(strNFATable, "\n");
-	strNFALine.clear();
+	append(strTable, "\n");
+	strLine.clear();
 
 	// Record transitions
 	foreach(pState;states) {
 		State[] state;	
 
-		foreach(jt;this.inputSet) {
+		state = pState.getTransition(0);
+		foreach(jt;state) {
+			string stateId1 = (pState.toString());
+			string stateId2 = (jt.toString());
+			strLine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
+			strLine.pushBack("\t[label=\"epsilon\"];\n");
+			append(strTable, strLine.getString());
+			strLine.clear();
+		}
+
+		foreach(jt; inputSet) {
 			state = pState.getTransition(jt);
 			foreach(kt;state) {
 				string stateId1 = (pState.toString());
 				string stateId2 = (kt.toString());
-				strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
-				strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
-				append(strNFATable, strNFALine.getString());
-				strNFALine.clear();
+				strLine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
+				strLine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
+				append(strTable, strLine.getString());
+				strLine.clear();
 			}
 		}	
 	}
 
-	append(strNFATable, "}");
-	std.stream.File file = new std.stream.File("minDfaGraph.dot", 
+	append(strTable, "}");
+	std.stream.File file = new std.stream.File(fileName ~ ".dot", 
 		FileMode.OutNew);
-	foreach(it;strNFATable) {
+	foreach(it;strTable) {
 		file.writeString(it);
 	}
 	file.close();
-	system("dot -T jpg minDfaGraph.dot > minDfaGraph.jpg");
+	system("dot -T jpg " ~ fileName ~ ".dot > " ~ fileName ~ ".jpg");
 }

@@ -3,6 +3,7 @@ module dex.regex;
 import dex.state;
 import dex.strutil;
 import dex.minimizer;
+import dex.emit;
 
 import hurt.conv.conv;
 import hurt.container.multimap;
@@ -31,15 +32,10 @@ class RegEx {
 	Stack!(char) operatorStack;
 
 	int nextStateId;
-
 	Set!(char) inputSet;
-
 	State rootState;
-
 	int patternIndex;
-
 	string strText;
-
 	Vector!(int) vecPos;
 
 	this() {
@@ -544,7 +540,7 @@ class RegEx {
 	}
 
 	void writeDFAGraph() {
-		string[] strNFATable = ["digraph{\n"];
+		/*string[] strNFATable = ["digraph{\n"];
 		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
 		foreach(it;this.dfaTable) {
 			if(it.acceptingState) {
@@ -571,7 +567,7 @@ class RegEx {
 				strNFALine.clear();
 			}*/
 
-			foreach(jt;this.inputSet) {
+			/*foreach(jt;this.inputSet) {
 				state = pState.getTransition(jt);
 				foreach(kt;state) {
 					string stateId1 = (pState.toString());
@@ -592,11 +588,12 @@ class RegEx {
 			file.writeString(it);
 		}
 		file.close();
-		system("dot -T jpg dfaGraph.dot > dfaGraph.jpg");
+		system("dot -T jpg dfaGraph.dot > dfaGraph.jpg");*/
+		dex.emit.writeGraph(this.dfaTable,this.inputSet, "dfaGraph");
 	}
 
 	void writeNFAGraph() {
-		string[] strNFATable = ["digraph{\n"];
+		/*string[] strNFATable = ["digraph{\n"];
 		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
 		foreach(it;this.globalNfaTable) {
 			if(it.acceptingState) {
@@ -648,7 +645,8 @@ class RegEx {
 			file.writeString(it);
 		}
 		file.close();
-		system("dot -T jpg nfaGraph.dot > nfaGraph.jpg");
+		system("dot -T jpg nfaGraph.dot > nfaGraph.jpg");*/
+		dex.emit.writeGraph(this.globalNfaTable,this.inputSet, "nfaGraph");
 	}
 
 	void writeGraph(DLinkedList!(State) graph, string name) {
