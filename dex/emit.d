@@ -10,6 +10,11 @@ import hurt.util.array;
 import std.stream;
 import std.process;
 
+/* A function that writes a given graph to a file of name fileName.
+ * Iterable is a container that implements opApply. The transitions of
+ * the states inside the container should correspond to the character inside
+ * the inputSet. Otherwise the transistion will not be displayed.
+ */
 void writeGraph(Iterable!(State) states, Set!(char) inputSet,
 		string fileName) {
 	string[] strTable = ["digraph{\n"];

@@ -29,10 +29,6 @@ class State {
 
 	this(int nId, Set!(State) NFAState) {
 		this(nId);
-		/*this.stateId = nId;
-		this.acceptingState = false;
-		this.aStates = new Set!(int)();
-		this.transition = new MultiMap!(char,State)();	*/
 		this.nfaStates = NFAState.dup();
 		foreach(it;NFAState) {
 			if(it.acceptingState) {
@@ -41,14 +37,6 @@ class State {
 				}	
 			}
 		}
-	}
-
-	bool compare(State toCmp) {
-		if(this.acceptingState != toCmp.isAccepting()) {
-			return false;
-		}
-		return this.aStates == toCmp.getAcceptingStates() &&
-			this.transition == toCmp.getTransitions();
 	}
 
 	public bool obEquals(Object o) const {
@@ -74,7 +62,7 @@ class State {
 		return this.nfaStates;
 	}
 
-	void setAcceptingState(int sId) {
+	void setAcceptingState(in int sId) {
 		this.acceptingState = true;
 		this.aStates.insert(sId);;	
 	}
@@ -107,7 +95,7 @@ class State {
 		return this.stateId;
 	}
 
-	void setStateId(int id) {
+	void setStateId(in int id) {
 		return this.stateId = id;
 	}
 

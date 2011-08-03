@@ -37,6 +37,7 @@ class RegEx {
 	int patternIndex;
 	string strText;
 	Vector!(int) vecPos;
+	Vector!(State) minDfa;
 
 	this() {
 		this.nfaTable = new FSA_Table();
@@ -368,8 +369,8 @@ class RegEx {
 	
 			// Check which operator it is
 			switch(chOperator) {
-				//case  '*':
-				case  ST:
+				//case '*':
+				case ST:
 					debug(RegExDebug) writeln(__FILE__,__LINE__, " star");
 					return this.Star();
 				//case '|':
@@ -380,9 +381,9 @@ class RegEx {
 				case CC:
 					debug(RegExDebug) writeln(__FILE__,__LINE__, " concat");
 					return this.Concat();
+				default:
+					assert(0, "invalid case");
 			}
-	
-			return false;
 		}
 	
 		return false;
@@ -492,202 +493,19 @@ class RegEx {
 		
 	void minimize() {
 		writeln("start to minimize with ", this.dfaTable.getSize(), " states");
-		auto min = dex.minimizer.minimize!(char)(this.dfaTable, this.inputSet);
-		writeln("minimized to ", min.getSize(), " states");
-		writeMinDFAGraph(min);
-		//writeGraph(min, "min");
+		this.minDfa = dex.minimizer.minimize!(char)(this.dfaTable, this.inputSet);
+		writeln("minimized to ", this.minDfa.getSize(), " states");
 	}
 
-	void writeMinDFAGraph(Vector!(State) states) {
-		string[] strNFATable = ["digraph{\n"];
-		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
-		foreach(it;states) {
-			if(it.acceptingState) {
-				strNFALine.pushBack('\t').pushBack(it.toString());
-				strNFALine.pushBack("\t[shape=doublecircle];\n");
-				append(strNFATable, strNFALine.getString());
-				strNFALine.clear();
-			}
-		}
-		append(strNFATable, "\n");
-		strNFALine.clear();
-
-		// Record transitions
-		foreach(pState;states) {
-			State[] state;	
-
-			foreach(jt;this.inputSet) {
-				state = pState.getTransition(jt);
-				foreach(kt;state) {
-					string stateId1 = (pState.toString());
-					string stateId2 = (kt.toString());
-					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
-					strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
-					append(strNFATable, strNFALine.getString());
-					strNFALine.clear();
-				}
-			}	
-		}
-
-		append(strNFATable, "}");
-		std.stream.File file = new std.stream.File("minDfaGraph.dot", 
-			FileMode.OutNew);
-		foreach(it;strNFATable) {
-			file.writeString(it);
-		}
-		file.close();
-		system("dot -T jpg minDfaGraph.dot > minDfaGraph.jpg");
+	void writeMinDFAGraph() {
+		dex.emit.writeGraph(this.minDfa,this.inputSet, "minDfaGraph");
 	}
 
 	void writeDFAGraph() {
-		/*string[] strNFATable = ["digraph{\n"];
-		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
-		foreach(it;this.dfaTable) {
-			if(it.acceptingState) {
-				strNFALine.pushBack('\t').pushBack(it.toString());
-				strNFALine.pushBack("\t[shape=doublecircle];\n");
-				append(strNFATable, strNFALine.getString());
-				strNFALine.clear();
-			}
-		}
-		append(strNFATable, "\n");
-		strNFALine.clear();
-
-		// Record transitions
-		foreach(pState;this.dfaTable) {
-			State[] state = pState.getTransition(0);	
-
-			// Record transition
-			/*foreach(jt;state) {
-				string stateId1 = (pState.toString());
-				string stateId2 = (jt.toString());
-				strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
-				strNFALine.pushBack("\t[label=\"epsilon\"];\n");
-				append(strNFATable, strNFALine.getString());
-				strNFALine.clear();
-			}*/
-
-			/*foreach(jt;this.inputSet) {
-				state = pState.getTransition(jt);
-				foreach(kt;state) {
-					string stateId1 = (pState.toString());
-					string stateId2 = (kt.toString());
-					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
-					strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
-					append(strNFATable, strNFALine.getString());
-					strNFALine.clear();
-				}
-			}	
-			
-		}
-
-		append(strNFATable, "}");
-		std.stream.File file = new std.stream.File("dfaGraph.dot", 
-			FileMode.OutNew);
-		foreach(it;strNFATable) {
-			file.writeString(it);
-		}
-		file.close();
-		system("dot -T jpg dfaGraph.dot > dfaGraph.jpg");*/
 		dex.emit.writeGraph(this.dfaTable,this.inputSet, "dfaGraph");
 	}
 
 	void writeNFAGraph() {
-		/*string[] strNFATable = ["digraph{\n"];
-		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
-		foreach(it;this.globalNfaTable) {
-			if(it.acceptingState) {
-				//strNFALine.pushBack('\t').pushBack(conv!(int,string)(it.stateId));
-				strNFALine.pushBack('\t').pushBack(it.toString());
-				strNFALine.pushBack("\t[shape=doublecircle];\n");
-				append(strNFATable, strNFALine.getString());
-				strNFALine.clear();
-			}
-		}
-		append(strNFATable, "\n");
-		strNFALine.clear();
-
-		// Record transitions
-		foreach(pState;this.globalNfaTable) {
-			State[] state = pState.getTransition(0);	
-
-			// Record transition
-			foreach(jt;state) {
-				//string stateId1 = conv!(int,string)(pState.stateId);
-				string stateId1 = (pState.toString());
-				//string stateId2 = conv!(int,string)(jt.stateId);
-				string stateId2 = (jt.toString());
-				strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
-				strNFALine.pushBack("\t[label=\"epsilon\"];\n");
-				append(strNFATable, strNFALine.getString());
-				strNFALine.clear();
-			}
-
-			foreach(jt;this.inputSet) {
-				state = pState.getTransition(jt);
-				foreach(kt;state) {
-					//string stateId1 = conv!(int,string)(pState.stateId);
-					//string stateId2 = conv!(int,string)(kt.stateId);
-					string stateId1 = (pState.toString());
-					string stateId2 = (kt.toString());
-					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
-					strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
-					append(strNFATable, strNFALine.getString());
-					strNFALine.clear();
-				}
-			}	
-			
-		}
-
-		append(strNFATable, "}");
-		std.stream.File file = new std.stream.File("nfaGraph.dot", FileMode.OutNew);
-		foreach(it;strNFATable) {
-			file.writeString(it);
-		}
-		file.close();
-		system("dot -T jpg nfaGraph.dot > nfaGraph.jpg");*/
 		dex.emit.writeGraph(this.globalNfaTable,this.inputSet, "nfaGraph");
-	}
-
-	void writeGraph(DLinkedList!(State) graph, string name) {
-		string[] strNFATable = ["digraph{\n"];
-		StringBuffer!(char) strNFALine = new StringBuffer!(char)(16);
-		foreach(it;graph) {
-			if(it.acceptingState) {
-				strNFALine.pushBack('\t').pushBack(it.toString());
-				strNFALine.pushBack("\t[shape=doublecircle];\n");
-				append(strNFATable, strNFALine.getString());
-				strNFALine.clear();
-			}
-		}
-		append(strNFATable, "\n");
-		strNFALine.clear();
-
-		// Record transitions
-		State[] state;
-		foreach(pState;graph) {
-			MultiMap!(State, char) trans = new MultiMap!(State, char)();
-			foreach(jt;this.inputSet) {
-				state = pState.getTransition(jt);
-				foreach(kt;state) {
-					//string stateId1 = conv!(int,string)(pState.stateId);
-					//string stateId2 = conv!(int,string)(kt.stateId);
-					string stateId1 = (pState.toString());
-					string stateId2 = (kt.toString());
-					strNFALine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
-					strNFALine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
-					append(strNFATable, strNFALine.getString());
-					strNFALine.clear();
-				}
-			}	
-		}
-
-		append(strNFATable, "}");
-		std.stream.File file = new std.stream.File(name ~ ".dot", FileMode.OutNew);
-		foreach(it;strNFATable) {
-			file.writeString(it);
-		}
-		file.close();
-		system("dot -T jpg " ~ name ~ ".dot > " ~ name ~ ".jpg");
 	}
 }
