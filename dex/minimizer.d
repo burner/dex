@@ -8,6 +8,7 @@ import hurt.container.vector;
 import hurt.container.list;
 import hurt.container.set;
 import hurt.container.map;
+import hurt.container.isr;
 import hurt.container.multimap;
 
 import std.stdio;
