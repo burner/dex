@@ -3,6 +3,7 @@ module dex.strutil;
 import dex.parseerror;
 
 import hurt.string.stringbuffer;
+import hurt.conv.conv;
 import hurt.util.array;
 
 import std.stdio;
@@ -271,4 +272,35 @@ public pure bool presedence(T)(T opLeft, T opRight)
 		return false;
 	
 	return true;
+}
+
+public pure int userCodeParanthesis(in char[] str, int start = 0) {
+	int ret = -1;
+	if(str.length < 2)
+		return ret;
+	else if(start >= str.length)
+		return ret;
+	else if(start == str.length-1)
+		return ret;
+
+	ret = 0;
+	foreach(idx, it; str[0..$-1]) {
+		if(it == '%' && str[idx+1] == '%') {
+			return ret;	
+		}
+		ret++;	
+		assert(ret-1 == idx, conv!(int,string)(ret-1) ~ " != " ~ 
+			conv!(size_t,string)(idx));
+	}
+	return -1;
+}
+
+unittest {
+	assert(-1 != userCodeParanthesis("   %%"));
+	assert(-1 == userCodeParanthesis("   %"));
+	assert(-1 == userCodeParanthesis("%  % %"));
+	assert(-1 != userCodeParanthesis("%  %%"));
+	assert(-1 != userCodeParanthesis("%%  %%"));
+	assert(-1 != userCodeParanthesis("%%  %%", 3));
+	assert(-1 == userCodeParanthesis("%%  %%", 5));
 }
