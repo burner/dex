@@ -7,7 +7,7 @@ import hurt.container.set;
 import hurt.string.stringbuffer;
 import hurt.util.array;
 
-import std.stream;
+import hurt.io.stream;
 import std.process;
 
 /* A function that writes a given graph to a file of name fileName.
@@ -58,7 +58,7 @@ void writeGraph(Iterable!(State) states, Set!(char) inputSet,
 	}
 
 	append(strTable, "}");
-	std.stream.File file = new std.stream.File(fileName ~ ".dot", 
+	hurt.io.stream.File file = new hurt.io.stream.File(fileName ~ ".dot", 
 		FileMode.OutNew);
 	foreach(it;strTable) {
 		file.writeString(it);

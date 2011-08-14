@@ -9,7 +9,7 @@ FILES = dex/main.d dex/fsm.d dex/strutil.d  \
 dex/regex.d dex/state.d dex/parseerror.d dex/minimizer.d \
 
 OBJS=dex.main.o dex.strutil.o dex.regex.o dex.state.o dex.parseerror.o \
-dex.minimizer.o dex.emit.o
+dex.minimizer.o dex.emit.o dex.input.o
 
 count:
 	wc -l `find dex -name \*.d`
@@ -26,6 +26,9 @@ fine: $(OBJS)
 
 dex.main.o: dex/main.d dex.regex.o
 	dmd $(CFLAGS) -c dex/main.d -ofdex.main.o
+
+dex.input.o: dex/input.d dex.regex.o
+	dmd $(CFLAGS) -c dex/input.d -ofdex.input.o
 
 dex.emit.o: dex/emit.d dex.regex.o
 	dmd $(CFLAGS) -c dex/emit.d -ofdex.emit.o

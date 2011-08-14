@@ -1,27 +1,20 @@
 module dex.main;
 
-import dex.regex;
+import dex.input;
 
-import std.stdio;
+import hurt.io.stdio;
 
-void main() {
-	writeln("all unittest passed");
-	RegEx r1 = new RegEx();
-	writeln("regex object created");
-	assert(r1.createNFA("if", 1));
-	assert(r1.createNFA("function", 2));
-	assert(r1.createNFA("delegate", 3));
-	assert(r1.createNFA("[:digit:][:digit:]*", 4));
-	//assert(r1.createNFA("[:alpha:][:alpha:]*", 5));
-	writeln("nfa's created");
-	r1.writeNFAGraph();
-	writeln("nfa's graph created");
-	r1.convertNfaToDfa();
-	r1.findErrorState();	
-	writeln("nfa to dfa convertions done");
-	r1.writeDFAGraph();
-	writeln("dfa's graph created");
-	r1.minimize();
-	r1.writeMinDFAGraph();
-	return;
+void main(string[] args) {
+	Input input;
+	if(args.length == 1) {
+		println("no input file passed");
+	} else if(args.length == 2) {
+		try {
+			input = new Input(args[1]);	
+		} catch(Exception e) {
+			println(e.msg);
+			return;
+		}
+	}
+	delete input;
 }

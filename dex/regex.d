@@ -308,10 +308,6 @@ class RegEx {
 	}
 
 	void push(char chInput) {
-		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
-			"push");
-		debug st.putArgs("char", "chInput", chInput);
-			
 		State s0 = new State(++nextStateId);
 		State s1 = new State(++nextStateId);
 		s0.addTransition(chInput, s1);
@@ -339,9 +335,6 @@ class RegEx {
 	}
 
 	bool pop(ref FSA_Table table) {
-		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
-			"pop");
-
 		debug(RegExDebug) writeln(__FILE__,__LINE__, " this.operandStack.size ",
 			this.operandStack.getSize());
 			
@@ -355,9 +348,6 @@ class RegEx {
 	}
 
 	bool eval() {
-		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
-			"eval");
-
 		// First pop the operator from the stack
 		debug(RegExDebug) writeln(__FILE__,__LINE__, 
 			" eval this.operatorStack.size ", this.operatorStack.getSize());
@@ -390,8 +380,6 @@ class RegEx {
 	}
 
 	bool Concat() {
-		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
-			"Concat");
 		// Pop 2 elements
 		FSA_Table A, B;
 		if(!this.pop(B) || !this.pop(A))
@@ -458,8 +446,6 @@ class RegEx {
 	}
 
 	bool Union() {
-		debug scope StackTrace st = new StackTrace(__FILE__, __LINE__,
-			"Union");
 		// Pop 2 elements
 		FSA_Table A, B;
 		if(!this.pop(B) || !this.pop(A))
