@@ -1,0 +1,14 @@
+%%
+	foobar
+	foobar2
+	foobar3
+%%
+
+%% foobar4
+	foobar5
+	foobar6 %%
+
+%% foobar7 %%
+
+"foo[as]*" { args args2 }
+"bar[as]*" {{{{{ args3 args4 }}}}}

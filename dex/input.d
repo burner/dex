@@ -1,6 +1,7 @@
 module dex.input;
 
 import hurt.container.vector;
+import hurt.conv.conv;
 import hurt.io.stream;
 import hurt.io.file;
 import hurt.io.stdio;
@@ -13,8 +14,16 @@ class RegexCode {
 	private string regex;
 	private string code;
 
-	this(string regex) {
-		this.regex = regex;
+	this(char[] regex) {
+		this.regex ~= regex.idup;
+	}
+
+	public void setCode(char[] code) {
+		this.code ~= code.idup;
+	}
+
+	public override string toString() {
+		return regex ~ " : " ~ code;
 	}
 }
 
@@ -51,6 +60,9 @@ class Input {
 
 		this.ins = new File(filename);
 		this.parseFile();
+		foreach(it;this.regexCode) {
+			println(it.toString());
+		}
 	}
 
 	~this() {
@@ -87,13 +99,17 @@ class Input {
 				}
 				int rcLow = findTick(it);
 				if(rcLow != -1) {
-					int rcUp = findTick(it);
+					int rcUp = findTick(it, rcLow+1);
 					if(rcUp == -1) {
 						throw new Exception("line " ~ conv!(size_t,string)(idx)
 							~ " missing tick after regex expression");
 					} else {
-						this.regexCode(new RegexCode(it[rcLow+1..rcUp]));
-						int nxtLft = userCodeBrace('{')(it,rcUp+1);
+						assert(rcLow+1 < rcUp, conv!(int,string)(rcLow+1) ~
+							" " ~ conv!(int,string)(rcUp));
+						this.regexCode.append(new RegexCode(it[rcLow+1..rcUp]));
+						assert(this.regexCode.getSize() >= 1, 
+							conv!(long,string)(this.regexCode.getSize()));
+						int nxtLft = userCodeBrace!('{')(it,rcUp+1);
 						int frstLft = nxtLft;
 						if(nxtLft == -1) {
 							throw new Exception("line " ~ 
@@ -102,18 +118,34 @@ class Input {
 						} else {
 							braceStack++;
 							while(-1 != (nxtLft = 
-									userCodeBrace('{')(it,nxtLft+1)) ) {
+									userCodeBrace!('{')(it,nxtLft+1)) ) {
 								braceStack++;
 							}
-							int nxtRght = userCodeBrace('}')(it,rcUp+1);
+							int nxtRght = userCodeBrace!('}')(it,rcUp+1);
+							int lstRght = -1;
 							bool done = false;
-							while(-1 != (nxtRght = 
-									userCodeBrace('}')(it,nxtLft+1)) ) {
+							while(-1 != nxtRght) {
 								braceStack--;
-								if(braceStack == 0) {
-									
+								//println(__FILE__,__LINE__, braceStack);
+								if(braceStack <= 0 && !done) {
+									lstRght = nxtRght;
+									done = true;	
+									//println(cast(string)it[frstLft+1..lstRght]);
+									this.regexCode.peekBack().setCode(
+										it[frstLft+1..lstRght]
+										);
+									ps = ParseState.None;
+								} else if(braceStack <= 0 && done) {
+									throw new Exception("line " ~ 
+										conv!(size_t,string)(idx) ~ 
+										" missing tick after regex expression");
 								}
+								nxtRght = userCodeBrace!('}')(it,nxtRght+1);
 							}
+							if(!done)
+								tmp.pushBack(it[frstLft+1..lstRght]);
+								tmp.pushBack('\n');
+								ps = ParseState.RegexCode;
 						}
 					}
 				}
@@ -133,6 +165,31 @@ class Input {
 				break;
 			}
 			case ParseState.RegexCode: {
+				int nxtLft = -1;
+				while(-1 != (nxtLft = userCodeBrace!('{')(it,nxtLft+1)) ) {
+					braceStack++;
+				}
+				int nxtRght = userCodeBrace!('}')(it,0);
+				int lstRght = -1;
+				bool done = false;
+				while(-1 != nxtRght) {
+					braceStack--;
+					//println(__FILE__,__LINE__, braceStack);
+					if(braceStack <= 0 && !done) {
+						lstRght = nxtRght;
+						done = true;	
+						//println(cast(string)it[frstLft+1..lstRght]);
+						this.regexCode.peekBack().setCode(
+							it[frstLft+1..lstRght]
+							);
+						ps = ParseState.None;
+					} else if(braceStack <= 0 && done) {
+						throw new Exception("line " ~ 
+							conv!(size_t,string)(idx) ~ 
+							" missing tick after regex expression");
+					}
+					nxtRght = userCodeBrace!('}')(it,nxtRght+1);
+				}
 				break;
 			}
 			}
