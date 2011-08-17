@@ -13,6 +13,9 @@
 "foo[as]*" {: args args2 :}
 "bar[as]*" {:{{{{ args3 args4 }}}}:}
 "args[as]*" {:{{{{ 
-args5 args6 
-}}}}
+		args5 args6 
+	}}}}
+	lfadflkasjdf
+	asdflskjadfl asdf { } asfalskdjf : 
+	asdf 
 :}
