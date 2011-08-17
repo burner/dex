@@ -297,28 +297,56 @@ public pure int userCodeParanthesis(in char[] str, int start = 0) {
 	return -1;
 }
 
-public pure int userCodeBrace(char brace)(in char[] str, int start = 0) 
-		if(brace == '{' || brace == '}') {
-	int ret = -1;
+public int userCodeBrace(bool dir)(in char[] str, int start = 0) {
 	if(start < 0) {
-		return ret;
+		return -1;
 	} else if(str.length < 1)
-		return ret;
+		return -1;
 	else if(start >= str.length)
-		return ret;
+		return -1;
 	else if(start == str.length)
-		return ret;
+		return -1;
 
-	ret = 0;
-	foreach(idx, it; str[start..$]) {
-		if(it == brace) {
-			return ret+start;	
+	static if(!dir) {
+		foreach(idx, it; str[start..$-1]) {
+			if(it == '{' && str[idx+start+1] == ':') {
+				return conv!(size_t,int)(idx)+start;	
+			} else if(!(it == ' ' || it == '\t')) {
+				return -1;
+			}
 		}
-		ret++;	
-		assert(ret-1 == idx, conv!(int,string)(ret-1) ~ " != " ~ 
-			conv!(size_t,string)(idx));
+	} else {
+		foreach_reverse(idx, it; str[start+1..$]) {
+			if(it == '}' && str[start+idx] == ':') {
+				return conv!(size_t,int)(idx)+start;	
+			} else if(!(it == ' ' || it == '\t')) {
+				return -1;
+			}
+		}
 	}
 	return -1;
+}
+
+unittest {
+	assert(-1 != userCodeBrace!(false)("   {:"));
+	assert(3 == userCodeBrace!(false)("   {:"));
+	assert(3 == userCodeBrace!(false)("   {:",2));
+	assert(-1 == userCodeBrace!(false)("    "));
+	assert(-1 == userCodeBrace!(false)("%    %"));
+	assert(-1 != userCodeBrace!(false)("{:  %%"));
+	assert(0 == userCodeBrace!(false)("{:  %%"));
+	assert(-1 == userCodeBrace!(true)("  }:%%"));
+	assert(-1 == userCodeBrace!(true)("  %%"));
+	assert(-1 != userCodeBrace!(true)("%%  %:}"));
+	assert(-1 != userCodeBrace!(true)("%%  %:}", 3));
+	assert(-1 != userCodeBrace!(true)("%%  %:} "));
+	assert(-1 != userCodeBrace!(true)("%%  %:}  ", 3));
+	assert(-1 == userCodeBrace!(true)("%%  %:} t"));
+	assert(-1 == userCodeBrace!(true)("%%  %:} ]", 3));
+	assert(5 == userCodeBrace!(true)("%%  %:}", 3), 
+		conv!(int,string)(userCodeBrace!(true)("%%  %:}", 3)));
+	assert(-1 == userCodeBrace!(true)("%%  :}%", 6));
+	assert(-1 == userCodeBrace!(true)("%%:}  %", 3));
 }
 
 public pure int findTick(in char[] str, int start = 0) {
@@ -366,21 +394,6 @@ unittest {
 		conv!(int,string)(findTick([' ', ' ',' ', ' ','"'],0)));
 	assert(0 == findTick(['"', ' ',' ', ' ','"'],0), 
 		conv!(int,string)(findTick([' ', ' ',' ', ' ','"'],0)));
-}
-
-unittest {
-	assert(-1 != userCodeBrace!('{')("   {"));
-	assert(3 == userCodeBrace!('{')("   {"));
-	assert(-1 == userCodeBrace!('{')("    "));
-	assert(-1 == userCodeBrace!('{')("%    %"));
-	assert(-1 != userCodeBrace!('{')("{  %%"));
-	assert(0 == userCodeBrace!('{')("{  %%"));
-	assert(-1 != userCodeBrace!('}')("%}  %%"));
-	assert(1 == userCodeBrace!('}')("%}  %%"));
-	assert(-1 != userCodeBrace!('}')("%%  %}", 3));
-	assert(5 == userCodeBrace!('}')("%%  %}", 3));
-	assert(-1 == userCodeBrace!('}')("%%  }%", 6));
-	assert(-1 == userCodeBrace!('}')("%%}  %", 3));
 }
 
 unittest {

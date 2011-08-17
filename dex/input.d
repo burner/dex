@@ -109,43 +109,22 @@ class Input {
 						this.regexCode.append(new RegexCode(it[rcLow+1..rcUp]));
 						assert(this.regexCode.getSize() >= 1, 
 							conv!(long,string)(this.regexCode.getSize()));
-						int nxtLft = userCodeBrace!('{')(it,rcUp+1);
-						int frstLft = nxtLft;
-						if(nxtLft == -1) {
+
+						int rucLow = userCodeBrace!(false)(it,rcUp+1);
+						if(rucLow == -1)
 							throw new Exception("line " ~ 
-								conv!(size_t,string)(idx) ~ " missing tick 
-								after regex expression");
+								conv!(size_t,string)(idx) ~ 
+								" should contain {: " ~
+								"aka regex code start symbol");
+
+						int rucUp = userCodeBrace!(true)(it,rucLow+2);
+						if(rucUp == -1) {
+							tmp.pushBack(it[rucLow+2..$]);
+							tmp.pushBack('\n');
+							ps = ParseState.RegexCode;
 						} else {
-							braceStack++;
-							while(-1 != (nxtLft = 
-									userCodeBrace!('{')(it,nxtLft+1)) ) {
-								braceStack++;
-							}
-							int nxtRght = userCodeBrace!('}')(it,rcUp+1);
-							int lstRght = -1;
-							bool done = false;
-							while(-1 != nxtRght) {
-								braceStack--;
-								//println(__FILE__,__LINE__, braceStack);
-								if(braceStack <= 0 && !done) {
-									lstRght = nxtRght;
-									done = true;	
-									//println(cast(string)it[frstLft+1..lstRght]);
-									this.regexCode.peekBack().setCode(
-										it[frstLft+1..lstRght]
-										);
-									ps = ParseState.None;
-								} else if(braceStack <= 0 && done) {
-									throw new Exception("line " ~ 
-										conv!(size_t,string)(idx) ~ 
-										" missing tick after regex expression");
-								}
-								nxtRght = userCodeBrace!('}')(it,nxtRght+1);
-							}
-							if(!done)
-								tmp.pushBack(it[frstLft+1..lstRght]);
-								tmp.pushBack('\n');
-								ps = ParseState.RegexCode;
+							this.regexCode.peekBack().setCode(
+								it[rucLow+2..rucUp]);
 						}
 					}
 				}
@@ -165,32 +144,6 @@ class Input {
 				break;
 			}
 			case ParseState.RegexCode: {
-				int nxtLft = -1;
-				while(-1 != (nxtLft = userCodeBrace!('{')(it,nxtLft+1)) ) {
-					braceStack++;
-				}
-				int nxtRght = userCodeBrace!('}')(it,0);
-				int lstRght = -1;
-				bool done = false;
-				while(-1 != nxtRght) {
-					braceStack--;
-					//println(__FILE__,__LINE__, braceStack);
-					if(braceStack <= 0 && !done) {
-						lstRght = nxtRght;
-						done = true;	
-						//println(cast(string)it[frstLft+1..lstRght]);
-						this.regexCode.peekBack().setCode(
-							it[frstLft+1..lstRght]
-							);
-						ps = ParseState.None;
-					} else if(braceStack <= 0 && done) {
-						throw new Exception("line " ~ 
-							conv!(size_t,string)(idx) ~ 
-							" missing tick after regex expression");
-					}
-					nxtRght = userCodeBrace!('}')(it,nxtRght+1);
-				}
-				break;
 			}
 			}
 		}
