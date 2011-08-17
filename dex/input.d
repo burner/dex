@@ -18,6 +18,10 @@ class RegexCode {
 		this.regex ~= regex.idup;
 	}
 
+	public void setCode(string code) {
+		this.code ~= code;
+	}
+
 	public void setCode(char[] code) {
 		this.code ~= code.idup;
 	}
@@ -144,6 +148,18 @@ class Input {
 				break;
 			}
 			case ParseState.RegexCode: {
+				int rucUp = userCodeBrace!(true)(it);
+				if(rucUp == -1) {
+					tmp.pushBack(it);
+					tmp.pushBack('\n');
+				} else {
+					tmp.pushBack(it[0..rucUp]);
+					tmp.pushBack('\n');
+					this.regexCode.peekBack().setCode(tmp.getString());
+					tmp.clear();
+					ps = ParseState.None;
+				}
+				break;
 			}
 			}
 		}
