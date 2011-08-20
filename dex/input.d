@@ -13,9 +13,11 @@ import dex.strutil;
 class RegexCode {
 	private string regex;
 	private string code;
+	private size_t priority;
 
-	this(char[] regex) {
+	this(char[] regex, size_t priority) {
 		this.regex ~= regex.idup;
+		this.priority = priority;
 	}
 
 	public void setCode(string code) {
@@ -27,7 +29,20 @@ class RegexCode {
 	}
 
 	public override string toString() {
-		return regex ~ " : " ~ code;
+		return regex ~ " " ~ conv!(size_t,string)(this.priority) 
+			~ " : " ~ code;
+	}
+
+	public string getRegEx() {
+		return this.regex;
+	}
+
+	public string getCode() {
+		return this.code;
+	}
+
+	public size_t getPriority() const {
+		return this.priority;
 	}
 }
 
@@ -64,8 +79,14 @@ class Input {
 
 		this.ins = new File(filename);
 		this.parseFile();
+		/*
 		foreach(it;this.regexCode) {
 			println(it.toString());
+		}
+		println(this.userCode);
+		*/
+		if(this.regexCode.getSize() == 0) {
+			throw new Exception(filename ~ " doesn't contain any regex code");
 		}
 	}
 
@@ -110,7 +131,10 @@ class Input {
 					} else {
 						assert(rcLow+1 < rcUp, conv!(int,string)(rcLow+1) ~
 							" " ~ conv!(int,string)(rcUp));
-						this.regexCode.append(new RegexCode(it[rcLow+1..rcUp]));
+						this.regexCode.append(
+							// the line number stored in the idx variable
+							// defines the priority of the regex expression
+							new RegexCode(it[rcLow+1..rcUp], idx));
 						assert(this.regexCode.getSize() >= 1, 
 							conv!(long,string)(this.regexCode.getSize()));
 
@@ -163,6 +187,13 @@ class Input {
 			}
 			}
 		}
-		println(this.userCode);
+	}
+
+	public Vector!(RegexCode) getRegExCode() {
+		return this.regexCode;
+	}
+
+	public string getUserCode() {
+		return this.userCode;
 	}
 }
