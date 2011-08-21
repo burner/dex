@@ -329,7 +329,6 @@ class RegEx {
 			}
 			writeln("\n");
 		}
-			
 
 		this.inputSet.insert(chInput);
 	}
@@ -479,19 +478,20 @@ class RegEx {
 		
 	void minimize() {
 		writeln("start to minimize with ", this.dfaTable.getSize(), " states");
-		this.minDfa = dex.minimizer.minimize!(char)(this.dfaTable, this.inputSet);
+		this.minDfa = dex.minimizer.minimize!(char)(this.dfaTable, 
+			this.inputSet);
 		writeln("minimized to ", this.minDfa.getSize(), " states");
 	}
 
-	void writeMinDFAGraph() {
-		dex.emit.writeGraph(this.minDfa,this.inputSet, "minDfaGraph");
+	void writeMinDFAGraph(string filename) {
+		dex.emit.writeGraph(this.minDfa,this.inputSet, filename);
 	}
 
-	void writeDFAGraph() {
-		dex.emit.writeGraph(this.dfaTable,this.inputSet, "dfaGraph");
+	void writeDFAGraph(string filename) {
+		dex.emit.writeGraph(this.dfaTable,this.inputSet, filename);
 	}
 
-	void writeNFAGraph() {
-		dex.emit.writeGraph(this.globalNfaTable,this.inputSet, "nfaGraph");
+	void writeNFAGraph(string filename) {
+		dex.emit.writeGraph(this.globalNfaTable,this.inputSet, filename);
 	}
 }
