@@ -1,7 +1,7 @@
 interface Lexer {
 	public void run();
-	public dchar eolChar();
-	public dchar eofChar();
+	public dchar eolChar() const;
+	public dchar eofChar() const;
 }
 
 private import hurt.io.stream;
@@ -9,6 +9,7 @@ private import hurt.io.file;
 private import hurt.conv.conv;
 private import hurt.string.utf;
 import hurt.io.stdio;
+import std.stdio;
 
 class DexLexer : Lexer {
 	private string filename;
@@ -50,6 +51,11 @@ class DexLexer : Lexer {
 		return this.file.eof();	
 	}
 
+	public bool isEmpty() {
+		return this.isEOF() && (this.currentLine is null || 
+			this.charIdx >= this.currentLine.length);
+	}
+
 	private void getNextLine() {
 		char[] tmp = this.file.readLine();
 		if(tmp !is null) {
@@ -62,7 +68,7 @@ class DexLexer : Lexer {
 	}
 
 	public dchar getNextChar() {
-		if(this.isEOF()) {
+		if(this.isEmpty()) {
 			return eofChar();
 		} else if(this.charIdx >= this.currentLine.length) {
 			this.getNextLine();
@@ -77,20 +83,25 @@ class DexLexer : Lexer {
 	}
 
 	public void run() {
-		println(__LINE__, this.isEOF());
-		while(!this.isEOF())
-			print(this.getNextChar());
+		println(__LINE__, this.isEOF(), this.isEmpty());
+		/*dchar next = ' ';
+		while(dchar.init != (next = getNextChar()))
+			print(next);
+		*/
+		while(!isEmpty())
+			print(getNextChar());
 	}
 
-	public dchar eolChar() {
+	public dchar eolChar() const {
 		return '\n';
 	}
 
-	public dchar eofChar() {
+	public dchar eofChar() const {
 		return dchar.init;
 	}
 }
 
+// some nice utf8 cömments
 void main() {
 	DexLexer dl = new DexLexer("outputtemplate.d");
 	dl.run();
