@@ -13,12 +13,11 @@ import hurt.container.dlst;
 import hurt.container.stack;
 import hurt.container.vector;
 import hurt.container.isr;
+import hurt.io.stdio;
 import hurt.util.stacktrace;
 import hurt.util.array;
 import hurt.string.stringbuffer;
 
-import std.stdio;
-import std.stream;
 import std.process;
 
 public alias DLinkedList!(State) FSA_Table;
@@ -29,10 +28,10 @@ class RegEx {
 	FSA_Table nfaTable;
 	FSA_Table dfaTable;
 	Stack!(FSA_Table) operandStack;
-	Stack!(char) operatorStack;
+	Stack!(dchar) operatorStack;
 
 	int nextStateId;
-	Set!(char) inputSet;
+	Set!(dchar) inputSet;
 	State rootState;
 	int patternIndex;
 	string strText;
@@ -42,8 +41,8 @@ class RegEx {
 	this() {
 		this.nfaTable = new FSA_Table();
 		this.operandStack = new Stack!(FSA_Table)();
-		this.operatorStack = new Stack!(char)();
-		this.inputSet = new Set!(char);
+		this.operatorStack = new Stack!(dchar)();
+		this.inputSet = new Set!(dchar);
 		this.rootState = new State(nextStateId);
 		this.globalNfaTable = new FSA_Table();
 		this.globalNfaTable.pushBack(this.rootState);
@@ -52,47 +51,47 @@ class RegEx {
 	void cleanUp() {
 		this.nfaTable = new FSA_Table();
 		this.operandStack = new Stack!(FSA_Table)();
-		this.operatorStack = new Stack!(char)();
+		this.operatorStack = new Stack!(dchar)();
 	}
 
 	bool createNFA(string str, int action) {
 		this.cleanUp();
 		str = concatExpand(str);
-		debug(RegExDebug) writeln(__FILE__,__LINE__, " ", str, " :length ",
+		debug(RegExDebug) println(__FILE__,__LINE__, " ", str, " :length ",
 			str.length);
 			
 		foreach(idx,it;str) {
-			debug(RegExDebug) writeln(__FILE__,__LINE__, " ", it, " ", idx);
+			debug(RegExDebug) println(__FILE__,__LINE__, " ", it, " ", idx);
 			if(isInput!(char)(it)) {
-				debug(RegExDebug) writeln(__FILE__,__LINE__, " isInput");
+				debug(RegExDebug) println(__FILE__,__LINE__, " isInput");
 				this.push(it);
 			} else if(operatorStack.empty()) {
-				debug(RegExDebug) writeln(__FILE__,__LINE__, 
+				debug(RegExDebug) println(__FILE__,__LINE__, 
 					" operatorStack.empty");
 				this.operatorStack.push(it);
-			} else if(isLeftParanthesis!(char)(it)) {
-				debug(RegExDebug) writeln(__FILE__,__LINE__, 
+			} else if(isLeftParanthesis!(dchar)(it)) {
+				debug(RegExDebug) println(__FILE__,__LINE__, 
 					" isLeftParanthesis");
 				this.operatorStack.push(it);
-			} else if(isRightParanthesis!(char)(it)) {
-				debug(RegExDebug) writeln(__FILE__,__LINE__, 
+			} else if(isRightParanthesis!(dchar)(it)) {
+				debug(RegExDebug) println(__FILE__,__LINE__, 
 					" isRightParanthesis");
-				while(!isLeftParanthesis!(char)(this.operatorStack.top())) {
+				while(!isLeftParanthesis!(dchar)(this.operatorStack.top())) {
 					if(!this.eval()) {
 						return false;
 					}
 				}
 				this.operatorStack.pop();
 			} else {
-				debug(RegExDebug) writeln(__FILE__,__LINE__, " else");
-				while(!this.operatorStack.empty() && presedence!(char)(it, 
+				debug(RegExDebug) println(__FILE__,__LINE__, " else");
+				while(!this.operatorStack.empty() && presedence!(dchar)(it, 
 						this.operatorStack.top())) {
-					debug(RegExDebug) writeln(__FILE__,__LINE__, " !(if.eval)");
+					debug(RegExDebug) println(__FILE__,__LINE__, " !(if.eval)");
 					if(!this.eval()) {
 						return false;
 					}
 				}
-				debug(RegExDebug) writeln(__FILE__,__LINE__, 
+				debug(RegExDebug) println(__FILE__,__LINE__, 
 					" operatorStack.push ", it);
 				this.operatorStack.push(it);
 			}
@@ -159,7 +158,7 @@ class RegEx {
 		return res;	
 	}
 
-	Set!(State) move(char chInput, Set!(State) t) const {
+	Set!(State) move(dchar chInput, Set!(State) t) const {
 		Set!(State) res = new Set!(State)(ISRType.HashTable);
 	
 		/* This is very simple since I designed the NFA table
@@ -210,7 +209,7 @@ class RegEx {
 		
 		int count = 0;	
 		while(!unmarkedStates.empty()) {
-			//writeln(count, " ",unmarkedStates.getSize()); count++;
+			//println(count, " ",unmarkedStates.getSize()); count++;
 			// process an unprocessed state
 			State processingDFAState = unmarkedStates.popBack();
 
@@ -307,40 +306,40 @@ class RegEx {
 		}
 	}
 
-	void push(char chInput) {
+	void push(dchar chInput) {
 		State s0 = new State(++nextStateId);
 		State s1 = new State(++nextStateId);
 		s0.addTransition(chInput, s1);
-		debug(RegExDebug) writeln(__FILE__,__LINE__, " after andTransition");
+		debug(RegExDebug) println(__FILE__,__LINE__, " after andTransition");
 
 		FSA_Table table = new FSA_Table();
 		table.pushBack(s0);
 		table.pushBack(s1);
-		debug(RegExDebug) writeln(__FILE__,__LINE__, " after table.push");
+		debug(RegExDebug) println(__FILE__,__LINE__, " after table.push");
 
 		this.operandStack.push(table);
 		
-		debug(RegExDebug) { writeln(__FILE__,__LINE__, " push operandStack");
+		debug(RegExDebug) { println(__FILE__,__LINE__, " push operandStack");
 			foreach(it;this.operandStack.values()) {
 				foreach(jt;it) {
 					write(jt.stateId, " ");
 				}
-				writeln();
+				println();
 			}
-			writeln("\n");
+			println("\n");
 		}
 
 		this.inputSet.insert(chInput);
 	}
 
 	bool pop(ref FSA_Table table) {
-		debug(RegExDebug) writeln(__FILE__,__LINE__, " this.operandStack.size ",
+		debug(RegExDebug) println(__FILE__,__LINE__, " this.operandStack.size ",
 			this.operandStack.getSize());
 			
 		if(this.operandStack.getSize() > 0) {
 			table = operandStack.top();
 			operandStack.pop();
-			debug(RegExDebug) writeln(__FILE__,__LINE__, " nfaTable assigned");
+			debug(RegExDebug) println(__FILE__,__LINE__, " nfaTable assigned");
 			return true;
 		}
 		return false;
@@ -348,27 +347,27 @@ class RegEx {
 
 	bool eval() {
 		// First pop the operator from the stack
-		debug(RegExDebug) writeln(__FILE__,__LINE__, 
+		debug(RegExDebug) println(__FILE__,__LINE__, 
 			" eval this.operatorStack.size ", this.operatorStack.getSize());
 		if(this.operatorStack.getSize()>0) {
-			char chOperator = this.operatorStack.top();
+			dchar chOperator = this.operatorStack.top();
 			this.operatorStack.pop();
-			debug(RegExDebug) writeln(__FILE__,__LINE__, " chOperator ", 
+			debug(RegExDebug) println(__FILE__,__LINE__, " chOperator ", 
 				chOperator);
 	
 			// Check which operator it is
 			switch(chOperator) {
 				//case '*':
 				case ST:
-					debug(RegExDebug) writeln(__FILE__,__LINE__, " star");
+					debug(RegExDebug) println(__FILE__,__LINE__, " star");
 					return this.Star();
 				//case '|':
 				case UN:
-					debug(RegExDebug) writeln(__FILE__,__LINE__, " union");
+					debug(RegExDebug) println(__FILE__,__LINE__, " union");
 					return this.Union();
 				//case '\a':
 				case CC:
-					debug(RegExDebug) writeln(__FILE__,__LINE__, " concat");
+					debug(RegExDebug) println(__FILE__,__LINE__, " concat");
 					return this.Concat();
 				default:
 					assert(0, "invalid case");
@@ -384,7 +383,7 @@ class RegEx {
 		if(!this.pop(B) || !this.pop(A))
 			return false;
 
-		debug(RegExDebug) writeln(__FILE__,__LINE__, " after pop");
+		debug(RegExDebug) println(__FILE__,__LINE__, " after pop");
 	
 		// Now evaluate AB
 		// Basically take the last state from A
@@ -396,7 +395,7 @@ class RegEx {
 		assert(A !is null, "A shouldn't be null");
 		assert(B !is null, "B shouldn't be null");
 		A.get(A.getSize()).addTransition(0, B.get(0));
-		debug(RegExDebug) writeln(__FILE__,__LINE__, " after A.get");
+		debug(RegExDebug) println(__FILE__,__LINE__, " after A.get");
 		foreach(it; B) {
 			A.pushBack(it);
 		}
@@ -477,10 +476,10 @@ class RegEx {
 	}
 		
 	void minimize() {
-		writeln("start to minimize with ", this.dfaTable.getSize(), " states");
-		this.minDfa = dex.minimizer.minimize!(char)(this.dfaTable, 
+		println("start to minimize with ", this.dfaTable.getSize(), " states");
+		this.minDfa = dex.minimizer.minimize!(dchar)(this.dfaTable, 
 			this.inputSet);
-		writeln("minimized to ", this.minDfa.getSize(), " states");
+		println("minimized to ", this.minDfa.getSize(), " states");
 	}
 
 	void writeMinDFAGraph(string filename) {

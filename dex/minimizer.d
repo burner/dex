@@ -44,7 +44,7 @@ private Vector!(Vector!(State)) makeInitPartitions(
 }
 
 private Vector!(State) finalizeGroups(Vector!(Vector!(State)) old,
-		Set!(char) inputSet, Map!(State,long) states) {
+		Set!(dchar) inputSet, Map!(State,long) states) {
 	Vector!(State) ret = new Vector!(State)();
 	//writeln(__LINE__," ",old.getSize());
 	// make the states gone fill them later

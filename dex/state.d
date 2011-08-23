@@ -9,6 +9,7 @@ import hurt.container.stack;
 import hurt.container.vector;
 import hurt.util.array;
 import hurt.container.rbtree;
+import hurt.string.utf;
 
 import std.stdio;
 
@@ -16,13 +17,13 @@ class State {
 	int stateId;
 	bool acceptingState;
 	Set!(int) aStates;
-	MultiMap!(char,State) transition;
+	MultiMap!(dchar,State) transition;
 	Set!(State) nfaStates;
 
 	this(int nId = -1) {
 		this.stateId = nId;
 		this.acceptingState = false;
-		this.transition = new MultiMap!(char,State)();	
+		this.transition = new MultiMap!(dchar,State)();	
 		this.nfaStates = new Set!(State)();
 		this.aStates = new Set!(int)();
 	}
@@ -99,11 +100,11 @@ class State {
 		return this.stateId = id;
 	}
 
-	MultiMap!(char,State) getTransitions() {
+	MultiMap!(dchar,State) getTransitions() {
 		return this.transition;
 	}	
 
-	void addTransition(char chInput, State state) {
+	void addTransition(dchar chInput, State state) {
 		assert(state !is null);
 		debug(StateDebug) writeln(__FILE__,__LINE__, 
 			" addTransition ", chInput , " ", state.stateId);
@@ -124,7 +125,7 @@ class State {
 		}
 	}
 	
-	State[] getTransition(char chInput) {
+	State[] getTransition(dchar chInput) {
 		auto it = this.transition.range(chInput);	
 		State[] ret = new State[10];
 		size_t idx = 0;
@@ -137,34 +138,34 @@ class State {
 		return ret[0..idx];
 	}
 
-	State getSingleTransition(char chInput) {
+	State getSingleTransition(dchar chInput) {
 		return *this.transition.range(chInput);
 	}
 
 	public override string toString() {
-		immutable deli = '_';
-		immutable startStop = '\"';
-		char[] tmp;
+		immutable dchar deli = '_';
+		immutable dchar startStop = '\"';
+		dchar[] tmp;
 		size_t idx = 0;
 		//assert(same(aStatesOld, aStates));	
 		if(!this.aStates.isEmpty()) {
-			tmp = new char[2+this.aStates.getSize()*3];
+			tmp = new dchar[2+this.aStates.getSize()*3];
 		} else {
 			return "\"" ~ conv!(int,string)(this.stateId) ~ "\"";
 		}
 		appendWithIdx(tmp, idx++, startStop);
 		
-		string ut = conv!(int,string)(this.stateId);
+		dstring ut = conv!(int,dstring)(this.stateId);
 		foreach(it; ut)
-			tmp = appendWithIdx!(char)(tmp, idx++, it);
+			tmp = appendWithIdx!(dchar)(tmp, idx++, it);
 
 		foreach(it; this.aStates) {
-			tmp = appendWithIdx!(char)(tmp, idx++, deli);
-			string jt = conv!(int,string)(it);
+			tmp = appendWithIdx!(dchar)(tmp, idx++, deli);
+			dstring jt = conv!(int,dstring)(it);
 			foreach(kt; jt)
-				tmp = appendWithIdx!(char)(tmp, idx++, kt);
+				tmp = appendWithIdx!(dchar)(tmp, idx++, kt);
 		}
 		appendWithIdx(tmp, idx++, startStop);
-		return tmp[0..idx].idup;
+		return toUTF8(tmp[0..idx]).idup;
 	}
 }

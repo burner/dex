@@ -6,6 +6,7 @@ import hurt.container.iterator;
 import hurt.container.set;
 import hurt.string.stringbuffer;
 import hurt.util.array;
+import hurt.string.utf;
 
 import hurt.io.stream;
 import std.process;
@@ -15,7 +16,7 @@ import std.process;
  * the states inside the container should correspond to the character inside
  * the inputSet. Otherwise the transistion will not be displayed.
  */
-void writeGraph(Iterable!(State) states, Set!(char) inputSet,
+void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 		string fileName) {
 	string[] strTable = ["digraph{\n"];
 	StringBuffer!(char) strLine = new StringBuffer!(char)(16);
@@ -45,12 +46,16 @@ void writeGraph(Iterable!(State) states, Set!(char) inputSet,
 		}
 
 		foreach(jt; inputSet) {
+			dchar[1] inChar;
+			inChar[0] = jt;
+			string inputDChar = toUTF8(inChar);
 			state = pState.getTransition(jt);
 			foreach(kt;state) {
 				string stateId1 = (pState.toString());
 				string stateId2 = (kt.toString());
 				strLine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
-				strLine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
+				//strLine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
+				strLine.pushBack("\t[label=\"" ~ inputDChar ~ "\"];\n");
 				append(strTable, strLine.getString());
 				strLine.clear();
 			}

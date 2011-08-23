@@ -1,4 +1,4 @@
-interface Lexer {
+abstract class Lexer {
 	public void run();
 	public dchar eolChar() const;
 	public dchar eofChar() const;
@@ -8,12 +8,12 @@ private import hurt.io.stream;
 private import hurt.io.file;
 private import hurt.conv.conv;
 private import hurt.string.utf;
-import hurt.io.stdio;
-import std.stdio;
 
 class DexLexer : Lexer {
+	import hurt.io.stdio;
+	import std.stdio;
 	private string filename;
-	private hurt.io.stream.File file;
+	private hurt.io.stream.BufferedFile file;
 
 	private size_t lineNumber;
 	private size_t charIdx;
@@ -27,7 +27,7 @@ class DexLexer : Lexer {
 			throw new Exception(__FILE__ ~ ":" ~ conv!(int,string)(__LINE__) ~
 				this.filename ~ " does not exists");
 
-		this.file = new hurt.io.stream.File(this.filename);
+		this.file = new hurt.io.stream.BufferedFile(this.filename);
 		this.getNextLine();
 	}
 
@@ -39,7 +39,7 @@ class DexLexer : Lexer {
 		}
 	}
 
-	public size_t getCurrentLine() const {
+	public size_t getCurrentLineCount() const {
 		return this.lineNumber;
 	}
 
@@ -60,11 +60,11 @@ class DexLexer : Lexer {
 		char[] tmp = this.file.readLine();
 		if(tmp !is null) {
 			this.currentLine = toUTF32Array(tmp);
-			this.lineNumber++;
 			this.charIdx = 0;
 		} else {
 			this.currentLine = null;
 		}
+		this.lineNumber++;
 	}
 
 	public dchar getNextChar() {
@@ -82,14 +82,18 @@ class DexLexer : Lexer {
 		}
 	}
 
-	public void run() {
+	public void run() { // a stupid run methode could look like this »«¢¢ſð@
 		println(__LINE__, this.isEOF(), this.isEmpty());
 		/*dchar next = ' ';
 		while(dchar.init != (next = getNextChar()))
 			print(next);
 		*/
-		while(!isEmpty())
+		while(!isEmpty()) {
+			if(this.getCurrentIndexInLine() == 0) {
+				print(this.getCurrentLineCount());
+			}
 			print(getNextChar());
+		}
 	}
 
 	public dchar eolChar() const {
@@ -101,7 +105,7 @@ class DexLexer : Lexer {
 	}
 }
 
-// some nice utf8 cömments
+// some nice utf8 cömments ¼³²³½ŧłđſðđłđ]ðđĸłæa
 void main() {
 	DexLexer dl = new DexLexer("outputtemplate.d");
 	dl.run();
