@@ -2,16 +2,15 @@ module dex.minimizer;
 
 import dex.state;
 
-import hurt.conv.conv;
 import hurt.container.dlst;
-import hurt.container.vector;
-import hurt.container.list;
-import hurt.container.set;
-import hurt.container.map;
 import hurt.container.isr;
+import hurt.container.list;
+import hurt.container.map;
 import hurt.container.multimap;
-
-import std.stdio;
+import hurt.container.set;
+import hurt.container.vector;
+import hurt.conv.conv;
+import hurt.io.stdio;
 
 private Vector!(Vector!(State)) makeInitPartitions(
 		DLinkedList!(State) oldStates, Map!(State,long) states) {
@@ -86,10 +85,10 @@ private Vector!(State) finalizeGroups(Vector!(Vector!(State)) old,
 }
 
 private void printStates(Map!(State,long) states) {
-	write("states {");
+	print("states {");
 	for(auto it = states.begin(); it.isValid(); it++)
-		write((*it).getKey(),":",(*it).getData()," ");
-	writeln("}");
+		print((*it).getKey(),":",(*it).getData());
+	println("}");
 }
 
 public Vector!(State) minimize(T)(DLinkedList!(State) oldStates, 
