@@ -9,6 +9,7 @@ import hurt.conv.conv;
 import hurt.container.multimap;
 import hurt.container.list;
 import hurt.container.set;
+import hurt.container.map;
 import hurt.container.dlst;
 import hurt.container.stack;
 import hurt.container.vector;
@@ -248,7 +249,6 @@ class RegEx {
 				}
 			}
 		}
-		//this.removeDeadStates();
 	}
 
 	/* One state is never left, this is the error state.
@@ -276,34 +276,45 @@ class RegEx {
 		}
 	}
 
-	void removeDeadStates() {
-		scope Set!(State) deadEndSet = new Set!(State)();
-		foreach(it; this.dfaTable) {
+	public static FSA_Table removeDeadStates(FSA_Table oldTable) {
+		Map!(int,State) table = new Map!(int,State)(ISRType.HashTable);
+		Set!(State) deadEndSet = new Set!(State)();
+		println(__LINE__);
+		foreach(it; oldTable) {
 			if(it.isDeadEnd()) {
 				deadEndSet.insert(it);
+			} else {
+				State tmp = new State(it.getStateId());
+				auto accIt = it.getAcceptingStates().begin();
+				for(; accIt.isValid(); accIt++)
+					tmp.setAcceptingState(*accIt);
+
+				table.insert(it.getStateId(),tmp);
 			}
 		}
+		println(__LINE__);
 
-		if(deadEndSet.isEmpty()) {
-			return;
-		}
-
-		foreach(it; deadEndSet) {
-			foreach(jt; this.dfaTable) {
-				jt.removeTransition(it);	
+		foreach(it; oldTable) {
+			if(it.isDeadEnd())
+				continue;
+			State nIt = table.find(it.getStateId()).getData();
+			auto tIt = it.getTransitions().begin();
+			for(; tIt.isValid(); tIt++) {
+				if(!deadEndSet.contains(*tIt)) {
+					State tranState = table.find((*tIt).getStateId()).getData();
+					assert(tranState !is null);
+					nIt.addTransition(tIt.getKey, tranState);
+				}
 			}
 		}
+		println(__LINE__);
 
-		foreach(jt; deadEndSet) {
-			size_t idx = 0;
-			foreach(it; this.dfaTable) {
-				if(it == jt) {
-					this.dfaTable.remove(idx);
-					break;
-				}	
-				idx++;
-			}
-		}
+		DLinkedList!(State) ret = new DLinkedList!(State);
+		auto it = table.begin();
+		for(; it.isValid(); it++)
+			ret.pushBack((*it).getData());
+
+		return ret;
 	}
 
 	void push(dchar chInput) {
@@ -487,7 +498,9 @@ class RegEx {
 	}
 
 	void writeDFAGraph(string filename) {
-		dex.emit.writeGraph(this.dfaTable,this.inputSet, filename);
+		auto tmp = removeDeadStates(this.dfaTable);
+		//dex.emit.writeGraph(this.dfaTable,this.inputSet, filename);
+		dex.emit.writeGraph(tmp,this.inputSet, filename);
 	}
 
 	void writeNFAGraph(string filename) {

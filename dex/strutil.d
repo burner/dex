@@ -34,6 +34,8 @@ public immutable(T)[] expandRange(T)(immutable(T)[] str)
 		} else if((str[i] == '[' && i > 0 && str[i-1] != '\\')
 				|| (str[i] == '[' && i == 0)) {
 			StringBuffer!(T) tmp = new StringBuffer!(T)();
+			tmp.pushBack(str[i]);
+			i++;
 			while(i < str.length) {
 				if(str[i] == ']' && i > 0 && str[i-1] != '\\') {
 					tmp = tmp.pushBack(str[i]);
@@ -42,6 +44,9 @@ public immutable(T)[] expandRange(T)(immutable(T)[] str)
 					tmp.popBack();
 					tmp.pushBack(str[i]);
 					i++;
+				} else if(str[i] == '[' && i > 0  && str[i-1] != '\\') {
+					throw new ParseError("An [ inside an [ environment " ~
+						"is useless str="~str);
 				} else if(str[i] == ']'  && i > 0 && str[i-1] == '\\') {
 					tmp.popBack();
 					tmp.pushBack(str[i]);
@@ -79,6 +84,9 @@ unittest {
 		expandRange!(char)("rt\\[\\]rt"));
 	assert("rt\v[" ~ UN ~ "]\frt" == expandRange!(char)("rt[\\[\\]]rt"), 
 		expandRange!(char)("rt[\\[\\]]rt"));
+	assert("rt\va" ~ UN ~ "a\frt" == 
+		expandRange!(char)("rt[aa]rt"), 
+		stringWrite(expandRange!(char)("rt[aa]rt")));
 	assert("rt\va" ~ UN ~ 'b' ~ UN ~ 'c' ~ UN ~ '[' ~ UN ~ ']' ~ "\frt" 
 		== expandRange!(char)("rt[abc\\[\\]]rt"), 
 		expandRange!(char)("rt[abc\\[\\]]rt"));
@@ -92,6 +100,14 @@ unittest {
 	assert("rt\va"~UN~'t'~UN~"h\f[]rt" 
 		== expandRange!(char)("rt[ath]\\[\\]rt"), 
 		expandRange!(char)("rt[ath]\\[\\]rt"));
+
+	bool rs = false;
+	try {
+		string a = expandRange!(char)("rt[021[12]]rt");
+	} catch(Exception e) {
+		rs = true;
+	}
+	assert(rs);
 }
 
 public immutable(T)[] setUnionSymbol(T)(T[] str) 
@@ -108,10 +124,6 @@ public immutable(T)[] setUnionSymbol(T)(T[] str)
 	}
 	return ret[0..ptr].idup;
 }
-
-unittest {
-}
-
 
 public int stringCompare(string a, string b) {
 	//if(a.length > b.length) {
