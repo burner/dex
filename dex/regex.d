@@ -5,21 +5,22 @@ import dex.strutil;
 import dex.minimizer;
 import dex.emit;
 
-import hurt.conv.conv;
-import hurt.container.multimap;
-import hurt.container.list;
-import hurt.container.set;
-import hurt.container.map;
 import hurt.container.dlst;
+import hurt.container.isr;
+import hurt.container.iterator;
+import hurt.container.list;
+import hurt.container.map;
+import hurt.container.multimap;
+import hurt.container.set;
 import hurt.container.stack;
 import hurt.container.vector;
-import hurt.container.isr;
+import hurt.conv.conv;
 import hurt.io.stdio;
-import hurt.util.stacktrace;
-import hurt.util.array;
 import hurt.string.stringbuffer;
+import hurt.util.array;
+import hurt.util.stacktrace;
 
-import std.process;
+//import std.process;
 
 public alias DLinkedList!(State) FSA_Table;
 
@@ -276,10 +277,9 @@ class RegEx {
 		}
 	}
 
-	public static FSA_Table removeDeadStates(FSA_Table oldTable) {
+	public static FSA_Table removeDeadStates(Iterable!(State) oldTable) {
 		Map!(int,State) table = new Map!(int,State)(ISRType.HashTable);
 		Set!(State) deadEndSet = new Set!(State)();
-		println(__LINE__);
 		foreach(it; oldTable) {
 			if(it.isDeadEnd()) {
 				deadEndSet.insert(it);
@@ -292,8 +292,6 @@ class RegEx {
 				table.insert(it.getStateId(),tmp);
 			}
 		}
-		println(__LINE__);
-
 		foreach(it; oldTable) {
 			if(it.isDeadEnd())
 				continue;
@@ -307,8 +305,6 @@ class RegEx {
 				}
 			}
 		}
-		println(__LINE__);
-
 		DLinkedList!(State) ret = new DLinkedList!(State);
 		auto it = table.begin();
 		for(; it.isValid(); it++)
@@ -487,14 +483,15 @@ class RegEx {
 	}
 		
 	void minimize() {
-		println("start to minimize with ", this.dfaTable.getSize(), " states");
+		println("start to minimize with", this.dfaTable.getSize(), "states");
 		this.minDfa = dex.minimizer.minimize!(dchar)(this.dfaTable, 
 			this.inputSet);
-		println("minimized to ", this.minDfa.getSize(), " states");
+		println("minimized to", this.minDfa.getSize(), "states");
 	}
 
 	void writeMinDFAGraph(string filename) {
-		dex.emit.writeGraph(this.minDfa,this.inputSet, filename);
+		auto tmp = removeDeadStates(this.minDfa);
+		dex.emit.writeGraph(tmp,this.inputSet, filename);
 	}
 
 	void writeDFAGraph(string filename) {
@@ -504,6 +501,7 @@ class RegEx {
 	}
 
 	void writeNFAGraph(string filename) {
-		dex.emit.writeGraph(this.globalNfaTable,this.inputSet, filename);
+		auto tmp = removeDeadStates(this.globalNfaTable);
+		dex.emit.writeGraph(tmp,this.inputSet, filename);
 	}
 }

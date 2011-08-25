@@ -12,7 +12,8 @@
 
 "foo[as]*" {: args args2 :}
 "bar[zzagg]*" {:{{{{ args3 args4 }}}}:}
-"[:digit:][:digit:]*" {:{{{{ args3 args4 }}}}:}
+"[:digit:][:digit:]*.[:digit:]*" {:{{{{ args2 args7 }}}}:}
+".." {:{{{{ args9 args7 }}}}:}
 "t*" {:{{{{ args9 args0 }}}}:}
 "args[as]*" {:{{{{ 
 		args5 args6 
