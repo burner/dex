@@ -183,7 +183,7 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 		case ":odigit:":
 			return ('\v' ~ setUnionSymbol!(T)(digits[0..8]) ~ '\f').idup;
 		default: {
-			return ('\v' ~ setUnionSymbol!(T)(str.dup) ~ '\f').idup;	
+			return('\v' ~ setUnionSymbol!(T)(str.dup) ~ '\f').idup;
 		}
 	}
 }
@@ -286,7 +286,101 @@ public pure bool presedence(T)(T opLeft, T opRight)
 	return true;
 }
 
-private pure int findColon(in char[] str, int start = 0) {
+public pure T[] aliases(T)(T[] str) 
+		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
+	//writeln(__LINE__, " ",str);
+	T[] upperChar = ['A','B','C','D','E','F','G','H','I','J','K','L',
+		'M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+	assert(upperChar.length == 26);
+	T[] lowChar = ['a','b','c','d','e','f','g','h','i','j','k','l',
+		'm','n','o','p','q','r','s','t','u','v','w','x','y','z'];
+	assert(lowChar.length == 26);
+	T[] digits = ['0','1','2','3','4','5','6','7','8','9'];
+	assert(digits.length == 10);
+	T[] xdigits = ['A','B','C','D','E','F','0','1','2','3','4','5',
+		'6','7','8','9','a','b','c','d','e','f'];
+	assert(xdigits.length == 22);
+
+	switch(str) {
+		case ":alnum:": 
+		case ":a-zA-Z0-9:":
+			return lowChar ~ upperChar ~ digits; 
+		case ":word:": 
+		case ":a-zA-Z0-9_:":
+			return lowChar ~ upperChar ~ digits;
+		case ":alpha:": 
+		case ":a-zA-Z:":
+			return lowChar ~ upperChar;
+		case ":a-z:":
+			return lowChar.dup;
+		case ":digit:": 
+		case ":0-9:":
+			return digits.dup;
+		case ":upper:":
+			return upperChar.dup;
+		case ":lower:":
+			return lowChar.dup;
+		case ":xdigit:":
+			return xdigits.dup;
+		case ":odigit:":
+			return digits[0..8].dup;
+		default: {
+			assert(0);
+		}
+	}
+}
+
+private pure T[] unionExtend(T)(T[] str)
+		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
+
+	T[] upperChar = ['A','B','C','D','E','F','G','H','I','J','K','L',
+		'M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+	assert(upperChar.length == 26);
+	T[] lowChar = ['a','b','c','d','e','f','g','h','i','j','k','l',
+		'm','n','o','p','q','r','s','t','u','v','w','x','y','z'];
+	assert(lowChar.length == 26);
+	T[] digits = ['0','1','2','3','4','5','6','7','8','9'];
+	assert(digits.length == 10);
+	T[] xdigits = ['A','B','C','D','E','F','0','1','2','3','4','5',
+		'6','7','8','9','a','b','c','d','e','f'];
+	assert(xdigits.length == 22);
+
+	T[] ret = new T[str.length*4];
+	size_t ri = 0;
+
+	for(size_t i = 0; i < str.length; i++) {
+		if(str[i] == ':') {
+			int nc = findColon!(T)(str,i+1);
+			if(nc != -1) {
+				assert(str[i] == ':');
+				assert(str[nc] == ':', conv!(char,string)(str[nc]));
+				T[] als = aliases!(T)(str[i .. nc+1]);					
+				ri = appendWithIdx!(T)(ret, ri, als);
+				i = nc;
+			} else {
+				appendWithIdx!(T)(ret, ri, cast(immutable)str[i]);
+				ri++;
+			}
+		} else {
+			appendWithIdx!(T)(ret, ri, cast(immutable)str[i]);
+			ri++;
+		}
+	}
+	return ret[0 .. ri];
+}
+
+unittest {
+	assert("abc" == unionExtend!(char)("abc".dup));
+	assert("0123456789abc" == unionExtend!(char)(":digit:abc".dup), 
+		unionExtend!(char)(":digit:abc".dup));
+	assert("0123456789abc0123456789" == 
+		unionExtend!(char)(":digit:abc:digit:".dup), 
+		unionExtend!(char)(":digit:abc:digit:".dup));
+}
+
+private pure int findColon(T)(in T[] str, size_t start = 0) 
+		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
+
 	int ret = -1;
 	if(start < 0) {
 		return ret;
@@ -299,7 +393,7 @@ private pure int findColon(in char[] str, int start = 0) {
 	ret = 0;
 	foreach(idx, it; str[start..$]) {
 		if(it == ':') {
-			return ret+start;	
+			return conv!(size_t,int)(ret+start);	
 		}
 		ret++;	
 		assert(ret-1 == idx, conv!(int,string)(ret-1) ~ " != " ~ 
@@ -309,19 +403,21 @@ private pure int findColon(in char[] str, int start = 0) {
 }
 
 unittest {
-	assert(-1 == findColon("      "));
-	assert(-1 != findColon(" :    "));
-	assert(1 == findColon(" :    ",1), 
-		conv!(int,string)(findColon(" :    ",1)));
-	assert(4 == findColon("    : ",1));
-	assert(4 == findColon("    : ",3));
-	assert(4 == findColon("    : ",4));
-	assert(5 == findColon("     :",1));
-	assert(5 == findColon("     :",3));
-	assert(5 == findColon("     :",4));
-	assert(5 == findColon("     :",5));
-	assert(0 == findColon(":     "));
-	assert(-1 == findColon(":     ",1));
+	assert(-1 == findColon!(char)("      "));
+	assert(-1 != findColon!(char)(" :    "));
+	assert(1 == findColon!(char)(" :    ",1), 
+		conv!(int,string)(findColon!(char)(" :    ",1)));
+	assert(4 == findColon!(char)("    : ",1));
+	assert(4 == findColon!(char)("    : ",3));
+	assert(4 == findColon!(char)("    : ",4));
+	assert(5 == findColon!(char)("     :",1));
+	assert(5 == findColon!(char)("     :",3));
+	assert(5 == findColon!(char)("     :",4));
+	assert(5 == findColon!(char)("     :",5));
+	assert(0 == findColon!(char)(":     "));
+	assert(-1 == findColon!(char)(":     ",1));
+	assert(0 == findColon!(char)(":     ",0));
+	assert(3 == findColon!(char)("   :  ",3));
 }
 
 public pure int userCodeParanthesis(in char[] str, int start = 0) {
