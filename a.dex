@@ -10,15 +10,7 @@
 
 %% foobar7 %%
 
-"foo[as]*" {: args args2 :}
-"bar[zzagg]*" {:{{{{ args3 args4 }}}}:}
-"[:digit:][:digit:]*.[:digit:]*" {:{{{{ args2 args7 }}}}:}
-".." {:{{{{ args9 args7 }}}}:}
-"t*" {:{{{{ args9 args0 }}}}:}
-"args[as]*" {:{{{{ 
-		args5 args6 
-	}}}}
-	lfadflkasjdf
-	asdflskjadfl asdf { } asfalskdjf : 
-	asdf 
-:}
+"[:digit:_][:digit:_]*" {: int :}
+"0x[01234567_][01234567_]*" {: hex :}
+"0b[01_][01_]*" {: bin :}
+"[:digit:][:digit:]*.[:digit:]*[fdr]*" {: float :}

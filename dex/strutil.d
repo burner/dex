@@ -156,22 +156,23 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 	T[] xdigits = ['A','B','C','D','E','F','0','1','2','3','4','5',
 		'6','7','8','9','a','b','c','d','e','f'];
 	assert(xdigits.length == 22);
+
 	switch(str) {
 		case ":alnum:": 
-		case "a-zA-Z0-9":
+		case ":a-zA-Z0-9:":
 			return ('\v' ~ setUnionSymbol!(T)(lowChar ~ upperChar ~ digits) 
 				~ '\f').idup;
 		case ":word:": 
-		case "a-zA-Z0-9_":
+		case ":a-zA-Z0-9_:":
 			return ('\v' ~ setUnionSymbol!(T)(lowChar ~ upperChar ~ digits) 
 				~ '_' ~ '\f').idup;
 		case ":alpha:": 
-		case "a-zA-Z":
+		case ":a-zA-Z:":
 			return ('\v' ~ setUnionSymbol!(T)(lowChar ~ upperChar) ~ '\f').idup;
-		case "a-z":
+		case ":a-z:":
 			return ('\v' ~ setUnionSymbol!(T)(lowChar) ~ '\f').idup;
 		case ":digit:": 
-		case "0-9":
+		case ":0-9:":
 			return ('\v' ~ setUnionSymbol!(T)(digits) ~ '\f').idup;
 		case ":upper:":
 			return ('\v' ~ setUnionSymbol!(T)(upperChar) ~ '\f').idup;
@@ -283,6 +284,44 @@ public pure bool presedence(T)(T opLeft, T opRight)
 		return false;
 	
 	return true;
+}
+
+private pure int findColon(in char[] str, int start = 0) {
+	int ret = -1;
+	if(start < 0) {
+		return ret;
+	} else if(str.length < 1) {
+		return ret;
+	} else if(start >= str.length) {
+		return ret;
+	}
+
+	ret = 0;
+	foreach(idx, it; str[start..$]) {
+		if(it == ':') {
+			return ret+start;	
+		}
+		ret++;	
+		assert(ret-1 == idx, conv!(int,string)(ret-1) ~ " != " ~ 
+			conv!(size_t,string)(idx));
+	}
+	return -1;
+}
+
+unittest {
+	assert(-1 == findColon("      "));
+	assert(-1 != findColon(" :    "));
+	assert(1 == findColon(" :    ",1), 
+		conv!(int,string)(findColon(" :    ",1)));
+	assert(4 == findColon("    : ",1));
+	assert(4 == findColon("    : ",3));
+	assert(4 == findColon("    : ",4));
+	assert(5 == findColon("     :",1));
+	assert(5 == findColon("     :",3));
+	assert(5 == findColon("     :",4));
+	assert(5 == findColon("     :",5));
+	assert(0 == findColon(":     "));
+	assert(-1 == findColon(":     ",1));
 }
 
 public pure int userCodeParanthesis(in char[] str, int start = 0) {
