@@ -330,39 +330,37 @@ public pure T[] aliases(T)(T[] str)
 	}
 }
 
-private pure T[] unionExtend(T)(T[] str)
-		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
-
-	T[] upperChar = ['A','B','C','D','E','F','G','H','I','J','K','L',
+private pure dchar[] unionExtend(dchar[] str) {
+	dchar[] upperChar = ['A','B','C','D','E','F','G','H','I','J','K','L',
 		'M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
 	assert(upperChar.length == 26);
-	T[] lowChar = ['a','b','c','d','e','f','g','h','i','j','k','l',
+	dchar[] lowChar = ['a','b','c','d','e','f','g','h','i','j','k','l',
 		'm','n','o','p','q','r','s','t','u','v','w','x','y','z'];
 	assert(lowChar.length == 26);
-	T[] digits = ['0','1','2','3','4','5','6','7','8','9'];
+	dchar[] digits = ['0','1','2','3','4','5','6','7','8','9'];
 	assert(digits.length == 10);
-	T[] xdigits = ['A','B','C','D','E','F','0','1','2','3','4','5',
+	dchar[] xdigits = ['A','B','C','D','E','F','0','1','2','3','4','5',
 		'6','7','8','9','a','b','c','d','e','f'];
 	assert(xdigits.length == 22);
 
-	T[] ret = new T[str.length*4];
+	dchar[] ret = new dchar[str.length*4];
 	size_t ri = 0;
 
 	for(size_t i = 0; i < str.length; i++) {
 		if(str[i] == ':') {
-			int nc = findColon!(T)(str,i+1);
+			int nc = findColon!(dchar)(str,i+1);
 			if(nc != -1) {
 				assert(str[i] == ':');
-				assert(str[nc] == ':', conv!(char,string)(str[nc]));
-				T[] als = aliases!(T)(str[i .. nc+1]);					
-				ri = appendWithIdx!(T)(ret, ri, als);
+				assert(str[nc] == ':', conv!(dchar,string)(str[nc]));
+				dchar[] als = aliases!(dchar)(str[i .. nc+1]);					
+				ri = appendWithIdx!(dchar)(ret, ri, als);
 				i = nc;
 			} else {
-				appendWithIdx!(T)(ret, ri, cast(immutable)str[i]);
+				appendWithIdx!(dchar)(ret, ri, cast(immutable)str[i]);
 				ri++;
 			}
 		} else {
-			appendWithIdx!(T)(ret, ri, cast(immutable)str[i]);
+			appendWithIdx!(dchar)(ret, ri, cast(immutable)str[i]);
 			ri++;
 		}
 	}
@@ -370,12 +368,132 @@ private pure T[] unionExtend(T)(T[] str)
 }
 
 unittest {
-	assert("abc" == unionExtend!(char)("abc".dup));
-	assert("0123456789abc" == unionExtend!(char)(":digit:abc".dup), 
-		unionExtend!(char)(":digit:abc".dup));
+	assert("abc" == unionExtend("abc"d.dup));
+	assert("0123456789abc"d == unionExtend(":digit:abc"d.dup), 
+		conv!(dchar[],string)(unionExtend(":digit:abc"d.dup)));
 	assert("0123456789abc0123456789" == 
-		unionExtend!(char)(":digit:abc:digit:".dup), 
-		unionExtend!(char)(":digit:abc:digit:".dup));
+		unionExtend(":digit:abc:digit:"d.dup), 
+		conv!(dchar[],string)(unionExtend(":digit:abc:digit:"d.dup)));
+}
+
+public immutable(dchar)[] prepareString(immutable(dchar)[] str) {
+	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(str.length*3);	
+	for(size_t i = 0; i < str.length; i++) {
+		// writeln(i, " ", ret.getString());
+		// in case you find the union char [ . 
+		// Search till you find the matching ]
+		if(str[i] == '[' && i > 0 && str[i-1] == '\\') {
+			ret.popBack();
+			ret.pushBack(str[i]);
+		} else if(str[i] == ']' && i > 0 && str[i-1] == '\\') {
+			ret.popBack();
+			ret.pushBack(str[i]);
+		} else if(str[i] == '*' && i > 0 && str[i-1] == '\\') {
+			ret.popBack();
+			ret.pushBack(str[i]);
+		} else if(str[i] == '*' && i > 0 && str[i-1] != '\\') {
+			ret.pushBack(ST);
+		} else if(str[i] == '+' && i > 0 && str[i-1] != '\\') {
+			if(str[i-1] != ']') {
+				ret.pushBack(str[i-1]);
+			} else {
+				size_t up = ret.getSize();
+				size_t low = ret.getSize();
+				while(ret.charAt(low) != '\v') {
+					low--;
+				}
+				ret.pushBack(ret.getData()[low .. up]);
+				ret.pushBack(ST);
+				continue;
+			}
+			ret.pushBack(ST);
+		} else if((str[i] == '[' && i > 0 && str[i-1] != '\\')
+				|| (str[i] == '[' && i == 0)) {
+			StringBuffer!(dchar) tmp = new StringBuffer!(dchar)();
+			tmp.pushBack(str[i]);
+			i++;
+			while(i < str.length) {
+				if(str[i] == ']' && i > 0 && str[i-1] != '\\') {
+					tmp = tmp.pushBack(str[i]);
+					break;
+				} else if(str[i] == '[' && i > 0  && str[i-1] == '\\') {
+					tmp.popBack();
+					tmp.pushBack(str[i]);
+					i++;
+				} else if(str[i] == '[' && i > 0  && str[i-1] != '\\') {
+					throw new ParseError("An [ inside an [ environment " ~
+						"is useless str="~conv!(dstring,string)(str));
+				} else if(str[i] == ']'  && i > 0 && str[i-1] == '\\') {
+					tmp.popBack();
+					tmp.pushBack(str[i]);
+					i++;
+				} else if(str[i] == '[' && i == 0) {
+					tmp.pushBack(str[i]);
+					i++;
+				} else {
+					tmp = tmp.pushBack(str[i]);
+					i++;
+				}
+			}
+			if(str[i] != ']') {
+				throw new ParseError("Expected char ] not found");
+			}
+			ret.pushBack('\v');
+			ret.pushBack(
+				setUnionSymbol!(dchar)(unionExtend(tmp.getData()[1..$-1])));
+			ret.pushBack('\f');
+			continue;
+		} else if(str[i] == '[' && i == 0) {
+			ret.pushBack(str[i]);
+		} else {
+			ret.pushBack(str[i]);
+		}
+	}
+	return ret.getString();
+}
+
+unittest {
+	assert("\v\f"d ~ ST == prepareString("[]*"d),
+		conv!(dstring,string)(stringWrite!(dchar)(prepareString("[]*"d))));
+	assert("\va\f"d ~ ST == prepareString("[a]*"d),
+		conv!(dstring,string)(stringWrite!(dchar)(prepareString("[a]*"d))));
+	assert("\va\f\va\f"d ~ ST == prepareString("[a]+"d),
+		conv!(dstring,string)(stringWrite!(dchar)(prepareString("[a]+"d))));
+	assert("aa"d ~ ST == prepareString("a+"d),
+		conv!(dstring,string)(stringWrite!(dchar)(prepareString("a+"d))));
+	assert("\v\f" == prepareString("[]"d), 
+		conv!(dstring,string)(prepareString("[]"d)));
+	assert("rt\v\frt" == prepareString("rt[]rt"d), 
+		conv!(dstring,string)(prepareString("rt[]rt"d)));
+	assert("rt[]rt" == prepareString("rt\\[\\]rt"d), 
+		conv!(dstring,string)(prepareString("rt\\[\\]rt"d)));
+	assert("rt\v["d ~ UN ~ "]\frt"d == prepareString("rt[\\[\\]]rt"d), 
+		conv!(dstring,string)(prepareString("rt[\\[\\]]rt"d)));
+	assert("rt\va"d ~ UN ~ "a\frt"d == 
+		prepareString("rt[aa]rt"d), 
+		conv!(dstring,string)(stringWrite(prepareString("rt[aa]rt"d))));
+	assert("rt\va"d ~ UN ~ 'b' ~ UN ~ 'c' ~ UN ~ '[' ~ UN ~ ']' ~ "\frt"d 
+		== prepareString("rt[abc\\[\\]]rt"d), 
+		conv!(dstring,string)(prepareString("rt[abc\\[\\]]rt"d)));
+	assert("rt\v0"d~UN~'1'~UN~'2'~UN~'3'~UN~'4'~UN~'5'~UN~'6'~UN~"7\frt"d 
+		== prepareString("rt[:odigit:]rt"d), 
+		conv!(dstring,string)(prepareString("rt[:odigit:]rt"d)));
+	assert("rt\v0"d~UN~'1'~UN~"2\frt"d == prepareString("rt[012]rt"d), 
+		conv!(dstring,string)(prepareString("rt[012]rt"d)));
+	assert("rt\va"d~UN~'t'~UN~"h\frt"d == prepareString("rt[ath]rt"d), 
+		conv!(dstring,string)(prepareString("rt[ath]rt"d)));
+	assert("rt\va"d~UN~'t'~UN~"h\f[]rt"d 
+		== prepareString("rt[ath]\\[\\]rt"d), 
+		conv!(dstring,string)(prepareString("rt[ath]\\[\\]rt"d)));
+
+	bool rs = false;
+	try {
+		dstring a = prepareString("rt[021[12]]rt"d);
+	} catch(Exception e) {
+		rs = true;
+	}
+	assert(rs);
+	
 }
 
 private pure int findColon(T)(in T[] str, size_t start = 0) 
