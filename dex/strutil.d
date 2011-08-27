@@ -125,23 +125,6 @@ public immutable(T)[] setUnionSymbol(T)(T[] str)
 	return ret[0..ptr].idup;
 }
 
-public int stringCompare(string a, string b) {
-	//if(a.length > b.length) {
-	//	return -2;
-	//} else if(a.length < b.length) {
-	//	return -1;
-	//}
-	int idx = 0;
-	foreach(it; a) {
-		if(it != b[idx]) {
-			//write(it, " != ", b[idx], " ");
-			return idx;
-		}
-		idx++;
-	}
-	return -3;
-}
-
 public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	//writeln(__LINE__, " ",str);
@@ -465,6 +448,8 @@ unittest {
 		conv!(dstring,string)(prepareString("[]"d)));
 	assert("rt\v\frt" == prepareString("rt[]rt"d), 
 		conv!(dstring,string)(prepareString("rt[]rt"d)));
+	assert("rt\v\f\v\f"d ~ ST ~ "rt" == prepareString("rt[]+rt"d), 
+		conv!(dstring,string)(prepareString("rt[]rt+"d)));
 	assert("rt[]rt" == prepareString("rt\\[\\]rt"d), 
 		conv!(dstring,string)(prepareString("rt\\[\\]rt"d)));
 	assert("rt\v["d ~ UN ~ "]\frt"d == prepareString("rt[\\[\\]]rt"d), 
@@ -478,6 +463,10 @@ unittest {
 	assert("rt\v0"d~UN~'1'~UN~'2'~UN~'3'~UN~'4'~UN~'5'~UN~'6'~UN~"7\frt"d 
 		== prepareString("rt[:odigit:]rt"d), 
 		conv!(dstring,string)(prepareString("rt[:odigit:]rt"d)));
+	assert("rt\v0"d~UN~'1'~UN~'2'~UN~'3'~UN~'4'~UN~'5'~UN~'6'~UN~"7\f" ~ 
+		"\v0"d~UN~'1'~UN~'2'~UN~'3'~UN~'4'~UN~'5'~UN~'6'~UN~"7\f" ~ ST ~ "rt"d 
+		== prepareString("rt[:odigit:]+rt"d), 
+		conv!(dstring,string)(prepareString("rt[:odigit:]+rt"d)));
 	assert("rt\v0"d~UN~'1'~UN~"2\frt"d == prepareString("rt[012]rt"d), 
 		conv!(dstring,string)(prepareString("rt[012]rt"d)));
 	assert("rt\va"d~UN~'t'~UN~"h\frt"d == prepareString("rt[ath]rt"d), 
