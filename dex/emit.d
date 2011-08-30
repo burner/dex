@@ -2,14 +2,68 @@ module dex.emit;
 
 import dex.state;
 
+import hurt.conv.conv;
 import hurt.container.iterator;
 import hurt.container.set;
+import hurt.container.isr;
 import hurt.string.stringbuffer;
+import hurt.string.formatter;
 import hurt.util.array;
 import hurt.string.utf;
-
+import hurt.io.stdio;
 import hurt.io.stream;
 import std.process;
+
+void writeTable(Iterable!(State) states, Set!(dchar) inputSet,
+		string filename) {
+	hurt.io.stream.File file = new hurt.io.stream.File(filename ~ ".tab", 
+		FileMode.OutNew);
+
+	int howManyBlanks = 0;
+	size_t size = states.getSize();
+	while(size > 0) {
+		howManyBlanks++;
+		size /= 10;
+	}
+	assert(howManyBlanks >= 1);
+
+	StringBuffer!(dchar) sb = new StringBuffer!(dchar)();
+	
+	ISRIterator!(dchar) it = inputSet.begin();
+	for(int i = 0; i < howManyBlanks; i++)
+		sb.pushBack(' ');
+
+	for(; it.isValid(); it++) {
+		for(int i = 0; i < howManyBlanks; i++)
+			sb.pushBack(' ');
+
+		sb.pushBack(*it);	
+	}
+	file.writeString(conv!(dstring,string)(sb.getString()));
+	file.write('\n');
+	sb.clear();
+
+	foreach(it; states) {
+		sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(howManyBlanks)
+			~ "d", it.getStateId()));
+
+		ISRIterator!(dchar) cit = inputSet.begin();
+		for(; cit.isValid(); cit++) {
+			sb.pushBack(' ');
+			assert(it !is null);
+			State next = it.getSingleTransition(*cit);
+			int nextId = next is null ? -1 : next.getStateId();
+
+			sb.pushBack(format!(char,dchar)("%" ~ 
+				conv!(int,string)(howManyBlanks) ~ "d", nextId));
+		}
+		sb.pushBack('\n');
+		file.writeString(conv!(dstring,string)(sb.getString()));
+		sb.clear();
+	}
+	
+	file.close();
+}
 
 /* A function that writes a given graph to a file of name fileName.
  * Iterable is a container that implements opApply. The transitions of

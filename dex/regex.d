@@ -504,4 +504,8 @@ class RegEx {
 		auto tmp = removeDeadStates(this.globalNfaTable);
 		dex.emit.writeGraph(tmp,this.inputSet, filename);
 	}
+
+	void writeTable(string filename) {
+		dex.emit.writeTable(this.minDfa, this.inputSet, filename);
+	}
 }

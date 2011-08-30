@@ -60,5 +60,7 @@ void main(string[] args) {
 		re.writeNFAGraph(nfaFilename);
 	}
 
+	re.writeTable("dfaTable");
+
 	delete input;
 }

@@ -4,6 +4,7 @@ import dex.strutil;
 
 import hurt.conv.conv;
 import hurt.container.multimap;
+import hurt.container.isr;
 import hurt.container.set;
 import hurt.container.stack;
 import hurt.container.vector;
@@ -139,7 +140,8 @@ class State {
 	}
 
 	State getSingleTransition(dchar chInput) {
-		return *this.transition.range(chInput);
+		Iterator!(dchar,State) it = this.transition.range(chInput);
+		return it.isValid() ? *it : null;
 	}
 
 	public override string toString() {
