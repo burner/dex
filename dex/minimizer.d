@@ -2,6 +2,7 @@ module dex.minimizer;
 
 import dex.state;
 
+import hurt.algo.sorting;
 import hurt.container.dlst;
 import hurt.container.isr;
 import hurt.container.list;
@@ -157,12 +158,7 @@ public Vector!(State) minimize(T)(DLinkedList!(State) oldStates,
 							conv!(long,string)(states.find(next).getData()) ~
 							" " ~ conv!(size_t,string)(groups.getSize()-1));
 						break;
-					} else {
-						/*writeln(__LINE__," ",c," ",gotoFirst.getStateId()," ",
-							gotoNext.getStateId()," ", 
-							states.find(gotoFirst).getData(), " ",
-							states.find(gotoNext).getData());*/
-					}
+					} 					
 					cntInner++;
 				}
 			}
@@ -170,4 +166,63 @@ public Vector!(State) minimize(T)(DLinkedList!(State) oldStates,
 		rounds++;
 	}
 	return finalizeGroups(groups, inputSet,states);	
+}
+
+struct MinTable {
+	Vector!(Vector!(int)) table;
+	int[] state;
+	Map!(dchar,int) inputChar;
+}
+
+MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
+	// create the return type and it's members
+	MinTable ret;
+	sortVector!(State)(states, function(in State a, in State b) { 
+		return a.getStateId() < b.getStateId(); });
+
+	// fill the vectors with the uncompressed transition table
+	// the compression is done on this vectors
+	assert(states.getSize() != 0);
+	ret.table = new Vector!(Vector!(int))(states.getSize()-1);
+	for(int i = 1; i < states.getSize(); i++) {
+		ret.table.pushBack(new Vector!(int)(inputSet.getSize()));
+		
+		State s = states[i];
+		ISRIterator!(dchar) isIt = inputSet.begin();
+		for(; isIt.isValid(); isIt++) {
+			ret.table[i-1].pushBack(s.getSingleTransition(*isIt).getStateId());
+		}
+	}
+	assert(ret.table.getSize() != 0);
+
+	ret.state = new int[states.getSize()-1];
+	ret.inputChar = new Map!(dchar,int)();
+
+	// use this mapping to find the dchar the given column index points to
+	// than use this information to make the dchar point to the new index
+	// after the column was changed
+	Map!(int,dchar) map = new Map!(int,dchar)();
+
+	// fill the datastructures
+	ISRIterator!(dchar) isIt = inputSet.begin();
+	for(int i = 0; i < inputSet.getSize(); isIt++, i++) {
+		ret.inputChar.insert(*isIt, i);
+		map.insert(i, *isIt);
+	}
+	assert(mapTest(map, ret.inputChar));
+
+	return ret;
+}
+
+bool mapTest(Map!(int,dchar) m1, Map!(dchar,int) m2) {
+	ISRIterator!(MapItem!(int,dchar)) mIt = m1.begin();
+
+	for(; mIt.isValid(); mIt++) {
+		dchar dc = (*mIt).getData();
+		int one = m2.find(dc).getData();
+		if(one != (*mIt).getKey()) {
+			return false;	
+		}
+	}
+	return true;
 }

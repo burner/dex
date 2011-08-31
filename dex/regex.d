@@ -508,4 +508,15 @@ class RegEx {
 	void writeTable(string filename) {
 		dex.emit.writeTable(this.minDfa, this.inputSet, filename);
 	}
+
+	MinTable minTable() {
+		MinTable ret = 	dex.minimizer.minTable(this.minDfa, this.inputSet);
+		foreach(it ; ret.table) {
+			foreach(jt; it) {
+				printf("%2d ", jt);
+			}
+			println("\n");
+		}
+		return ret;
+	}
 }

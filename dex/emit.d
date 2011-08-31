@@ -2,10 +2,12 @@ module dex.emit;
 
 import dex.state;
 
+import hurt.algo.sorting;
 import hurt.conv.conv;
 import hurt.container.iterator;
 import hurt.container.set;
 import hurt.container.isr;
+import hurt.container.vector;
 import hurt.string.stringbuffer;
 import hurt.string.formatter;
 import hurt.util.array;
@@ -18,6 +20,10 @@ void writeTable(Iterable!(State) states, Set!(dchar) inputSet,
 		string filename) {
 	hurt.io.stream.File file = new hurt.io.stream.File(filename ~ ".tab", 
 		FileMode.OutNew);
+
+	sortVector!(State)(cast(Vector!(State))states, 
+		function(in State a, in State b) { 
+		return a.getStateId() < b.getStateId(); });
 
 	int howManyBlanks = 0;
 	size_t size = states.getSize();
