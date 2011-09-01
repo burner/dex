@@ -511,6 +511,10 @@ class RegEx {
 
 	MinTable minTable() {
 		MinTable ret = 	dex.minimizer.minTable(this.minDfa, this.inputSet);
+		for(int i = 0; i < ret.table[0].getSize(); i++) {
+			printf("%2d", i);
+		}
+		println('\n');
 		foreach(it ; ret.table) {
 			foreach(jt; it) {
 				printf("%2d ", jt);

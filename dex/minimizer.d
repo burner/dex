@@ -195,33 +195,81 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	}
 	assert(ret.table.getSize() != 0);
 
+	// This multimap is used to check the state array of the return value.
+	// It is also used to have a reference to know which elements of the 
+	// state array to change when rows are joined.
+	MultiMap!(int,int) rmap = new MultiMap!(int,int)();
+
+	// When you start minimizing every index points to the row with the 
+	// same index
 	ret.state = new int[states.getSize()-1];
+	for(int i = 0; i < ret.state.length; i++) {
+		ret.state[i] = i;
+		rmap.insert(i, i);
+	}
+
+	assert(rmapTest(ret.state, rmap));
+
+	// this map is used to tell which input character points to which row
 	ret.inputChar = new Map!(dchar,int)();
 
 	// use this mapping to find the dchar the given column index points to
 	// than use this information to make the dchar point to the new index
 	// after the column was changed
-	Map!(int,dchar) map = new Map!(int,dchar)();
+	MultiMap!(int,dchar) cmap = new MultiMap!(int,dchar)();
 
 	// fill the datastructures
 	ISRIterator!(dchar) isIt = inputSet.begin();
 	for(int i = 0; i < inputSet.getSize(); isIt++, i++) {
 		ret.inputChar.insert(*isIt, i);
-		map.insert(i, *isIt);
+		cmap.insert(i, *isIt);
 	}
-	assert(mapTest(map, ret.inputChar));
+	assert(cmapTest(cmap, ret.inputChar));
+
+	for(int i = 0; i < ret.table[0].getSize(); i++) {
+		for(int j = i+1; j < ret.table[0].getSize(); j++) {
+			if(columnEqual(ret.table, i, j)) {
+				println(i, j);
+			}
+		}
+	}
 
 	return ret;
 }
 
-bool mapTest(Map!(int,dchar) m1, Map!(dchar,int) m2) {
-	ISRIterator!(MapItem!(int,dchar)) mIt = m1.begin();
+bool columnEqual(Vector!(Vector!(int)) t, int i1, int i2) {
+	// check if the given indices i1 and i2 are valid, for all rows
+	assert(t.getSize() > 0);
+	foreach(Vector!(int) it; t) {
+		assert(it.getSize() > i1);
+		assert(it.getSize() > i2);
+	}
+
+	foreach(Vector!(int) it; t) {
+		if(it[i1] != it[i2])
+			return false;
+	}
+	return true;
+}
+
+bool cmapTest(MultiMap!(int,dchar) m1, Map!(dchar,int) m2) {
+	hurt.container.multimap.Iterator!(int,dchar) mIt = m1.begin();
 
 	for(; mIt.isValid(); mIt++) {
-		dchar dc = (*mIt).getData();
+		dchar dc = *mIt;
 		int one = m2.find(dc).getData();
-		if(one != (*mIt).getKey()) {
+		if(one != mIt.getKey()) {
 			return false;	
+		}
+	}
+	return true;
+}
+
+bool rmapTest(in int[] states, MultiMap!(int,int) map) {
+	hurt.container.multimap.Iterator!(int,int) it = map.begin();
+	for(; it.isValid(); it++) {
+		if(states[*it] != it.getKey()) {
+			return false;
 		}
 	}
 	return true;
