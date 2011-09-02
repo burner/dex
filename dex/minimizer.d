@@ -226,13 +226,39 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	}
 	assert(cmapTest(cmap, ret.inputChar));
 
+	println("equal column");
 	for(int i = 0; i < ret.table[0].getSize(); i++) {
+		bool p = false;
 		for(int j = i+1; j < ret.table[0].getSize(); j++) {
 			if(columnEqual(ret.table, i, j)) {
-				println(i, j);
+				if(!p)
+					printf("%2d: ",i);
+				p = true;
+				printf("%3d",j);
 			}
 		}
+		if(p)
+			println();
 	}
+
+	println("equal rows");
+	for(int i = 0; i < ret.table.getSize(); i++) {
+		bool p = false;
+		for(int j = i+1; j < ret.table.getSize(); j++) {
+			if(rowEqual(ret.table, i, j)) {
+				if(!p)
+					printf("%2d: ",i);
+				p = true;
+				printf("%3d",j);
+
+			}
+		}
+		if(p)
+			println();
+	}
+	println();
+
+	printTable(ret.table);
 
 	return ret;
 }
@@ -249,6 +275,21 @@ bool columnEqual(Vector!(Vector!(int)) t, int i1, int i2) {
 		if(it[i1] != it[i2])
 			return false;
 	}
+	return true;
+}
+
+bool rowEqual(Vector!(Vector!(int)) t, int i1, int i2) {
+	// check if the given indices i1 and i2 are valid, for all rows
+	assert(t.getSize() > i1);
+	assert(t.getSize() > i2);
+	assert(t[i1].getSize() == t[i2].getSize());
+
+	for(size_t i = 0; i < t[i1].getSize(); i++) {
+		if(t[i1][i] != t[i2][i]) {
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -273,4 +314,19 @@ bool rmapTest(in int[] states, MultiMap!(int,int) map) {
 		}
 	}
 	return true;
+}
+
+void printTable(Vector!(Vector!(int)) table) {
+	printf("    ");
+	for(int i = 0; i < table[0].getSize(); i++) {
+		printf("%3d", i);
+	}
+	println();
+	foreach(idx, it ; table) {
+		printf("%3d ", idx);
+		foreach(jt; it) {
+			printf("%3d", jt);
+		}
+		println();
+	}
 }
