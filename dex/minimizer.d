@@ -171,7 +171,7 @@ public Vector!(State) minimize(T)(DLinkedList!(State) oldStates,
 struct MinTable {
 	Vector!(Vector!(int)) table;
 	int[] state;
-	Map!(dchar,int) inputChar;
+	Map!(dchar,Column) inputChar;
 }
 
 class Column {
@@ -240,10 +240,8 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	}
 	assert(ret.table.getSize() != 0);
 
-	println(__LINE__);
 	Map!(dchar,Column) co = new Map!(dchar,Column)();
 	ISRIterator!(dchar) cit = inputSet.begin();
-	println(__LINE__);
 	for(int i = 0; cit.isValid(); cit++, i++) {
 		Column row = new Column(i, states.getSize());
 		co.insert(*cit, row);
@@ -253,8 +251,7 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 		}
 	}
 
-	println(__LINE__);
-	ISRIterator!(MapItem!(dchar, Column)) mit = co.begin();
+	/*ISRIterator!(MapItem!(dchar, Column)) mit = co.begin();
 	for(; mit.isValid(); mit++) {
 		printf("%c [",(*mit).getKey());
 		foreach(it; (*mit).getData().row) {
@@ -263,11 +260,12 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 		println("]");
 	}
 
-	printEqual(ret.table);
+	printEqual(ret.table);*/
 	columnReduce(ret.table);
 	columnRemap(ret.table, co);
+	ret.inputChar = co;
 
-	mit = co.begin();
+	/*mit = co.begin();
 	for(; mit.isValid(); mit++) {
 		printf("%c %3d [",(*mit).getKey(), (*mit).getData().idx);
 		foreach(it; (*mit).getData().row) {
@@ -275,7 +273,7 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 		}
 		println("]");
 	}
-	printTable(ret.table);
+	printTable(ret.table);*/
 
 	Map!(int,Row) r = new Map!(int,Row)();
 	foreach(idx, it; ret.table) {
@@ -283,21 +281,40 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 			new Row(conv!(size_t,int)(idx), it.clone));	
 	}
 	
-	ISRIterator!(MapItem!(int,Row)) rit = r.begin();
+	/*ISRIterator!(MapItem!(int,Row)) rit = r.begin();
 	for(; rit.isValid(); rit++) {
 		printf("%c %3d [",(*rit).getKey(), (*rit).getData().idx);
 		foreach(it; (*rit).getData().row) {
 			printf("%3d,", it);
 		}
 		println("]");
-	}
+	}*/
+
 	rowReduce(ret.table);
-	printTable(ret.table);
+	rowRemap(ret.table, r);
+
+	ret.state = new int[r.getSize()];
+	ISRIterator!(MapItem!(int,Row)) it = r.begin();
+	for(size_t idx = 0; it.isValid(); idx++, it++) {
+		assert((*it).getKey() == idx);
+		ret.state[idx] = (*it).getData().idx;
+	}
+
+	/*rit = r.begin();
+	for(; rit.isValid(); rit++) {
+		printf("%3d %3d [",(*rit).getKey(), (*rit).getData().idx);
+		foreach(it; (*rit).getData().row) {
+			printf("%3d,", it);
+		}
+		println("]");
+	}
+
+	printTable(ret.table);*/
 
 	return ret;
 }
 
-bool compareRow(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {
+bool compareColumn(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {
 	assert(r2.getSize > 0);
 	assert(r2[0].getSize() > r2idx);
 	assert(r1.getSize() == r2.getSize());
@@ -314,7 +331,7 @@ void columnRemap(Vector!(Vector!(int)) t, Map!(dchar,Row) r) {
 	ISRIterator!(MapItem!(dchar, Row)) it = r.begin();
 	for(; it.isValid(); it++) {
 		for(size_t idx = 0; idx < t[0].getSize(); idx++) {
-			if(compareRow((*it).getData().row, t, idx)) {
+			if(compareColumn((*it).getData().row, t, idx)) {
 				(*it).getData().idx = conv!(size_t,int)(idx);
 				break;
 			}
@@ -353,6 +370,30 @@ bool columnEqual(Vector!(Vector!(int)) t, int i1, int i2) {
 			return false;
 	}
 	return true;
+}
+
+bool compareRow(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {
+	assert(r2.getSize() > r2idx);
+	assert(r1.getSize() == r2[0].getSize());
+	
+	foreach(idx, it; r2[r2idx]) {
+		if(it != r1[idx]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void rowRemap(Vector!(Vector!(int)) t, Map!(int,Row) r) {
+	ISRIterator!(MapItem!(int, Row)) it = r.begin();
+	for(; it.isValid(); it++) {
+		for(size_t idx = 0; idx < t[0].getSize(); idx++) {
+			if(compareRow((*it).getData().row, t, idx)) {
+				(*it).getData().idx = conv!(size_t,int)(idx);
+				break;
+			}
+		}
+	}
 }
 
 void rowReduce(Vector!(Vector!(int)) t) {

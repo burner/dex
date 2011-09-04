@@ -506,7 +506,8 @@ class RegEx {
 	}
 
 	void writeTable(string filename) {
-		dex.emit.writeTable(this.minDfa, this.inputSet, filename);
+		MinTable min = this.minTable();
+		dex.emit.writeTable(min, this.minDfa, this.inputSet, filename);
 	}
 
 	MinTable minTable() {

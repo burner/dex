@@ -61,7 +61,7 @@ void main(string[] args) {
 	}
 
 	re.writeTable("dfaTable");
-	re.minTable();
+	//re.minTable();
 
 	delete input;
 }

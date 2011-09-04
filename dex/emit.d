@@ -1,22 +1,24 @@
 module dex.emit;
 
 import dex.state;
+import dex.minimizer;
 
 import hurt.algo.sorting;
-import hurt.conv.conv;
-import hurt.container.iterator;
-import hurt.container.set;
 import hurt.container.isr;
+import hurt.container.iterator;
+import hurt.container.map;
+import hurt.container.set;
 import hurt.container.vector;
-import hurt.string.stringbuffer;
-import hurt.string.formatter;
-import hurt.util.array;
-import hurt.string.utf;
+import hurt.conv.conv;
 import hurt.io.stdio;
 import hurt.io.stream;
+import hurt.string.formatter;
+import hurt.string.stringbuffer;
+import hurt.string.utf;
+import hurt.util.array;
 import std.process;
 
-void writeTable(Iterable!(State) states, Set!(dchar) inputSet,
+void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 		string filename) {
 	hurt.io.stream.File file = new hurt.io.stream.File(filename ~ ".tab", 
 		FileMode.OutNew);
@@ -49,6 +51,16 @@ void writeTable(Iterable!(State) states, Set!(dchar) inputSet,
 	file.write('\n');
 	sb.clear();
 
+	for(int i = 0; i < howManyBlanks; i++)
+		sb.pushBack(' ');
+	for(int i = 0; i < inputSet.getSize(); i++) {
+		sb.pushBack(format!(char,dchar)("%" ~ 
+			conv!(int,string)(howManyBlanks+1) ~ "d", i));
+	}
+	file.writeString(conv!(dstring,string)(sb.getString()));
+	file.write('\n');
+	sb.clear();
+
 	foreach(it; states) {
 		sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(howManyBlanks)
 			~ "d", it.getStateId()));
@@ -67,7 +79,58 @@ void writeTable(Iterable!(State) states, Set!(dchar) inputSet,
 		file.writeString(conv!(dstring,string)(sb.getString()));
 		sb.clear();
 	}
-	
+
+	file.write('\n');
+	file.write('\n');
+
+	sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(9)
+		~ "s", "input"));
+
+	ISRIterator!(MapItem!(dchar,Column)) rit = min.inputChar.begin();
+	for(; rit.isValid(); rit++) {
+		for(int i = 0; i < howManyBlanks; i++)
+			sb.pushBack(' ');
+
+		sb.pushBack((*rit).getKey());	
+	}
+	sb.pushBack('\n');
+	file.writeString(conv!(dstring,string)(sb.getString()));
+	sb.clear();
+
+	rit = min.inputChar.begin();
+	sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(9)
+		~ "s", "column"));
+
+	for(; rit.isValid(); rit++) {
+		sb.pushBack(format!(char,dchar)("%" ~ 
+			conv!(int,string)(howManyBlanks+1) ~ "d", (*rit).getData().idx));
+	}
+	sb.pushBack('\n');
+	file.writeString(conv!(dstring,string)(sb.getString()));
+	sb.clear();
+
+	file.write('\n');
+	sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(9)
+		~ "s", "state"));
+
+	foreach(idx, sit; min.state) {
+		sb.pushBack(format!(char,dchar)("%3d", idx));
+	}
+	sb.pushBack('\n');
+	file.writeString(conv!(dstring,string)(sb.getString()));
+	sb.clear();
+
+	sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(9)
+		~ "s", "row"));
+
+	foreach(idx, sit; min.state) {
+		sb.pushBack(format!(char,dchar)("%3d", sit));
+	}
+
+	sb.pushBack('\n');
+	file.writeString(conv!(dstring,string)(sb.getString()));
+	sb.clear();
+
 	file.close();
 }
 
