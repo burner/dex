@@ -251,29 +251,9 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 		}
 	}
 
-	/*ISRIterator!(MapItem!(dchar, Column)) mit = co.begin();
-	for(; mit.isValid(); mit++) {
-		printf("%c [",(*mit).getKey());
-		foreach(it; (*mit).getData().row) {
-			printf("%3d,", it);
-		}
-		println("]");
-	}
-
-	printEqual(ret.table);*/
 	columnReduce(ret.table);
 	columnRemap(ret.table, co);
 	ret.inputChar = co;
-
-	/*mit = co.begin();
-	for(; mit.isValid(); mit++) {
-		printf("%c %3d [",(*mit).getKey(), (*mit).getData().idx);
-		foreach(it; (*mit).getData().row) {
-			printf("%3d,", it);
-		}
-		println("]");
-	}
-	printTable(ret.table);*/
 
 	Map!(int,Row) r = new Map!(int,Row)();
 	foreach(idx, it; ret.table) {
@@ -281,15 +261,6 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 			new Row(conv!(size_t,int)(idx), it.clone));	
 	}
 	
-	/*ISRIterator!(MapItem!(int,Row)) rit = r.begin();
-	for(; rit.isValid(); rit++) {
-		printf("%c %3d [",(*rit).getKey(), (*rit).getData().idx);
-		foreach(it; (*rit).getData().row) {
-			printf("%3d,", it);
-		}
-		println("]");
-	}*/
-
 	rowReduce(ret.table);
 	rowRemap(ret.table, r);
 
@@ -300,18 +271,27 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 		ret.state[idx] = (*it).getData().idx;
 	}
 
-	/*rit = r.begin();
-	for(; rit.isValid(); rit++) {
-		printf("%3d %3d [",(*rit).getKey(), (*rit).getData().idx);
-		foreach(it; (*rit).getData().row) {
-			printf("%3d,", it);
-		}
-		println("]");
-	}
-
-	printTable(ret.table);*/
+	assert(testReduction(ret.table, ret.state, ret.inputChar, states, 
+		inputSet));
 
 	return ret;
+}
+
+bool testReduction(Vector!(Vector!(int)) t, int[] r, 
+		Map!(dchar,Column) c, Vector!(State) s, Set!(dchar) i) {
+	foreach(sit; s) {
+		if(sit.getStateId() == -1)
+			continue;
+
+		foreach(iit; i) {
+			int oldNext = sit.getSingleTransition(iit).getStateId();
+			int newNext = t[r[sit.getStateId()]][(c.find(iit)).getData().idx];
+			if(oldNext != newNext) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 bool compareColumn(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {

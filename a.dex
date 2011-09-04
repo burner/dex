@@ -6,7 +6,13 @@
 
 %% foobar4
 	foobar5
-	foobar6 %%
+	foobar6
+"[:word:]+" {: identifer :}
+"if" {: if :}
+"for" {: for :}
+"while" {: while :}
+"do" {: do :}
+%%
 
 %% foobar7 %%
 

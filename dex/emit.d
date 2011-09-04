@@ -152,6 +152,22 @@ void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 		sb.clear();
 	}
 
+	long oldTable = states.getSize() * inputSet.getSize();
+	long newTable = min.table.getSize() * min.table[0].getSize();
+
+	long oldTableDiv = oldTable / newTable;
+
+	file.writeString("\n   table reduction ratio = ");
+	file.writeString(conv!(long,string)(oldTableDiv));
+	file.write(':');
+	file.writeString("1\n\n");
+
+	file.writeString("   old table has = ");
+	file.writeString(conv!(long,string)(oldTable));
+	file.writeString(" states\n");
+	file.writeString("   new table has = ");
+	file.writeString(conv!(long,string)(newTable));
+	file.writeString(" states\n");
 	file.close();
 }
 
