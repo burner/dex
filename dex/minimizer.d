@@ -174,13 +174,18 @@ struct MinTable {
 	Map!(dchar,int) inputChar;
 }
 
-class Row {
+class Column {
 	int idx;
 	Vector!(int) row;
 
 	this(int idx, size_t size) {
 		this.idx = idx;
 		this.row = new Vector!(int)(size);
+	}
+
+	this(int idx, Vector!(int) row) {
+		this.idx = idx;
+		this.row = row;
 	}
 
 	override hash_t toHash() const {
@@ -212,6 +217,8 @@ class Row {
 	}
 }
 
+alias Column Row;
+
 MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	// create the return type and it's members
 	MinTable ret;
@@ -234,12 +241,12 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	assert(ret.table.getSize() != 0);
 
 	println(__LINE__);
-	MultiMap!(Row,dchar) rt = new MultiMap!(Row,dchar)(ISRType.HashTable);
+	Map!(dchar,Column) co = new Map!(dchar,Column)();
 	ISRIterator!(dchar) cit = inputSet.begin();
 	println(__LINE__);
 	for(int i = 0; cit.isValid(); cit++, i++) {
-		Row row = (rt.insert(new Row(i, states.getSize()), *cit)).getKey();
-		println(__LINE__,i);
+		Column row = new Column(i, states.getSize());
+		co.insert(*cit, row);
 		foreach(idx, sit; states) {
 			if(idx > 0)
 				row.row.pushBack(sit.getSingleTransition(*cit).getStateId());
@@ -247,110 +254,90 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	}
 
 	println(__LINE__);
-	hurt.container.multimap.Iterator!(Row, dchar) mit = rt.begin();
+	ISRIterator!(MapItem!(dchar, Column)) mit = co.begin();
 	for(; mit.isValid(); mit++) {
-		printf("%2d %c [",mit.getKey().idx, *mit);
-		foreach(it; mit.getKey().row) {
-			printf("%3d,", it);
-		}
-		println("]");
-	}
-	reduceRow(rt);
-	println(__LINE__, rt.getSize());
-	mit = rt.begin();
-	for(; mit.isValid(); mit++) {
-		printf("%2d %c [",mit.getKey().idx, *mit);
-		foreach(it; mit.getKey().row) {
+		printf("%c [",(*mit).getKey());
+		foreach(it; (*mit).getData().row) {
 			printf("%3d,", it);
 		}
 		println("]");
 	}
 
 	printEqual(ret.table);
+	columnReduce(ret.table);
+	columnRemap(ret.table, co);
+
+	mit = co.begin();
+	for(; mit.isValid(); mit++) {
+		printf("%c %3d [",(*mit).getKey(), (*mit).getData().idx);
+		foreach(it; (*mit).getData().row) {
+			printf("%3d,", it);
+		}
+		println("]");
+	}
+	printTable(ret.table);
+
+	Map!(int,Row) r = new Map!(int,Row)();
+	foreach(idx, it; ret.table) {
+		r.insert(conv!(size_t,int)(idx), 
+			new Row(conv!(size_t,int)(idx), it.clone));	
+	}
+	
+	ISRIterator!(MapItem!(int,Row)) rit = r.begin();
+	for(; rit.isValid(); rit++) {
+		printf("%c %3d [",(*rit).getKey(), (*rit).getData().idx);
+		foreach(it; (*rit).getData().row) {
+			printf("%3d,", it);
+		}
+		println("]");
+	}
+	rowReduce(ret.table);
 	printTable(ret.table);
 
 	return ret;
 }
 
-void reduceRow(MultiMap!(Row, dchar) r) {
-	hurt.container.multimap.Iterator!(Row, dchar) it = r.begin();
-	outer: while(it.isValid()) {
-		hurt.container.multimap.Iterator!(Row, dchar) jt = r.begin();
-		while(jt.isValid() && jt.getKey().idx == it.getKey().idx) {
-			println(__LINE__, it.getKey().idx, jt.getKey().idx);
-			jt++;
+bool compareRow(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {
+	assert(r2.getSize > 0);
+	assert(r2[0].getSize() > r2idx);
+	assert(r1.getSize() == r2.getSize());
+	
+	foreach(idx, it; r2) {
+		if(it[r2idx] != r1[idx]) {
+			return false;
 		}
-		println(__LINE__, it.getKey().idx, jt.getKey().idx);
-		for(; jt.isValid(); jt++) {
-			println(__LINE__, it.getKey().idx, jt.getKey().idx);
-			if(it.getKey().row == jt.getKey().row && it.getKey().idx != jt.getKey().idx) {
-				printfln("%4d %2d %2d", __LINE__, it.getKey().idx, jt.getKey().idx);
-				dchar toAdd = *jt;
-				r.remove(jt);
-				r.insert(it.getKey(), toAdd);
-				it = r.begin();
-				continue outer;
+	}
+	return true;
+}
+
+void columnRemap(Vector!(Vector!(int)) t, Map!(dchar,Row) r) {
+	ISRIterator!(MapItem!(dchar, Row)) it = r.begin();
+	for(; it.isValid(); it++) {
+		for(size_t idx = 0; idx < t[0].getSize(); idx++) {
+			if(compareRow((*it).getData().row, t, idx)) {
+				(*it).getData().idx = conv!(size_t,int)(idx);
+				break;
 			}
 		}
-		it++;
 	}
 }
 
-void columnReduce(Vector!(Vector!(int)) t, Map!(dchar,int) c, 
-		MultiMap!(int,dchar) h) {
+void columnReduce(Vector!(Vector!(int)) t) {
 	assert(t.getSize() > 0);
 
 	for(int i = 0; i < t[0].getSize()-1; i++) {
 		for(int j = i+1; j < t[0].getSize(); j++) {
-			println(i,j, t[0].getSize());
+			//println(i,j, t[0].getSize());
 			if(columnEqual(t, i, j)) {
-				println(__LINE__);
+				//println(__LINE__);
 				foreach(it; t) {
 					it.remove(j);
 				}
-				println(__LINE__);
-				hurt.container.multimap.Iterator!(int,dchar) it = h.range(j);
-				for(; it.isValid(); it++) {
-					c.insert(*it, i);
-					h.insert(i, *it); 
-				}
-				h.removeRange(j);
-				assert(cmapTest(h, c));
-				println(__LINE__);
-				reduceByOne(h,c,j);
-				println(__LINE__);
-				assert(cmapTest(h, c));
+				//println(__LINE__);
 				j--;
 			}
 		}
 	}
-}
-
-void reduceByOne(MultiMap!(int,dchar) mm, Map!(dchar,int) m, int j) {
-	assert(mm.getSize() == m.getSize(), 
-		conv!(size_t,string)(mm.getSize()) ~ " " ~ 
-		conv!(size_t,string)(m.getSize()));
-
-	hurt.container.multimap.Iterator!(int,dchar) it = mm.lower(++j);
-	for(; it.isValid(); it++) {
-		if(it.getKey() == j) {
-			mm.insert(j-1, *it);
-			m.insert(*it, j-1);
-		} else {
-			mm.removeRange(j);
-			m.remove(j);
-			j++;
-			mm.insert(j-1, *it);
-			m.insert(*it, j-1);
-			if(mm.getSize() != m.getSize())
-				printColumnMapping(mm,m);	
-			assert(mm.getSize() == m.getSize(), 
-				conv!(size_t,string)(mm.getSize()) ~ " " ~ 
-				conv!(size_t,string)(m.getSize()));
-		}
-	}
-	mm.removeRange(j);
-	m.remove(j);
 }
 
 bool columnEqual(Vector!(Vector!(int)) t, int i1, int i2) {
@@ -366,6 +353,18 @@ bool columnEqual(Vector!(Vector!(int)) t, int i1, int i2) {
 			return false;
 	}
 	return true;
+}
+
+void rowReduce(Vector!(Vector!(int)) t) {
+	assert(t.getSize() > 0);
+	for(int i = 0; i < t.getSize()-1; i++) {
+		for(int j = i+1; j < t.getSize(); j++) {
+			if(t[i] == t[j]) {
+				t.remove(j);
+				j--;
+			}
+		}
+	}
 }
 
 bool rowEqual(Vector!(Vector!(int)) t, int i1, int i2) {
@@ -391,16 +390,6 @@ bool cmapTest(MultiMap!(int,dchar) m1, Map!(dchar,int) m2) {
 		int one = m2.find(dc).getData();
 		if(one != mIt.getKey()) {
 			return false;	
-		}
-	}
-	return true;
-}
-
-bool rmapTest(in int[] states, MultiMap!(int,int) map) {
-	hurt.container.multimap.Iterator!(int,int) it = map.begin();
-	for(; it.isValid(); it++) {
-		if(states[*it] != it.getKey()) {
-			return false;
 		}
 	}
 	return true;
