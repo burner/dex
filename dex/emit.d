@@ -128,8 +128,29 @@ void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 	}
 
 	sb.pushBack('\n');
+	sb.pushBack('\n');
 	file.writeString(conv!(dstring,string)(sb.getString()));
 	sb.clear();
+
+	sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(4)
+		~ "s", " "));
+	for(int i = 0; i < min.table[0].getSize(); i++) {
+		sb.pushBack(format!(char,dchar)("%3d", i));
+	}
+	sb.pushBack('\n');
+	file.writeString(conv!(dstring,string)(sb.getString()));
+	sb.clear();
+
+	foreach(idx, rit; min.table) {
+		sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(4)
+			~ "d", idx));
+		foreach(s; rit) {
+			sb.pushBack(format!(char,dchar)("%3d", s));
+		}
+		sb.pushBack('\n');
+		file.writeString(conv!(dstring,string)(sb.getString()));
+		sb.clear();
+	}
 
 	file.close();
 }
