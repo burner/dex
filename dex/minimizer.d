@@ -174,6 +174,44 @@ struct MinTable {
 	Map!(dchar,int) inputChar;
 }
 
+class Row {
+	int idx;
+	Vector!(int) row;
+
+	this(int idx, size_t size) {
+		this.idx = idx;
+		this.row = new Vector!(int)(size);
+	}
+
+	override hash_t toHash() const {
+		return this.idx;
+	}
+
+	override int opCmp(Object o) const {
+		Row f = cast(Row)o;
+		if(this.idx > f.idx)
+			return 1;
+		else if(this.idx < f.idx)
+			return -1;
+		else
+			return 0;
+	}
+
+	override bool opEquals(Object o) {
+		Row r = cast(Row)o;
+		if(r.row.getSize() != this.row.getSize())
+			return false;
+
+		foreach(size_t idx, int it; r.row) {
+			if(it != this.row[idx]) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
 MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	// create the return type and it's members
 	MinTable ret;
@@ -195,72 +233,124 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	}
 	assert(ret.table.getSize() != 0);
 
-	// This multimap is used to check the state array of the return value.
-	// It is also used to have a reference to know which elements of the 
-	// state array to change when rows are joined.
-	MultiMap!(int,int) rmap = new MultiMap!(int,int)();
-
-	// When you start minimizing every index points to the row with the 
-	// same index
-	ret.state = new int[states.getSize()-1];
-	for(int i = 0; i < ret.state.length; i++) {
-		ret.state[i] = i;
-		rmap.insert(i, i);
-	}
-
-	assert(rmapTest(ret.state, rmap));
-
-	// this map is used to tell which input character points to which row
-	ret.inputChar = new Map!(dchar,int)();
-
-	// use this mapping to find the dchar the given column index points to
-	// than use this information to make the dchar point to the new index
-	// after the column was changed
-	MultiMap!(int,dchar) cmap = new MultiMap!(int,dchar)();
-
-	// fill the datastructures
-	ISRIterator!(dchar) isIt = inputSet.begin();
-	for(int i = 0; i < inputSet.getSize(); isIt++, i++) {
-		ret.inputChar.insert(*isIt, i);
-		cmap.insert(i, *isIt);
-	}
-	assert(cmapTest(cmap, ret.inputChar));
-
-	println("equal column");
-	for(int i = 0; i < ret.table[0].getSize(); i++) {
-		bool p = false;
-		for(int j = i+1; j < ret.table[0].getSize(); j++) {
-			if(columnEqual(ret.table, i, j)) {
-				if(!p)
-					printf("%2d: ",i);
-				p = true;
-				printf("%3d",j);
-			}
+	println(__LINE__);
+	MultiMap!(Row,dchar) rt = new MultiMap!(Row,dchar)(ISRType.HashTable);
+	ISRIterator!(dchar) cit = inputSet.begin();
+	println(__LINE__);
+	for(int i = 0; cit.isValid(); cit++, i++) {
+		Row row = (rt.insert(new Row(i, states.getSize()), *cit)).getKey();
+		println(__LINE__,i);
+		foreach(idx, sit; states) {
+			if(idx > 0)
+				row.row.pushBack(sit.getSingleTransition(*cit).getStateId());
 		}
-		if(p)
-			println();
 	}
 
-	println("equal rows");
-	for(int i = 0; i < ret.table.getSize(); i++) {
-		bool p = false;
-		for(int j = i+1; j < ret.table.getSize(); j++) {
-			if(rowEqual(ret.table, i, j)) {
-				if(!p)
-					printf("%2d: ",i);
-				p = true;
-				printf("%3d",j);
-
-			}
+	println(__LINE__);
+	hurt.container.multimap.Iterator!(Row, dchar) mit = rt.begin();
+	for(; mit.isValid(); mit++) {
+		printf("%2d %c [",mit.getKey().idx, *mit);
+		foreach(it; mit.getKey().row) {
+			printf("%3d,", it);
 		}
-		if(p)
-			println();
+		println("]");
 	}
-	println();
+	reduceRow(rt);
+	println(__LINE__, rt.getSize());
+	mit = rt.begin();
+	for(; mit.isValid(); mit++) {
+		printf("%2d %c [",mit.getKey().idx, *mit);
+		foreach(it; mit.getKey().row) {
+			printf("%3d,", it);
+		}
+		println("]");
+	}
 
+	printEqual(ret.table);
 	printTable(ret.table);
 
 	return ret;
+}
+
+void reduceRow(MultiMap!(Row, dchar) r) {
+	hurt.container.multimap.Iterator!(Row, dchar) it = r.begin();
+	outer: while(it.isValid()) {
+		hurt.container.multimap.Iterator!(Row, dchar) jt = r.begin();
+		while(jt.isValid() && jt.getKey().idx == it.getKey().idx) {
+			println(__LINE__, it.getKey().idx, jt.getKey().idx);
+			jt++;
+		}
+		println(__LINE__, it.getKey().idx, jt.getKey().idx);
+		for(; jt.isValid(); jt++) {
+			println(__LINE__, it.getKey().idx, jt.getKey().idx);
+			if(it.getKey().row == jt.getKey().row && it.getKey().idx != jt.getKey().idx) {
+				printfln("%4d %2d %2d", __LINE__, it.getKey().idx, jt.getKey().idx);
+				dchar toAdd = *jt;
+				r.remove(jt);
+				r.insert(it.getKey(), toAdd);
+				it = r.begin();
+				continue outer;
+			}
+		}
+		it++;
+	}
+}
+
+void columnReduce(Vector!(Vector!(int)) t, Map!(dchar,int) c, 
+		MultiMap!(int,dchar) h) {
+	assert(t.getSize() > 0);
+
+	for(int i = 0; i < t[0].getSize()-1; i++) {
+		for(int j = i+1; j < t[0].getSize(); j++) {
+			println(i,j, t[0].getSize());
+			if(columnEqual(t, i, j)) {
+				println(__LINE__);
+				foreach(it; t) {
+					it.remove(j);
+				}
+				println(__LINE__);
+				hurt.container.multimap.Iterator!(int,dchar) it = h.range(j);
+				for(; it.isValid(); it++) {
+					c.insert(*it, i);
+					h.insert(i, *it); 
+				}
+				h.removeRange(j);
+				assert(cmapTest(h, c));
+				println(__LINE__);
+				reduceByOne(h,c,j);
+				println(__LINE__);
+				assert(cmapTest(h, c));
+				j--;
+			}
+		}
+	}
+}
+
+void reduceByOne(MultiMap!(int,dchar) mm, Map!(dchar,int) m, int j) {
+	assert(mm.getSize() == m.getSize(), 
+		conv!(size_t,string)(mm.getSize()) ~ " " ~ 
+		conv!(size_t,string)(m.getSize()));
+
+	hurt.container.multimap.Iterator!(int,dchar) it = mm.lower(++j);
+	for(; it.isValid(); it++) {
+		if(it.getKey() == j) {
+			mm.insert(j-1, *it);
+			m.insert(*it, j-1);
+		} else {
+			mm.removeRange(j);
+			m.remove(j);
+			j++;
+			mm.insert(j-1, *it);
+			m.insert(*it, j-1);
+			if(mm.getSize() != m.getSize())
+				printColumnMapping(mm,m);	
+			assert(mm.getSize() == m.getSize(), 
+				conv!(size_t,string)(mm.getSize()) ~ " " ~ 
+				conv!(size_t,string)(m.getSize()));
+		}
+	}
+	mm.removeRange(j);
+	m.remove(j);
 }
 
 bool columnEqual(Vector!(Vector!(int)) t, int i1, int i2) {
@@ -329,4 +419,54 @@ void printTable(Vector!(Vector!(int)) table) {
 		}
 		println();
 	}
+}
+
+void printEqual(Vector!(Vector!(int)) table) {
+	println("equal column");
+	for(int i = 0; i < table[0].getSize(); i++) {
+		bool p = false;
+		for(int j = i+1; j < table[0].getSize(); j++) {
+			if(columnEqual(table, i, j)) {
+				if(!p)
+					printf("%2d: ",i);
+				p = true;
+				printf("%3d",j);
+			}
+		}
+		if(p)
+			println();
+	}
+
+	println("equal rows");
+	for(int i = 0; i < table.getSize(); i++) {
+		bool p = false;
+		for(int j = i+1; j < table.getSize(); j++) {
+			if(rowEqual(table, i, j)) {
+				if(!p)
+					printf("%2d: ",i);
+				p = true;
+				printf("%3d",j);
+
+			}
+		}
+		if(p)
+			println();
+	}
+	println();
+}
+
+void printColumnMapping(MultiMap!(int,dchar) mm, Map!(dchar,int) m) {
+	hurt.container.multimap.Iterator!(int,dchar) it = mm.begin();
+	print("mmp ");
+	for(; it.isValid(); it++) {
+		printf("%d:%c ", it.getKey(), *it);
+	}
+	println();
+
+	ISRIterator!(MapItem!(dchar,int)) jt = m.begin();
+	print("map ");
+	for(; jt.isValid(); jt++) {
+		printf("%d:%c ", **jt, (*jt).getKey());
+	}
+	println();
 }
