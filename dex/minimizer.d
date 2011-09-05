@@ -73,8 +73,9 @@ private Vector!(State) finalizeGroups(Vector!(Vector!(State)) old,
 				ret[states.find(old[i][0].getSingleTransition(c)).getData()]);
 		}
 
-		if(ret[i].getStateId() == 0)
+		/*if(ret[i].getStateId() == 0)
 			continue;
+		*/
 
 		foreach(it; old[i]) {
 			foreach(jt; it.getAcceptingStates()) {

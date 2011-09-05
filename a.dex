@@ -11,10 +11,10 @@
 
 %% foobar7 %%
 
-"[:digit:_]+" {: int :}
-"0x[01234567_][01234567_]*" {: hex :}
-"0b[01_][01_]*" {: bin :}
-"[:digit:]+.[:digit:]*[fdr]*" {: float :}
+"[+-:digit:_][:digit:_]*" {: int :}
+"0x[+-01234567_][01234567_]*" {: hex :}
+"0b[+-01_][01_]*" {: bin :}
+"[+-:digit:][:digit:].[:digit:]*[fdr]*" {: float :}
 "[:word:]+" {: identifer :}
 "long" {: long :}
 "if" {: if :}
@@ -23,3 +23,8 @@
 "do" {: do :}
 "int" {: int :}
 "void" {: void :}
+"delegate" {: delegate :}
+"function" {: function :}
+"template" {: template :}
+"&&" {: logicand :}
+"||" {: logicor :}

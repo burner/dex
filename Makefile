@@ -3,7 +3,7 @@ all: fine
 #CFLAGS=-m64 -offsm -unittest -d-debug -gc
 #CFLAGS=-m64 -offsm -unittest -debug -gc -debug=RegExDebug -debug=StateDebug
 CFLAGS=-m64 -unittest -debug -gc -I../libhurt/ -wi
-#CFLAGS=-m64 -offsm -unittest
+#CFLAGS=-m64 -offsm -O -wi -I../libhurt
 
 FILES = dex/main.d dex/fsm.d dex/strutil.d  \
 dex/regex.d dex/state.d dex/parseerror.d dex/minimizer.d \

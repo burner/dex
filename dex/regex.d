@@ -59,7 +59,7 @@ class RegEx {
 	bool createNFA(string str, int action) {
 		this.cleanUp();
 		//str = concatExpand(str);
-		dstring pstr = prepareString(conv!(string,dstring)(str));
+		dstring pstr = concatExpand(conv!(string,dstring)(str));
 		debug(RegExDebug) println(__FILE__,__LINE__, " ", pstr, " :length ",
 			pstr.length);
 			

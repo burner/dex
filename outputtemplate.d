@@ -4,14 +4,13 @@ abstract class Lexer {
 	public dchar eofChar() const;
 }
 
-private import hurt.io.stream;
-private import hurt.io.file;
-private import hurt.conv.conv;
-private import hurt.string.utf;
+import hurt.conv.conv;
+import hurt.io.file;
+import hurt.io.stdio;
+import hurt.io.stream;
+import hurt.string.utf;
 
 class DexLexer : Lexer {
-	import hurt.io.stdio;
-	import std.stdio;
 	private string filename;
 	private hurt.io.stream.BufferedFile file;
 
@@ -45,6 +44,10 @@ class DexLexer : Lexer {
 
 	public size_t getCurrentIndexInLine() const {
 		return this.charIdx;
+	}
+
+	public string getFilename() const {
+		return this.filename;
 	}
 
 	public bool isEOF() {
@@ -84,10 +87,6 @@ class DexLexer : Lexer {
 
 	public void run() { // a stupid run methode could look like this »«¢¢ſð@
 		println(__LINE__, this.isEOF(), this.isEmpty());
-		/*dchar next = ' ';
-		while(dchar.init != (next = getNextChar()))
-			print(next);
-		*/
 		while(!isEmpty()) {
 			if(this.getCurrentIndexInLine() == 0) {
 				print(this.getCurrentLineCount());

@@ -171,24 +171,23 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 			return('\v' ~ setUnionSymbol!(T)(str.dup) ~ '\f').idup;
 		}
 	}
-}
+}*/
 
-public immutable(T)[] concatExpand(T)(immutable(T)[] str) 
-		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
+public immutable(dchar)[] concatExpand(immutable(dchar)[] str) {
 	//writeln(__LINE__, " ", str);
-	str = expandRange!(T)(str);
+	str = prepareString(str);
 	//writeln(__LINE__, " ", str);
-	T[] ret = new T[str.length*3u];
+	dchar[] ret = new dchar[str.length*3u];
 	uint retPtr = 0;
-	T cLeft;
-	T cRight;
+	dchar cLeft;
+	dchar cRight;
 	for(size_t i = 0; i < str.length-1; i++) {
 		cLeft = str[i];
 		cRight = str[i+1];
 		ret[retPtr++] = cLeft;
-		if(isInput!(T)(cLeft) || isRightParanthesis!(T)(cLeft) 
+		if(isInput!(dchar)(cLeft) || isRightParanthesis!(dchar)(cLeft) 
 				|| cLeft == ST) {
-			if(isInput(cRight) || isLeftParanthesis!(T)(cRight)) {
+			if(isInput(cRight) || isLeftParanthesis!(dchar)(cRight)) {
 				ret[retPtr++] = CC;
 			}
 		}
@@ -196,7 +195,7 @@ public immutable(T)[] concatExpand(T)(immutable(T)[] str)
 	ret[retPtr++] = str[$-1];
 	return ret[0..retPtr].idup;
 }
-*/
+
 immutable(T)[] stringWrite(T)(immutable(T)[] str) {
 	T[] ret = new T[str.length];
 	foreach(idx,it;str) {
@@ -233,6 +232,11 @@ public pure bool isOperator(T)(T ch)
 public pure bool isInput(T)(T ch)
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	return !isOperator!(T)(ch);
+}
+
+unittest {
+	assert(isInput!(dchar)('-'));
+	assert(isInput!(dchar)('+'));
 }
 
 public pure bool isRightParanthesis(T)(T ch)
