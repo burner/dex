@@ -58,13 +58,14 @@ class RegEx {
 
 	bool createNFA(string str, int action) {
 		this.cleanUp();
-		str = concatExpand(str);
-		debug(RegExDebug) println(__FILE__,__LINE__, " ", str, " :length ",
-			str.length);
+		//str = concatExpand(str);
+		dstring pstr = prepareString(conv!(string,dstring)(str));
+		debug(RegExDebug) println(__FILE__,__LINE__, " ", pstr, " :length ",
+			pstr.length);
 			
-		foreach(idx,it;str) {
+		foreach(idx,it;pstr) {
 			debug(RegExDebug) println(__FILE__,__LINE__, " ", it, " ", idx);
-			if(isInput!(char)(it)) {
+			if(isInput!(dchar)(it)) {
 				debug(RegExDebug) println(__FILE__,__LINE__, " isInput");
 				this.push(it);
 			} else if(operatorStack.empty()) {

@@ -12,7 +12,7 @@ public immutable char RP = '\f';
 public immutable char CC = '\a';
 public immutable char UN = cast(char)6;
 public immutable char ST = cast(char)14;
-
+/*
 public immutable(T)[] expandRange(T)(immutable(T)[] str) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	StringBuffer!(T) ret = new StringBuffer!(T)(str.length*3);	
@@ -109,6 +109,7 @@ unittest {
 	}
 	assert(rs);
 }
+*/
 
 public immutable(T)[] setUnionSymbol(T)(T[] str) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
@@ -125,6 +126,7 @@ public immutable(T)[] setUnionSymbol(T)(T[] str)
 	return ret[0..ptr].idup;
 }
 
+/*
 public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	//writeln(__LINE__, " ",str);
@@ -194,7 +196,7 @@ public immutable(T)[] concatExpand(T)(immutable(T)[] str)
 	ret[retPtr++] = str[$-1];
 	return ret[0..retPtr].idup;
 }
-
+*/
 immutable(T)[] stringWrite(T)(immutable(T)[] str) {
 	T[] ret = new T[str.length];
 	foreach(idx,it;str) {
@@ -214,13 +216,14 @@ immutable(T)[] stringWrite(T)(immutable(T)[] str) {
 	}
 	return ret.idup;
 }
-
+/*
 unittest {
 	assert("f\ad"~ST == concatExpand("fd*"), 
 		concatExpand("fd*"));
 	assert("f\ad"~ST~"\a\vt"~UN~"r\f\aw" == concatExpand("fd*[tr]w"), 
 		stringWrite(concatExpand("fd*[tr]w")));
 }
+*/
 
 public pure bool isOperator(T)(T ch)
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
