@@ -511,7 +511,11 @@ class RegEx {
 	}
 
 	MinTable minTable() {
+		println("table minimization started with", 
+			this.minDfa.getSize() * this.inputSet.getSize(), "entries");
 		MinTable ret = 	dex.minimizer.minTable(this.minDfa, this.inputSet);
+		println("table minimized to", 
+			ret.table[0].getSize() * ret.table.getSize(), "entries");
 		return ret;
 	}
 }

@@ -46,7 +46,6 @@ private Vector!(Vector!(State)) makeInitPartitions(
 private Vector!(State) finalizeGroups(Vector!(Vector!(State)) old,
 		Set!(dchar) inputSet, Map!(State,long) states) {
 	Vector!(State) ret = new Vector!(State)();
-	//writeln(__LINE__," ",old.getSize());
 	// make the states gone fill them later
 	int idCnt = 1;
 	outer: foreach(idx,it; old) {
@@ -258,7 +257,7 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	Map!(int,Row) r = new Map!(int,Row)();
 	foreach(idx, it; ret.table) {
 		r.insert(conv!(size_t,int)(idx), 
-			new Row(conv!(size_t,int)(idx), it.clone));	
+			new Row(conv!(size_t,int)(idx), it.clone()));	
 	}
 	
 	rowReduce(ret.table);
@@ -270,16 +269,13 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 		assert((*it).getKey() == idx);
 		ret.state[idx] = (*it).getData().idx;
 	}
-	println(__LINE__);
 
-	printTable(ret.table);
-	printMapping(ret.state, ret.inputChar);
+	//printTable(ret.table);
+	//printMapping(ret.state, ret.inputChar);
 	assert(testReductionOnly(ret.table, ret.state, ret.inputChar));
 	assert(testReduction(ret.table, ret.state, ret.inputChar, states, 
 		inputSet));
 	
-	println(__LINE__);
-
 	return ret;
 }
 
@@ -316,9 +312,7 @@ bool testReduction(Vector!(Vector!(int)) t, int[] r,
 			continue;
 
 		foreach(iit; i) {
-			println(__LINE__, sit.getStateId(),(c.find(iit)).getData().idx);
 			int oldNext = sit.getSingleTransition(iit).getStateId();
-			println(__LINE__, t.getSize(), t[0].getSize());
 			int newNext = t[r[sit.getStateId()]][(c.find(iit)).getData().idx];
 			if(oldNext != newNext) {
 				return false;
@@ -358,13 +352,10 @@ void columnReduce(Vector!(Vector!(int)) t) {
 
 	for(int i = 0; i < t[0].getSize()-1; i++) {
 		for(int j = i+1; j < t[0].getSize(); j++) {
-			//println(i,j, t[0].getSize());
 			if(columnEqual(t, i, j)) {
-				//println(__LINE__);
 				foreach(it; t) {
 					it.remove(j);
 				}
-				//println(__LINE__);
 				j--;
 			}
 		}
@@ -390,13 +381,6 @@ bool compareRow(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {
 	assert(r2.getSize() > r2idx);
 	assert(r1.getSize() == r2[0].getSize());
 	
-	/*foreach(idx, it; r2[r2idx]) {
-		println(it.toString());
-		println(r1.toString());
-		if(it != r1) {
-			return false;
-		}
-	}*/
 	if(r1 != r2[r2idx]) {
 		return false;
 	} else
@@ -406,20 +390,11 @@ bool compareRow(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {
 void rowRemap(Vector!(Vector!(int)) t, Map!(int,Row) r) {
 	ISRIterator!(MapItem!(int, Row)) it = r.begin();
 	outer: for(; it.isValid(); it++) {
-		for(size_t idx = 0; idx < t[0].getSize(); idx++) {
-			//if(compareRow((*it).getData().row, t, idx)) {
-			foreach(jdx, jt; (*it).getData().row) {
-				if(jt != t[idx][jdx]) {
-					println(jt, t[idx][jdx], idx, jdx);
-
-				}
-			}
-			(*it).getData().idx = conv!(size_t,int)(idx);
-			continue outer;
-			/*if((*it).getData().row == t[idx]) {
+		inner: for(size_t idx = 0; idx < t.getSize(); idx++) {
+			if(compareRow((*it).getData().row, t, idx)) {
 				(*it).getData().idx = conv!(size_t,int)(idx);
 				continue outer;
-			}*/
+			}	
 		}
 		// this line should never be reached
 		printf("%3d:", (*it).getData().idx);
@@ -459,7 +434,7 @@ bool rowEqual(Vector!(Vector!(int)) t, int i1, int i2) {
 	return true;
 }
 
-bool cmapTest(MultiMap!(int,dchar) m1, Map!(dchar,int) m2) {
+/*bool cmapTest(MultiMap!(int,dchar) m1, Map!(dchar,int) m2) {
 	hurt.container.multimap.Iterator!(int,dchar) mIt = m1.begin();
 
 	for(; mIt.isValid(); mIt++) {
@@ -470,7 +445,7 @@ bool cmapTest(MultiMap!(int,dchar) m1, Map!(dchar,int) m2) {
 		}
 	}
 	return true;
-}
+}*/
 
 void printTable(Vector!(Vector!(int)) table) {
 	printf("    ");
@@ -522,26 +497,26 @@ void printEqual(Vector!(Vector!(int)) table) {
 }
 
 void printMapping(int[] r, Map!(dchar,Column) c) {
-	printf("%" ~ conv!(int,string)(9) ~ "s", "state");
+	printf("\n%" ~ conv!(int,string)(7) ~ "s", "state");
 	foreach(idx, sit; r) {
 		printf("%3d", idx);
 	}
 	println();
 
-	printf("%" ~ conv!(int,string)(9) ~ "s", "row");
+	printf("%" ~ conv!(int,string)(7) ~ "s", "row");
 	foreach(idx, sit; r) {
 		printf("%3d", sit);
 	}
 	println("\n");
 
 	ISRIterator!(MapItem!(dchar,Column)) it = c.begin();
-	printf("%" ~ conv!(int,string)(9) ~ "s", "input");
+	printf("%" ~ conv!(int,string)(7) ~ "s", "input");
 	for(; it.isValid(); it++) {
 		printf("%3c", (*it).getKey());
 	}
 	println();
 	it = c.begin();
-	printf("%" ~ conv!(int,string)(9) ~ "s", "column");
+	printf("%" ~ conv!(int,string)(7) ~ "s", "column");
 	for(; it.isValid(); it++) {
 		printf("%3d", (*it).getData().idx);
 	}

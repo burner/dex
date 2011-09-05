@@ -110,7 +110,7 @@ void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 	sb.clear();
 
 	file.write('\n');
-	sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(9)
+	sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(7)
 		~ "s", "state"));
 
 	foreach(idx, sit; min.state) {
@@ -120,7 +120,7 @@ void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 	file.writeString(conv!(dstring,string)(sb.getString()));
 	sb.clear();
 
-	sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(9)
+	sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(7)
 		~ "s", "row"));
 
 	foreach(idx, sit; min.state) {
@@ -155,10 +155,11 @@ void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 	long oldTable = states.getSize() * inputSet.getSize();
 	long newTable = min.table.getSize() * min.table[0].getSize();
 
-	long oldTableDiv = oldTable / newTable;
+	float oldTableDiv = 
+		conv!(long,float)(oldTable) / conv!(long,float)(newTable);
 
 	file.writeString("\n   table reduction ratio = ");
-	file.writeString(conv!(long,string)(oldTableDiv));
+	file.writeString(format!(char,char)("%.3f", oldTableDiv));
 	file.write(':');
 	file.writeString("1\n\n");
 
