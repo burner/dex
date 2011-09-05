@@ -17,6 +17,7 @@ import hurt.container.vector;
 import hurt.conv.conv;
 import hurt.io.stdio;
 import hurt.string.stringbuffer;
+import hurt.time.stopwatch;
 import hurt.util.array;
 import hurt.util.stacktrace;
 
@@ -507,7 +508,12 @@ class RegEx {
 	}
 
 	void writeTable(string filename) {
+		StopWatch sw;	
+		sw.start();
 		MinTable min = this.minTable();
+		ulong ms = sw.microsec();
+		sw.stop;
+		println(__LINE__, ms);
 		dex.emit.writeTable(min, this.minDfa, this.inputSet, filename);
 	}
 

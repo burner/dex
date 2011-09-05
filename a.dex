@@ -7,6 +7,14 @@
 %% foobar4
 	foobar5
 	foobar6
+"do" {: do :}
+"int" {: int :}
+"void" {: void :}
+"delegate" {: delegate :}
+"function" {: function :}
+"template" {: template :}
+"&&" {: logicand :}
+"||" {: logicor :}
 %%
 
 %% foobar7 %%
@@ -20,11 +28,3 @@
 "if" {: if :}
 "for" {: for :}
 "while" {: while :}
-"do" {: do :}
-"int" {: int :}
-"void" {: void :}
-"delegate" {: delegate :}
-"function" {: function :}
-"template" {: template :}
-"&&" {: logicand :}
-"||" {: logicor :}

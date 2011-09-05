@@ -230,7 +230,7 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 		file.writeString(it);
 	}
 	file.close();
-	system("dot -T jpg " ~ fileName ~ ".dot > " ~ fileName ~ ".jpg");
+	system("dot -Ln1 -T jpg " ~ fileName ~ ".dot > " ~ fileName ~ ".jpg");
 }
 
 private string base = `
