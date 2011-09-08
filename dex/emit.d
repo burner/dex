@@ -9,6 +9,7 @@ import hurt.container.iterator;
 import hurt.container.map;
 import hurt.container.set;
 import hurt.container.vector;
+import hurt.container.multimap;
 import hurt.conv.conv;
 import hurt.io.stdio;
 import hurt.io.stream;
@@ -193,6 +194,7 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 	strLine.clear();
 
 	// Record transitions
+	StringBuffer!(dchar) tranSb = new StringBuffer!(dchar)(32);
 	foreach(pState;states) {
 		State[] state;	
 
@@ -206,6 +208,7 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 			strLine.clear();
 		}
 
+		version(none) {
 		foreach(jt; inputSet) {
 			dchar[1] inChar;
 			inChar[0] = jt;
@@ -221,6 +224,46 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 				strLine.clear();
 			}
 		}	
+		}
+
+		MultiMap!(State,dchar) mm = new MultiMap!(State,dchar)();
+		hurt.container.multimap.Iterator!(dchar,State) it;
+		MultiMap!(dchar,State) pSmm = pState.getTransitions();
+		if(pSmm is null || pSmm.getSize() == 0)
+			continue;
+
+		it = pSmm.begin();
+
+		for(; it.isValid(); it++) {
+			mm.insert(*it, it.getKey());
+		}
+		foreach(jt; mm.keys()) {
+			hurt.container.multimap.Iterator!(State,dchar) kt = mm.range(jt);
+			tranSb.clear();
+			tranSb.pushBack("[");
+			int count = 0;
+			for(; kt.isValid(); kt++) {
+				tranSb.pushBack(kt.getData());
+				tranSb.pushBack(",");
+				if(count != 0 && count % 20 == 0)
+					tranSb.pushBack("\r");
+				count++;
+			}
+			tranSb.popBack();
+			tranSb.pushBack("]");
+
+			string stateId1 = (pState.toString());
+			string stateId2 = (jt.toString());
+			strLine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
+			//strLine.pushBack("\t[label=\"epsilon\"];\n");
+			strLine.pushBack("\t[label=\"");
+			strLine.pushBack(toUTF8(tranSb.getString()));
+			strLine.pushBack("\"];\n");
+			append(strTable, strLine.getString());
+			strLine.clear();
+
+		}
+
 	}
 
 	append(strTable, "}");

@@ -513,7 +513,7 @@ class RegEx {
 		MinTable min = this.minTable();
 		ulong ms = sw.microsec();
 		sw.stop;
-		println(__LINE__, ms);
+		//println(__LINE__, ms);
 		dex.emit.writeTable(min, this.minDfa, this.inputSet, filename);
 	}
 
