@@ -6,8 +6,12 @@ import dex.regex;
 import hurt.io.stdio;
 import hurt.conv.conv;
 import hurt.util.getopt;
+import hurt.time.stopwatch;
+import hurt.time.time;
 
 void main(string[] args) {
+	StopWatch sw;	
+	sw.start();
 	Args ar = Args(args);
 	ar.setHelpText("dex a lexer generator for the D Programming Langauge");
 	string inputFilename = null;
@@ -62,6 +66,9 @@ void main(string[] args) {
 
 	re.writeTable("dfaTable");
 	//re.minTable();
+	ulong ms = sw.microsec();
+	sw.stop;
+	println("Overall time spend", TimeSpan.fromMicros(ms).seconds(), "seconds");
 
 	delete input;
 }

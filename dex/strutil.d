@@ -671,3 +671,33 @@ unittest {
 		conv!(int,string)(userCodeParanthesis("%%  %%", 3)));
 	assert(-1 == userCodeParanthesis("%%  %%", 5));
 }
+
+struct Range {
+	dchar first, last;
+}
+
+pure bool extendsRange(Range range, dchar nextChar) {
+	if(range.last == dchar.init) {
+		int f = cast(int)(range.first);
+		int n = cast(int)(nextChar);
+		if(f+1 == n) {
+			return true;
+		} else {
+			return false;
+		}
+	} else if(cast(int)(range.last)+1 == cast(int)(nextChar)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+unittest {
+	Range r;
+	r.first = 'a';
+	assert(extendsRange(r, 'b'));
+	assert(!extendsRange(r, 'c'));
+	r.last = 'b';
+	assert(!extendsRange(r, 'b'));
+	assert(extendsRange(r, 'c'));
+}

@@ -19,11 +19,12 @@
 
 %% foobar7 %%
 
-"[+-:digit:_][:digit:_]*" {: int :}
-"0x[+-01234567_][01234567_]*" {: hex :}
-"0b[+-01_][01_]*" {: bin :}
-"[+-:digit:][:digit:]*.[:digit:]*[fdr]" {: float :}
-"[:word:]+" {: identifer :}
+"[+-:digit:][:digit:_]*" {: int :}
+"0x[+-01234567][01234567_]*" {: hex :}
+"0b[+-01][01_]*" {: bin :}
+"[+-:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
+"[+-:digit:][:digit:_]*.[:digit:_]*" {: float :}
+"[:alpha:][:word:]*" {: identifer :}
 "long" {: long :}
 "if" {: if :}
 "for" {: for :}
