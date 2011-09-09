@@ -52,12 +52,14 @@ class RegEx {
 	}
 
 	void cleanUp() {
+		scope Trace st = new Trace("cleanUp");
 		this.nfaTable = new FSA_Table();
 		this.operandStack = new Stack!(FSA_Table)();
 		this.operatorStack = new Stack!(dchar)();
 	}
 
 	bool createNFA(string str, int action) {
+		scope Trace st = new Trace("createNFA");
 		this.cleanUp();
 		//str = concatExpand(str);
 		dstring pstr = concatExpand(conv!(string,dstring)(str));
@@ -130,6 +132,7 @@ class RegEx {
 	}
 
 	Set!(State) epsilonClosure(Set!(State) old) const {
+		scope Trace st = new Trace("epsilonClosure");
 		// Initialize result with old because each state
 		// has epsilon closure to itself
 		Set!(State) res = new Set!(State)(ISRType.HashTable);
@@ -138,7 +141,7 @@ class RegEx {
 		}
 
 		// Push all states to be processes on the stack hence
-		Stack!(State) unprocessedStack = new Stack!(State)();
+		Stack!(State) unprocessedStack = new Stack!(State)(old.getSize()*2);
 		foreach(it; old) {
 			unprocessedStack.push(it);
 		}
@@ -163,6 +166,7 @@ class RegEx {
 	}
 
 	Set!(State) move(dchar chInput, Set!(State) t) const {
+		scope Trace st = new Trace("move");
 		Set!(State) res = new Set!(State)(ISRType.HashTable);
 	
 		/* This is very simple since I designed the NFA table
@@ -180,6 +184,7 @@ class RegEx {
 	}
 
 	void convertNfaToDfa() {
+		scope Trace st = new Trace("convertNfaToDfa");
 		this.dfaTable = new FSA_Table();
 		if(this.globalNfaTable.getSize() == 0) {
 			return;
@@ -259,6 +264,7 @@ class RegEx {
 	 * to -1. This is done so in the created scanner knows which
 	 * state is the error state. */
 	void findErrorState() {
+		scope Trace st = new Trace("findErrorState");
 		bool found = false;
 		outer: foreach(ref it; this.dfaTable) {
 			if(!it.acceptingState && !it.transition.isEmpty()) {
@@ -280,6 +286,7 @@ class RegEx {
 	}
 
 	public static FSA_Table removeDeadStates(Iterable!(State) oldTable) {
+		scope Trace st = new Trace("removeDeadStates");
 		Map!(int,State) table = new Map!(int,State)(ISRType.HashTable);
 		Set!(State) deadEndSet = new Set!(State)();
 		foreach(it; oldTable) {
@@ -316,6 +323,7 @@ class RegEx {
 	}
 
 	void push(dchar chInput) {
+		scope Trace st = new Trace("push");
 		State s0 = new State(++nextStateId);
 		State s1 = new State(++nextStateId);
 		s0.addTransition(chInput, s1);
@@ -342,6 +350,7 @@ class RegEx {
 	}
 
 	bool pop(ref FSA_Table table) {
+		scope Trace st = new Trace("pop");
 		debug(RegExDebug) println(__FILE__,__LINE__, " this.operandStack.size ",
 			this.operandStack.getSize());
 			
@@ -355,6 +364,7 @@ class RegEx {
 	}
 
 	bool eval() {
+		scope Trace st = new Trace("eval");
 		// First pop the operator from the stack
 		debug(RegExDebug) println(__FILE__,__LINE__, 
 			" eval this.operatorStack.size ", this.operatorStack.getSize());
@@ -387,6 +397,7 @@ class RegEx {
 	}
 
 	bool Concat() {
+		scope Trace st = new Trace("Concat");
 		// Pop 2 elements
 		FSA_Table A, B;
 		if(!this.pop(B) || !this.pop(A))
@@ -416,6 +427,7 @@ class RegEx {
 	}
 	
 	bool Star() {
+		scope Trace st = new Trace("Star");
 		// Pop 1 element
 		FSA_Table A, B;
 		if(!this.pop(A))
@@ -453,6 +465,7 @@ class RegEx {
 	}
 
 	bool Union() {
+		scope Trace st = new Trace("Union");
 		// Pop 2 elements
 		FSA_Table A, B;
 		if(!this.pop(B) || !this.pop(A))
@@ -485,6 +498,7 @@ class RegEx {
 	}
 		
 	void minimize() {
+		scope Trace st = new Trace("minimize");
 		println("start to minimize with", this.dfaTable.getSize(), "states");
 		this.minDfa = dex.minimizer.minimize!(dchar)(this.dfaTable, 
 			this.inputSet);
@@ -492,32 +506,31 @@ class RegEx {
 	}
 
 	void writeMinDFAGraph(string filename) {
+		scope Trace st = new Trace("writeMinDFAGraph");
 		auto tmp = removeDeadStates(this.minDfa);
 		dex.emit.writeGraph(tmp,this.inputSet, filename);
 	}
 
 	void writeDFAGraph(string filename) {
+		scope Trace st = new Trace("writeDFAGraph");
 		auto tmp = removeDeadStates(this.dfaTable);
 		//dex.emit.writeGraph(this.dfaTable,this.inputSet, filename);
 		dex.emit.writeGraph(tmp,this.inputSet, filename);
 	}
 
 	void writeNFAGraph(string filename) {
+		scope Trace st = new Trace("writeNFAGraph");
 		auto tmp = removeDeadStates(this.globalNfaTable);
 		dex.emit.writeGraph(tmp,this.inputSet, filename);
 	}
 
-	void writeTable(string filename) {
-		StopWatch sw;	
-		sw.start();
-		MinTable min = this.minTable();
-		ulong ms = sw.microsec();
-		sw.stop;
-		//println(__LINE__, ms);
+	void writeTable(string filename, MinTable min) {
+		scope Trace st = new Trace("writeTable");
 		dex.emit.writeTable(min, this.minDfa, this.inputSet, filename);
 	}
 
 	MinTable minTable() {
+		scope Trace st = new Trace("minTable");
 		println("table minimization started with", 
 			this.minDfa.getSize() * this.inputSet.getSize(), "entries");
 		MinTable ret = 	dex.minimizer.minTable(this.minDfa, this.inputSet);

@@ -6,6 +6,7 @@ import hurt.io.stream;
 import hurt.io.file;
 import hurt.io.stdio;
 import hurt.util.array;
+import hurt.util.stacktrace;
 import hurt.string.stringbuffer;
 
 import dex.strutil;
@@ -59,6 +60,7 @@ class Input {
 	private Vector!(RegexCode) regexCode;
 
 	private static bool isWellFormedFilename(in string filename) {
+		scope Trace st = new Trace("isWellFormedFilename");
 		if(filename.length <= 4)
 			return false;
 
@@ -69,6 +71,7 @@ class Input {
 	}
 
 	this(string filename) {
+		scope Trace st = new Trace("input this");
 		this.filename = filename;
 		this.regexCode = new Vector!(RegexCode)(16);
 		if(!isWellFormedFilename(filename))
@@ -100,6 +103,7 @@ class Input {
 	}
 
 	private void parseFile() {
+		scope Trace st = new Trace("parseFile");
 		ParseState ps = ParseState.None;
 		StringBuffer!(char) tmp = new StringBuffer!(char)(32);
 		int braceStack = 0;

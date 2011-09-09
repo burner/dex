@@ -1,6 +1,8 @@
 module dex.main;
 
+import dex.emit;
 import dex.input;
+import dex.minimizer;
 import dex.regex;
 
 import hurt.io.stdio;
@@ -8,10 +10,10 @@ import hurt.conv.conv;
 import hurt.util.getopt;
 import hurt.time.stopwatch;
 import hurt.time.time;
+import hurt.util.stacktrace;
 
 void main(string[] args) {
-	StopWatch sw;	
-	sw.start();
+	scope Trace st = new Trace("main");
 	Args ar = Args(args);
 	ar.setHelpText("dex a lexer generator for the D Programming Langauge");
 	string inputFilename = null;
@@ -44,6 +46,7 @@ void main(string[] args) {
 		return;
 	}
 
+	println("please wait ... this can take some time");
 	RegEx re = new RegEx();
 	foreach(it; input.getRegExCode()) {
 		re.createNFA(it.getRegEx(), conv!(size_t,int)(it.getPriority()));
@@ -64,11 +67,13 @@ void main(string[] args) {
 		re.writeNFAGraph(nfaFilename);
 	}
 
-	re.writeTable("dfaTable");
-	//re.minTable();
-	ulong ms = sw.microsec();
-	sw.stop;
-	println("Overall time spend", TimeSpan.fromMicros(ms).seconds(), "seconds");
+	MinTable min = re.minTable();
 
+	re.writeTable("dfaTable",min);
+	emitLexer(min,input,"DLexer",outputFilename);
+
+	//re.minTable();
 	delete input;
+	delete st;
+	//Trace.printStats();
 }

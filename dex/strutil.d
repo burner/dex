@@ -1,10 +1,14 @@
 module dex.strutil;
 
 import dex.parseerror;
+import dex.state;
 
 import hurt.io.stdio;
 import hurt.string.stringbuffer;
+import hurt.string.stringutil;
 import hurt.conv.conv;
+import hurt.container.vector;
+import hurt.container.multimap;
 import hurt.util.array;
 
 public immutable char LP = '\v';
@@ -674,10 +678,28 @@ unittest {
 
 struct Range {
 	dchar first, last;
+
+	static Range opCall() {
+		Range ret;
+		ret.first = dchar.init;
+		ret.last = dchar.init;
+		return ret;
+	}
+
+	dstring toDString() const {
+		if(last == dchar.init) {
+			return conv!(dchar,dstring)(first);
+		} else {
+			return conv!(dchar,dstring)(first) ~ "-"d ~ 
+				conv!(dchar,dstring)(last);
+		}
+	}
 }
 
 pure bool extendsRange(Range range, dchar nextChar) {
-	if(range.last == dchar.init) {
+	if(range.first == dchar.init)
+		return true;
+	if(range.last == dchar.init && isDigit(range.first) == isDigit(nextChar)) {
 		int f = cast(int)(range.first);
 		int n = cast(int)(nextChar);
 		if(f+1 == n) {
@@ -685,7 +707,8 @@ pure bool extendsRange(Range range, dchar nextChar) {
 		} else {
 			return false;
 		}
-	} else if(cast(int)(range.last)+1 == cast(int)(nextChar)) {
+	} else if(cast(int)(range.last)+1 == cast(int)(nextChar) && 
+			isDigit(range.last) == isDigit(nextChar)) {
 		return true;
 	} else {
 		return false;
@@ -694,10 +717,58 @@ pure bool extendsRange(Range range, dchar nextChar) {
 
 unittest {
 	Range r;
-	r.first = 'a';
 	assert(extendsRange(r, 'b'));
+	r.first = 'a';
+	assert(r.toDString() == "a");
+	assert(extendsRange(r, 'b'));
+	assert(!extendsRange(r, '0'));
 	assert(!extendsRange(r, 'c'));
 	r.last = 'b';
+	assert(r.toDString() == "a-b");
 	assert(!extendsRange(r, 'b'));
 	assert(extendsRange(r, 'c'));
+	assert(!extendsRange(r, '0'));
+	r.first = 'y';
+	r.last = dchar.init;
+	assert(r.toDString() == "y");
+	assert(!extendsRange(r, '0'));
+	assert(extendsRange(r, 'z'));
+	r.last = 'z';
+	assert(!extendsRange(r, 'b'));
+	assert(!extendsRange(r, 'c'));
+	assert(!extendsRange(r, '0'));
+}
+
+Vector!(Range) makeRanges(hurt.container.multimap.Iterator!(State,dchar) it) {
+	Vector!(Range) ret = new Vector!(Range)();
+	Range r = Range();
+	for(; it.isValid(); it++) {
+		if(extendsRange(r, *it) && r.first == dchar.init) {
+			r.first = *it;
+		} else if(extendsRange(r, *it) && r.first != dchar.init) {
+			r.last = *it;
+		} else {
+			assert(assertRange(r));
+			ret.pushBack(r);
+			r = Range();
+			r.first = *it;
+		}
+	}
+	if(r.first != dchar.init)
+		ret.pushBack(r);
+		
+	return ret;
+}
+
+bool assertRange(Range r) {
+	if(r.first == dchar.init)
+		return false;
+
+	if(r.last == dchar.init)
+		return true;
+	
+	if(r.first > r.last)
+		return false;
+
+	return true;
 }

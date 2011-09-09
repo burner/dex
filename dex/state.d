@@ -9,6 +9,7 @@ import hurt.container.set;
 import hurt.container.stack;
 import hurt.container.vector;
 import hurt.util.array;
+import hurt.util.stacktrace;
 import hurt.container.rbtree;
 import hurt.string.utf;
 
@@ -78,6 +79,7 @@ class State {
 	}
 
 	bool isDeadEnd() {
+		scope Trace st = new Trace("isDeadEnd");
 		if(this.acceptingState)
 			return false;
 		if(this.transition.isEmpty())

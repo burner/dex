@@ -1,7 +1,9 @@
 module dex.emit;
 
 import dex.state;
+import dex.strutil;
 import dex.minimizer;
+import dex.input;
 
 import hurt.algo.sorting;
 import hurt.container.isr;
@@ -21,6 +23,7 @@ import std.process;
 
 void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 		string filename) {
+
 	hurt.io.stream.File file = new hurt.io.stream.File(filename ~ ".tab", 
 		FileMode.OutNew);
 
@@ -242,14 +245,23 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 			tranSb.clear();
 			tranSb.pushBack("[");
 			int count = 0;
-			for(; kt.isValid(); kt++) {
+			/*for(; kt.isValid(); kt++) {
 				tranSb.pushBack(kt.getData());
 				tranSb.pushBack(",");
 				if(count != 0 && count % 20 == 0)
 					tranSb.pushBack("\r");
 				count++;
+			}*/
+			Vector!(Range) r = makeRanges(kt);
+			assert(r.getSize() > 0);
+			foreach(kt; r) {
+				dstring tmp = kt.toDString();
+				assert(tmp.length > 0);
+				tranSb.pushBack(tmp);
+				tranSb.pushBack(",");
 			}
-			tranSb.popBack();
+			if(tranSb.peekBack() == ',')
+				tranSb.popBack();
 			tranSb.pushBack("]");
 
 			string stateId1 = (pState.toString());
@@ -276,6 +288,150 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 	system("dot -Ln1 -T jpg " ~ fileName ~ ".dot > " ~ fileName ~ ".jpg");
 }
 
+string createCharMapping(MinTable min) {
+	StringBuffer!(char) ret = 
+		new StringBuffer!(char)(min.inputChar.getSize() * 6);
+
+	ret.pushBack("\tprivate void initCharMapping() {\n");
+	ret.pushBack("\t\tthis.charMapping = new Map!(dchar,size_t)();\n\n");
+	ret.pushBack("\t\tdchar inCh[");
+	ret.pushBack(conv!(size_t,string)(min.inputChar.getSize()));
+	ret.pushBack("] = [");
+	ISRIterator!(MapItem!(dchar,Column)) it = min.inputChar.begin();
+	int count = 0;
+	for(; it.isValid(); it++) {
+		ret.pushBack(format!(char,char)("'%c',", (*it).getKey()));
+		if(count != 0 && count % 10 == 0) {
+			ret.pushBack("\n");
+			ret.pushBack("\t\t");
+		}
+		count++;
+	}
+	ret.popBack();
+	ret.pushBack("];\n\n");
+	ret.pushBack("\t\tint inInt[");
+	ret.pushBack(conv!(size_t,string)(min.inputChar.getSize()));
+	ret.pushBack("] = [");
+	it = min.inputChar.begin();
+	count = 0;
+	for(; it.isValid(); it++) {
+		ret.pushBack(format!(char,char)("%3d,", (*it).getData().idx));
+		if(count != 0 && count % 10 == 0) {
+			ret.pushBack("\n");
+			ret.pushBack("\t\t");
+		}
+		count++;
+	}
+	ret.popBack();
+	ret.pushBack("];\n\n");
+	ret.pushBack("\t\tfor(int i = 0; i < inCh.length; i++) {\n");
+	ret.pushBack("\t\t\tthis.charMapping.insert(inCh[i],conv!(int,size_t)(inInt[i]));\n");
+	ret.pushBack("\t\t}\n");
+	ret.pushBack("\t}\n");
+
+	return ret.getString();
+}
+
+string createStateMapping(MinTable min) {
+	StringBuffer!(char) ret = new StringBuffer!(char)(min.state.length * 6);
+	int max = 0;
+	foreach(it; min.state) {
+		if(it > max) {
+				max = it;
+			}
+	}
+	if(max < 127) {
+		ret.pushBack("\tbyte[] stateMapping = [\n\t");
+	} else if(max < 32768) {
+		ret.pushBack("\tshort[] stateMapping = [\n\t");
+	} else {
+		ret.pushBack("\tint[] stateMapping = [\n\t");
+	}
+
+	int indent = 1;
+	while(max > 0) {
+		indent++;
+		max /= 10;
+	}
+	string form = "%" ~ conv!(int,string)(indent) ~ "d,";
+	
+	int count = 0;
+	foreach(int it; min.state) {
+		ret.pushBack(format!(char,char)(form,it));
+		if(count != 0 && count % 20 == 0) {
+			ret.pushBack("\n");
+			ret.pushBack("\t");
+		}
+		count++;
+	}
+	ret.popBack();
+	ret.pushBack("];\n\n");
+	
+	return ret.getString();
+}
+
+string createTable(MinTable min) {
+	StringBuffer!(char) ret = new StringBuffer!(char)(min.table.getSize() * 
+		min.table[0].getSize() * 4);
+
+	ret.pushBack("\tprivate");
+
+	int max = 0;
+	foreach(it; min.table) {
+		foreach(jt; it) {
+			if(jt > max) {
+				max = jt;
+			}
+		}
+	}
+	if(max < 127) {
+		ret.pushBack(" byte[][] table = [\n");
+	} else if(max < 32768) {
+		ret.pushBack(" short[][] table = [\n");
+	} else {
+		ret.pushBack(" int[][] table = [\n");
+	}
+
+	int indent = 1;
+	while(max > 0) {
+		indent++;
+		max /= 10;
+	}
+	string form = "%" ~ conv!(int,string)(indent) ~ "d,";
+
+	foreach(Vector!(int) it; min.table) {
+		ret.pushBack("\t[");
+		foreach(int jt; it) {
+			ret.pushBack(format!(char,char)(form, jt));
+		}
+		ret.popBack();
+		ret.pushBack("],\n");
+	}
+	ret.popBack();
+	ret.popBack();
+	ret.pushBack("];\n\n");
+
+	return ret.getString();
+}
+
+void emitLexer(MinTable min, Input input, string classname, string filename) {
+	hurt.io.stream.File file = new hurt.io.stream.File(filename, 
+		FileMode.OutNew);
+
+	file.writeString(base);
+	string usercode = input.getUserCode();
+	file.writeString("class " ~ classname ~ classHeader);
+	string table = createTable(min);
+	string stateMapping = createStateMapping(min);
+	string createInputCharMapping = createCharMapping(min);
+	file.writeString(stateMapping);
+	file.writeString(table);
+	file.writeString(createInputCharMapping);
+	file.writeString(classBody);
+	file.writeString("}");
+	file.close();
+}
+
 private string base = `
 abstract class Lexer {
 	public void run();
@@ -284,12 +440,15 @@ abstract class Lexer {
 }
 
 import hurt.conv.conv;
+import hurt.container.map;
 import hurt.io.file;
 import hurt.io.stdio;
 import hurt.io.stream;
 import hurt.string.utf;
 
-class DexLexer : Lexer {
+`;
+
+private string classHeader = ` : Lexer {
 	private string filename;
 	private hurt.io.stream.BufferedFile file;
 
@@ -297,6 +456,10 @@ class DexLexer : Lexer {
 	private size_t charIdx;
 	private dchar[] currentLine;
 
+	private Map!(dchar,size_t) charMapping;
+`;
+
+private string classBody = `
 	this(string filename) {
 		this.filename = filename;
 		this.lineNumber = 0;
@@ -305,7 +468,10 @@ class DexLexer : Lexer {
 			throw new Exception(__FILE__ ~ ":" ~ conv!(int,string)(__LINE__) ~
 				this.filename ~ " does not exists");
 
+		this.charMapping = new Map!(dchar,size_t)();
+
 		this.file = new hurt.io.stream.BufferedFile(this.filename);
+		this.initCharMapping();
 		this.getNextLine();
 	}
 
@@ -363,7 +529,9 @@ class DexLexer : Lexer {
 			return this.currentLine[this.charIdx++];
 		}
 	}
+`;
 
+string runFunction = `
 	/*public void run() { // a stupid run methode could look like this »«¢¢ſð@
 		println(__LINE__, this.isEOF(), this.isEmpty());
 		while(!isEmpty()) {

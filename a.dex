@@ -7,6 +7,11 @@
 %% foobar4
 	foobar5
 	foobar6
+"[:alpha:][:word:]*" {: identifer :}
+"long" {: long :}
+"if" {: if :}
+"for" {: for :}
+"while" {: while :}
 "do" {: do :}
 "int" {: int :}
 "void" {: void :}
@@ -24,8 +29,3 @@
 "0b[+-01][01_]*" {: bin :}
 "[+-:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
 "[+-:digit:][:digit:_]*.[:digit:_]*" {: float :}
-"[:alpha:][:word:]*" {: identifer :}
-"long" {: long :}
-"if" {: if :}
-"for" {: for :}
-"while" {: while :}
