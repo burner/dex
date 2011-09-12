@@ -24,8 +24,12 @@
 
 %% foobar7 %%
 
-"[+-:digit:][:digit:_]*" {: int :}
-"0x[+-01234567][01234567_]*" {: hex :}
+"[+-:digit:][:digit:][:digit:_]*" {: int :}
+"[:digit:][:digit:_]*" {: int :}
+"0x[01234567][01234567_]*" {: hex :}
+"0x[+-01234567][01234567][01234567_]*" {: hex :}
 "0b[+-01][01_]*" {: bin :}
-"[+-:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
-"[+-:digit:][:digit:_]*.[:digit:_]*" {: float :}
+"[+-:digit:][:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
+"[+-:digit:][:digit:][:digit:_]*.[:digit:_]*" {: float :}
+"[:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
+"[:digit:][:digit:_]*.[:digit:_]*" {: float :}

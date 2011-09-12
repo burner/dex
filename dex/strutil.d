@@ -3,6 +3,7 @@ module dex.strutil;
 import dex.parseerror;
 import dex.state;
 
+import hurt.algo.sorting;
 import hurt.io.stdio;
 import hurt.string.stringbuffer;
 import hurt.string.stringutil;
@@ -741,17 +742,24 @@ unittest {
 
 Vector!(Range) makeRanges(hurt.container.multimap.Iterator!(State,dchar) it) {
 	Vector!(Range) ret = new Vector!(Range)();
-	Range r = Range();
+	Vector!(dchar) chars = new Vector!(dchar)(32);
 	for(; it.isValid(); it++) {
-		if(extendsRange(r, *it) && r.first == dchar.init) {
-			r.first = *it;
-		} else if(extendsRange(r, *it) && r.first != dchar.init) {
-			r.last = *it;
+		chars.pushBack(*it);
+	}
+	sortVector!(dchar)(chars,
+		function(in dchar l, in dchar r) { return l < r; });
+
+	Range r = Range();
+	foreach(jt; chars) {
+		if(extendsRange(r, jt) && r.first == dchar.init) {
+			r.first = jt;
+		} else if(extendsRange(r, jt) && r.first != dchar.init) {
+			r.last = jt;
 		} else {
 			assert(assertRange(r));
 			ret.pushBack(r);
 			r = Range();
-			r.first = *it;
+			r.first = jt;
 		}
 	}
 	if(r.first != dchar.init)

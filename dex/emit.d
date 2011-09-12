@@ -288,6 +288,56 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 	system("dot -Ln1 -T jpg " ~ fileName ~ ".dot > " ~ fileName ~ ".jpg");
 }
 
+string createIsAcceptingStateFunction(MinTable min, string stateType) {
+	return null;
+}
+
+string createDefaultRunFunction(MinTable min, string stateType) {
+	StringBuffer!(char) ret = new StringBuffer!(char)(256*4);
+	ret.pushBack("\tprivate void run() {\n");
+	ret.pushBack("\t\tdchar currentInputChar;\n");
+	ret.pushBack("\t\t");
+	ret.pushBack(stateType);
+	ret.pushBack(" currentState = 0;\n\n");
+	ret.pushBack("\t\t");
+	ret.pushBack(stateType);
+	ret.pushBack(" nextState = -1;\n");
+	ret.pushBack("\t\tbool needToGetNextState = true;\n\n");
+	ret.pushBack("\t\twhile(!this.isEmpty()) {\n");
+	ret.pushBack("\t\t\tcurrentInputChar = this.getNextChar();\n");
+	ret.pushBack("\t\t\tif(needToGetNextState) {\n");
+	ret.pushBack("\t\t\t\tnextState = this.getNextState(currentInputChar, ");
+	ret.pushBack("currentState);\n");
+	ret.pushBack("\t\t\t} else {\n");
+	ret.pushBack("\t\t\t\tneedToGetNextState = true;\n");
+	ret.pushBack("\t\t\t}\n\n");
+	ret.pushBack("\t\t\tif(nextState != -1) {\n");
+	ret.pushBack("\t\t\t\tcontinue;\n");
+	ret.pushBack("\t\t\t} else {\n");
+	ret.pushBack("\t\t\t}\n");
+
+	ret.pushBack("\t\t}\n");
+	ret.pushBack("\t}\n");
+
+	return ret.getString();
+}
+
+string createGetNextState(string returnType) {
+	StringBuffer!(char) ret = new StringBuffer!(char)(256);
+
+	ret.pushBack("\tprivate ");
+	ret.pushBack(returnType);
+	ret.pushBack(" getNextState(dchar inputChar, ");
+	ret.pushBack(returnType);
+	ret.pushBack(" currentState) {\n");
+	ret.pushBack("\t\tsize_t column = *this.charMapping.find(inputChar);\n");
+	ret.pushBack("\t\tsize_t row = this.stateMapping[currentState];\n");
+	ret.pushBack("\t\treturn this.table[row][column];\n");
+	//ret.pushBack("\t\t}\n\n");
+	ret.pushBack("\t}\n\n");
+	return ret.getString();
+}
+
 string createCharMapping(MinTable min) {
 	StringBuffer!(char) ret = 
 		new StringBuffer!(char)(min.inputChar.getSize() * 6);
@@ -325,9 +375,10 @@ string createCharMapping(MinTable min) {
 	ret.popBack();
 	ret.pushBack("];\n\n");
 	ret.pushBack("\t\tfor(int i = 0; i < inCh.length; i++) {\n");
-	ret.pushBack("\t\t\tthis.charMapping.insert(inCh[i],conv!(int,size_t)(inInt[i]));\n");
+	ret.pushBack("\t\t\tthis.charMapping.insert(inCh[i],");
+	ret.pushBack("conv!(int,size_t)(inInt[i]));\n");
 	ret.pushBack("\t\t}\n");
-	ret.pushBack("\t}\n");
+	ret.pushBack("\t}\n\n");
 
 	return ret.getString();
 }
@@ -341,11 +392,11 @@ string createStateMapping(MinTable min) {
 			}
 	}
 	if(max < 127) {
-		ret.pushBack("\tbyte[] stateMapping = [\n\t");
+		ret.pushBack("\timmutable byte[] stateMapping = [\n\t");
 	} else if(max < 32768) {
-		ret.pushBack("\tshort[] stateMapping = [\n\t");
+		ret.pushBack("\timmutable short[] stateMapping = [\n\t");
 	} else {
-		ret.pushBack("\tint[] stateMapping = [\n\t");
+		ret.pushBack("\timmutable int[] stateMapping = [\n\t");
 	}
 
 	int indent = 1;
@@ -366,11 +417,19 @@ string createStateMapping(MinTable min) {
 	}
 	ret.popBack();
 	ret.pushBack("];\n\n");
+	/*if(max < 127) {
+		ret.pushBack("\tprivate byte currentState;");
+	} else if(max < 32768) {
+		ret.pushBack("\tprivate short currentState;");
+	} else {
+		ret.pushBack("\tprivate int currentState;");
+	}
+	ret.pushBack("\n\n");*/
 	
 	return ret.getString();
 }
 
-string createTable(MinTable min) {
+string createTable(MinTable min, ref string stateType) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(min.table.getSize() * 
 		min.table[0].getSize() * 4);
 
@@ -385,11 +444,14 @@ string createTable(MinTable min) {
 		}
 	}
 	if(max < 127) {
-		ret.pushBack(" byte[][] table = [\n");
+		ret.pushBack(" immutable byte[][] table = [\n");
+		stateType = "byte";
 	} else if(max < 32768) {
-		ret.pushBack(" short[][] table = [\n");
+		ret.pushBack(" immutable short[][] table = [\n");
+		stateType = "short";
 	} else {
-		ret.pushBack(" int[][] table = [\n");
+		ret.pushBack(" immutable int[][] table = [\n");
+		stateType = "int";
 	}
 
 	int indent = 1;
@@ -421,30 +483,35 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 	file.writeString(base);
 	string usercode = input.getUserCode();
 	file.writeString("class " ~ classname ~ classHeader);
-	string table = createTable(min);
+	string stateType;
+	string table = createTable(min, stateType);
 	string stateMapping = createStateMapping(min);
 	string createInputCharMapping = createCharMapping(min);
+	string getNextState = createGetNextState(stateType);
+	string defaultRunFunction = createDefaultRunFunction(min,stateType);
 	file.writeString(stateMapping);
 	file.writeString(table);
 	file.writeString(createInputCharMapping);
+	file.writeString(getNextState);
+	file.writeString(defaultRunFunction);
 	file.writeString(classBody);
 	file.writeString("}");
 	file.close();
 }
 
 private string base = `
-abstract class Lexer {
-	public void run();
-	public dchar eolChar() const;
-	public dchar eofChar() const;
-}
-
 import hurt.conv.conv;
 import hurt.container.map;
 import hurt.io.file;
 import hurt.io.stdio;
 import hurt.io.stream;
 import hurt.string.utf;
+
+abstract class Lexer {
+	public void run();
+	public dchar eolChar() const;
+	public dchar eofChar() const;
+}
 
 `;
 

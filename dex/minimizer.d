@@ -173,6 +173,7 @@ public Vector!(State) minimize(T)(DLinkedList!(State) oldStates,
 
 struct MinTable {
 	Vector!(Vector!(int)) table;
+	Vector!(State) states;
 	int[] state;
 	Map!(dchar,Column) inputChar;
 }
@@ -225,6 +226,7 @@ alias Column Row;
 MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	// create the return type and it's members
 	MinTable ret;
+	ret.states = states;
 	sortVector!(State)(states, function(in State a, in State b) { 
 		return a.getStateId() < b.getStateId(); });
 
