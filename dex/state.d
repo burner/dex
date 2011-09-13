@@ -70,6 +70,10 @@ class State {
 		this.aStates.insert(sId);;	
 	}
 
+	int getFirstAcceptingState() {
+		return *this.aStates.begin();
+	}
+
 	Set!(int) getAcceptingStates() {
 		return this.aStates;
 	}

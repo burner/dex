@@ -289,7 +289,32 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 }
 
 string createIsAcceptingStateFunction(MinTable min, string stateType) {
-	return null;
+	StringBuffer!(char) ret = new StringBuffer!(char)(256*4);
+	ret.pushBack("\tprivate ");
+	ret.pushBack(stateType);
+	ret.pushBack(" run(");
+	ret.pushBack(stateType);
+	ret.pushBack(" state) {\n");
+	ret.pushBack("\t\tswitch(state) {\n");
+	foreach(it; min.states) {
+		ret.pushBack("\t\t\tcase ");	
+		ret.pushBack(conv!(int,string)(it.getStateId()));
+		ret.pushBack(":\n");
+		if(it.isAccepting()) {
+			ret.pushBack("\t\t\t\treturn ");
+			ret.pushBack(conv!(int,string)(it.getFirstAcceptingState()));
+		} else {
+			ret.pushBack("\t\t\t\treturn -1");
+		}
+		ret.pushBack(";\n");
+	}
+	ret.pushBack("\t\t\tdefault:\n");
+	ret.pushBack("\t\t\t\tassert(false, \"an invalid state was passed \" ~");
+	ret.pushBack(" conv!(int,string)(state));\n");
+	ret.pushBack("\t\t}\n");
+	ret.pushBack("\t}\n");
+
+	return ret.getString();
 }
 
 string createDefaultRunFunction(MinTable min, string stateType) {
@@ -317,7 +342,7 @@ string createDefaultRunFunction(MinTable min, string stateType) {
 	ret.pushBack("\t\t\t}\n");
 
 	ret.pushBack("\t\t}\n");
-	ret.pushBack("\t}\n");
+	ret.pushBack("\t}\n\n");
 
 	return ret.getString();
 }
@@ -388,8 +413,8 @@ string createStateMapping(MinTable min) {
 	int max = 0;
 	foreach(it; min.state) {
 		if(it > max) {
-				max = it;
-			}
+			max = it;
+		}
 	}
 	if(max < 127) {
 		ret.pushBack("\timmutable byte[] stateMapping = [\n\t");
@@ -489,11 +514,13 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 	string createInputCharMapping = createCharMapping(min);
 	string getNextState = createGetNextState(stateType);
 	string defaultRunFunction = createDefaultRunFunction(min,stateType);
+	string isAcceptinStateFunction = createIsAcceptingStateFunction(min,stateType);
 	file.writeString(stateMapping);
 	file.writeString(table);
 	file.writeString(createInputCharMapping);
 	file.writeString(getNextState);
 	file.writeString(defaultRunFunction);
+	file.writeString(isAcceptinStateFunction);
 	file.writeString(classBody);
 	file.writeString("}");
 	file.close();
