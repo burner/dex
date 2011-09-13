@@ -7,19 +7,6 @@
 %% foobar4
 	foobar5
 	foobar6
-"[:alpha:][:word:]*" {: identifer :}
-"long" {: long :}
-"if" {: if :}
-"for" {: for :}
-"while" {: while :}
-"do" {: do :}
-"int" {: int :}
-"void" {: void :}
-"delegate" {: delegate :}
-"function" {: function :}
-"template" {: template :}
-"&&" {: logicand :}
-"||" {: logicor :}
 %%
 
 %% foobar7 %%
@@ -33,3 +20,16 @@
 "[+-:digit:][:digit:][:digit:_]*.[:digit:_]*" {: float :}
 "[:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
 "[:digit:][:digit:_]*.[:digit:_]*" {: float :}
+"[:alpha:][:word:]*" {: identifer :}
+"long" {: long :}
+"if" {: if :}
+"for" {: for :}
+"while" {: while :}
+"do" {: do :}
+"int" {: int :}
+"void" {: void :}
+"delegate" {: delegate :}
+"function" {: function :}
+"template" {: template :}
+"&&" {: logicand :}
+"||" {: logicor :}
