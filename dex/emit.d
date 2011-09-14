@@ -290,9 +290,8 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 
 string createIsAcceptingStateFunction(MinTable min, string stateType) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(256*4);
-	ret.pushBack("\tprivate ");
-	ret.pushBack(stateType);
-	ret.pushBack(" run(");
+	ret.pushBack("\tprivate int");
+	ret.pushBack(" isAcceptingState(");
 	ret.pushBack(stateType);
 	ret.pushBack(" state) {\n");
 	ret.pushBack("\t\tswitch(state) {\n");
@@ -339,6 +338,12 @@ string createDefaultRunFunction(MinTable min, string stateType) {
 	ret.pushBack("\t\t\tif(nextState != -1) {\n");
 	ret.pushBack("\t\t\t\tcontinue;\n");
 	ret.pushBack("\t\t\t} else {\n");
+	ret.pushBack("\t\t\t\tint isAccepting = this.isAcceptingState(currentState);\n");
+	ret.pushBack("\t\t\t\tif(isAccepting == -1) {\n");
+	ret.pushBack("\t\t\t\t\tassert(0, \"invalid input character for state and ");
+	ret.pushBack("state is not accepting\");\n");
+	ret.pushBack("\t\t\t\t} else {\n");
+	ret.pushBack("\t\t\t\t}\n");
 	ret.pushBack("\t\t\t}\n");
 
 	ret.pushBack("\t\t}\n");
