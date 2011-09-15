@@ -575,7 +575,8 @@ public pure int userCodeBrace(bool dir,char br)(in char[] str, int start = 0) {
 
 	static if(!dir) {
 		foreach(idx, it; str[start..$-1]) {
-			if(it == '{' && str[idx+start+1] == ':') {
+			//if(it == '{' && str[idx+start+1] == ':') {
+			if(it == '{' && str[idx+start+1] == br) {
 				return conv!(size_t,int)(idx)+start;	
 			} else if(!(it == ' ' || it == '\t')) {
 				return -1;
@@ -583,7 +584,8 @@ public pure int userCodeBrace(bool dir,char br)(in char[] str, int start = 0) {
 		}
 	} else {
 		foreach_reverse(idx, it; str[start+1..$]) {
-			if(it == '}' && str[start+idx] == ':') {
+			//if(it == '}' && str[start+idx] == ':') {
+			if(it == '}' && str[start+idx] == br) {
 				return conv!(size_t,int)(idx)+start;	
 			} else if(!(it == ' ' || it == '\t')) {
 				return -1;
@@ -594,25 +596,25 @@ public pure int userCodeBrace(bool dir,char br)(in char[] str, int start = 0) {
 }
 
 unittest {
-	assert(-1 != userCodeBrace!(false,'{')("   {:"));
-	assert(3 == userCodeBrace!(false,'{')("   {:"));
-	assert(3 == userCodeBrace!(false,'{')("   {:",2));
-	assert(-1 == userCodeBrace!(false,'{')("    "));
-	assert(-1 == userCodeBrace!(false,'{')("%    %"));
-	assert(-1 != userCodeBrace!(false,'{')("{:  %%"));
-	assert(0 == userCodeBrace!(false,'{')("{:  %%"));
-	assert(-1 == userCodeBrace!(true,'}')("  }:%%"));
-	assert(-1 == userCodeBrace!(true,'}')("  %%"));
-	assert(-1 != userCodeBrace!(true,'}')("%%  %:}"));
-	assert(-1 != userCodeBrace!(true,'}')("%%  %:}", 3));
-	assert(-1 != userCodeBrace!(true,'}')("%%  %:} "));
-	assert(-1 != userCodeBrace!(true,'}')("%%  %:}  ", 3));
-	assert(-1 == userCodeBrace!(true,'}')("%%  %:} t"));
-	assert(-1 == userCodeBrace!(true,'}')("%%  %:} ]", 3));
-	assert(5 == userCodeBrace!(true,'}')("%%  %:}", 3), 
-		conv!(int,string)(userCodeBrace!(true,'}')("%%  %:}", 3)));
-	assert(-1 == userCodeBrace!(true,'}')("%%  :}%", 6));
-	assert(-1 == userCodeBrace!(true,'}')("%%:}  %", 3));
+	assert(-1 != userCodeBrace!(false,':')("   {:"));
+	assert(3 == userCodeBrace!(false,':')("   {:"));
+	assert(3 == userCodeBrace!(false,':')("   {:",2));
+	assert(-1 == userCodeBrace!(false,':')("    "));
+	assert(-1 == userCodeBrace!(false,':')("%    %"));
+	assert(-1 != userCodeBrace!(false,':')("{:  %%"));
+	assert(0 == userCodeBrace!(false,':')("{:  %%"));
+	assert(-1 == userCodeBrace!(true,':')("  }:%%"));
+	assert(-1 == userCodeBrace!(true,':')("  %%"));
+	assert(-1 != userCodeBrace!(true,':')("%%  %:}"));
+	assert(-1 != userCodeBrace!(true,':')("%%  %:}", 3));
+	assert(-1 != userCodeBrace!(true,':')("%%  %:} "));
+	assert(-1 != userCodeBrace!(true,':')("%%  %:}  ", 3));
+	assert(-1 == userCodeBrace!(true,':')("%%  %:} t"));
+	assert(-1 == userCodeBrace!(true,':')("%%  %:} ]", 3));
+	assert(5 == userCodeBrace!(true,':')("%%  %:}", 3), 
+		conv!(int,string)(userCodeBrace!(true,':')("%%  %:}", 3)));
+	assert(-1 == userCodeBrace!(true,':')("%%  :}%", 6));
+	assert(-1 == userCodeBrace!(true,':')("%%:}  %", 3));
 }
 
 public pure int findTick(in char[] str, int start = 0) {

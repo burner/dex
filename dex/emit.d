@@ -308,15 +308,16 @@ string createIsAcceptingStateFunction(MinTable min, string stateType) {
 		ret.pushBack(";\n");
 	}
 	ret.pushBack("\t\t\tdefault:\n");
-	ret.pushBack("\t\t\t\tassert(false, \"an invalid state was passed \" ~");
-	ret.pushBack(" conv!(int,string)(state));\n");
+	ret.pushBack("\t\t\t\tassert(false, \"an invalid state was passed \" ~\n");
+	ret.pushBack("\t\t\t\t\tconv!(int,string)(state));\n");
 	ret.pushBack("\t\t}\n");
 	ret.pushBack("\t}\n");
 
 	return ret.getString();
 }
 
-string createDefaultRunFunction(MinTable min, string stateType) {
+string createDefaultRunFunction(MinTable min, string stateType, 
+		Input input) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(256*4);
 	ret.pushBack("\tprivate void run() {\n");
 	ret.pushBack("\t\tdchar currentInputChar;\n");
@@ -338,11 +339,38 @@ string createDefaultRunFunction(MinTable min, string stateType) {
 	ret.pushBack("\t\t\tif(nextState != -1) {\n");
 	ret.pushBack("\t\t\t\tcontinue;\n");
 	ret.pushBack("\t\t\t} else {\n");
-	ret.pushBack("\t\t\t\tint isAccepting = this.isAcceptingState(currentState);\n");
+	ret.pushBack("\t\t\t\tint isAccepting = ");
+	ret.pushBack("this.isAcceptingState(currentState);\n");
 	ret.pushBack("\t\t\t\tif(isAccepting == -1) {\n");
-	ret.pushBack("\t\t\t\t\tassert(0, \"invalid input character for state and ");
-	ret.pushBack("state is not accepting\");\n");
+
+	string inputErrorFunction = input.getInputErrorCode();
+	if(inputErrorFunction !is null && inputErrorFunction.length > 0) {
+		ret.pushBack(inputErrorFunction);
+		ret.pushBack("\n");
+	} else {
+		ret.pushBack("\t\t\t\t\tprintfln(\"lex error at character %d of line");
+		ret.pushBack(" %d in file %s\",\n \t\t\t\t\t\t");
+		ret.pushBack("this.getCurrentIndexInLine(),\n\t\t\t\t\t\t");
+		ret.pushBack("this.getCurrentLineCount(),\n\t\t\t\t\t\t");
+		ret.pushBack("this.getFilename());\n");
+		ret.pushBack("\t\t\t\t\tassert(false, \"Lex error\");\n");
+	}
+
 	ret.pushBack("\t\t\t\t} else {\n");
+	ret.pushBack("\t\t\t\t\tswitch(isAccepting) {\n");
+
+	sortVector!(RegexCode)(input.getRegExCode(),
+		function(in RegexCode a, in RegexCode b) { 
+		return a.getPriority() < b.getPriority(); });
+
+	foreach(RegexCode it; input.getRegExCode()) {
+		ret.pushBack("\t\t\t\t\t\tcase ");
+		ret.pushBack(conv!(size_t,string)(it.getPriority()));
+		ret.pushBack(": {\n");
+		ret.pushBack(it.getCode());
+		ret.pushBack("\n\t\t\t\t\t\t}\n\t\t\t\t\t\tbreak;\n");
+	}
+
 	ret.pushBack("\t\t\t\t}\n");
 	ret.pushBack("\t\t\t}\n");
 
@@ -518,8 +546,10 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 	string stateMapping = createStateMapping(min);
 	string createInputCharMapping = createCharMapping(min);
 	string getNextState = createGetNextState(stateType);
-	string defaultRunFunction = createDefaultRunFunction(min,stateType);
-	string isAcceptinStateFunction = createIsAcceptingStateFunction(min,stateType);
+	string defaultRunFunction = createDefaultRunFunction(min, stateType, 
+		input);
+	string isAcceptinStateFunction = 
+		createIsAcceptingStateFunction(min,stateType);
 	file.writeString(stateMapping);
 	file.writeString(table);
 	file.writeString(createInputCharMapping);
@@ -563,9 +593,10 @@ private string classBody = `
 		this.filename = filename;
 		this.lineNumber = 0;
 
-		if(!exists(this.filename))
+		if(!exists(this.filename)) {
 			throw new Exception(__FILE__ ~ ":" ~ conv!(int,string)(__LINE__) ~
 				this.filename ~ " does not exists");
+		}
 
 		this.charMapping = new Map!(dchar,size_t)();
 

@@ -19,7 +19,16 @@
 "template" {: template :}
 "&&" {: logicand :}
 "||" {: logicor :}
+"[+-:digit:][:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
+"[+-:digit:][:digit:][:digit:_]*.[:digit:_]*" {: float :}
+"[:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
+"[:digit:][:digit:_]*.[:digit:_]*" {: float :}
+"[:alpha:][:word:]*" {: identifer foobar :}
+{%printfln("lex error at character %d of line %d in file %s",
+  	this.getCurrentIndexInLine(), this.getCurrentLineCount(),
+  	this.getFilename());%}
 %%
+
 
 %% foobar7 %%
 
@@ -29,10 +38,3 @@
 "0x[+-01234567][01234567][01234567_]*" {: hex :}
 "0b[01][01_]*" {: bin :}
 "0b[+-01][01_]*" {: bin :}
-"[+-:digit:][:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
-"[+-:digit:][:digit:][:digit:_]*.[:digit:_]*" {: float :}
-"[:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
-"[:digit:][:digit:_]*.[:digit:_]*" {: float :}
-"[:alpha:][:word:]*" {: identifer 
-	foobar
-	:}

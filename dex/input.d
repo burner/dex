@@ -127,6 +127,20 @@ class Input {
 						tmp.pushBack(it[ucLow+2..$]);
 						tmp.pushBack("\n");
 					}
+					break;
+				}
+				int ieLow = userCodeBrace!(false,'%')(it, 0);
+				if(ieLow != -1) {
+					int ieUp = userCodeBrace!(true,'%')(it, ieLow+2);
+					if(ieUp != -1) {
+						char[] uc = it[ieLow+2..ieUp];
+						this.inputErrorCode ~= "\n" ~ uc;
+					} else {
+						ps = ParseState.InputErrorCode;
+						tmp.pushBack(it[ieLow+2..$]);
+						tmp.pushBack("\n");
+					}
+					break;
 				}
 				int rcLow = findTick(it);
 				if(rcLow != -1) {
@@ -161,18 +175,7 @@ class Input {
 								it[rucLow+2..rucUp]);
 						}
 					}
-				}
-				int ieLow = userCodeBrace!(false,'%')(it, 0);
-				if(ieLow != -1) {
-					int ieUp = userCodeBrace!(true,'%')(it, ieLow+2);
-					if(ieUp != -1) {
-						char[] uc = it[ieLow+2..ieUp];
-						this.inputErrorCode ~= "\n" ~ uc;
-					} else {
-						ps = ParseState.InputErrorCode;
-						tmp.pushBack(it[ieLow+2..$]);
-						tmp.pushBack("\n");
-					}
+					break;
 				}
 				break;
 			}
@@ -193,7 +196,7 @@ class Input {
 				int ieLow = userCodeBrace!(true,'%')(it);
 				if(ieLow == -1) {
 					tmp.pushBack(it);
-					tmp.pushBack('\n');
+					tmp.pushBack("\n");
 				} else {
 					tmp.pushBack(it[0..ieLow]);
 					this.inputErrorCode ~= tmp.getString();
@@ -226,5 +229,9 @@ class Input {
 
 	public string getUserCode() {
 		return this.userCode;
+	}
+
+	public string getInputErrorCode() {
+		return this.inputErrorCode;
 	}
 }
