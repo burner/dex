@@ -33,4 +33,6 @@
 "[+-:digit:][:digit:][:digit:_]*.[:digit:_]*" {: float :}
 "[:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
 "[:digit:][:digit:_]*.[:digit:_]*" {: float :}
-"[:alpha:][:word:]*" {: identifer :}
+"[:alpha:][:word:]*" {: identifer 
+	foobar
+	:}

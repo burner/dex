@@ -50,12 +50,14 @@ class RegexCode {
 enum ParseState {
 	None,
 	UserCode,
+	InputErrorCode,
 	RegexCode
 }
 
 class Input {
 	private string filename;
 	private string userCode;
+	private string inputErrorCode;
 	private File ins;
 	private Vector!(RegexCode) regexCode;
 
@@ -142,14 +144,14 @@ class Input {
 						assert(this.regexCode.getSize() >= 1, 
 							conv!(long,string)(this.regexCode.getSize()));
 
-						int rucLow = userCodeBrace!(false)(it,rcUp+1);
+						int rucLow = userCodeBrace!(false,':')(it,rcUp+1);
 						if(rucLow == -1)
 							throw new Exception("line " ~ 
 								conv!(size_t,string)(idx) ~ 
 								" should contain {: " ~
 								"aka regex code start symbol");
 
-						int rucUp = userCodeBrace!(true)(it,rucLow+2);
+						int rucUp = userCodeBrace!(true,':')(it,rucLow+2);
 						if(rucUp == -1) {
 							tmp.pushBack(it[rucLow+2..$]);
 							tmp.pushBack('\n');
@@ -158,6 +160,18 @@ class Input {
 							this.regexCode.peekBack().setCode(
 								it[rucLow+2..rucUp]);
 						}
+					}
+				}
+				int ieLow = userCodeBrace!(false,'%')(it, 0);
+				if(ieLow != -1) {
+					int ieUp = userCodeBrace!(true,'%')(it, ieLow+2);
+					if(ieUp != -1) {
+						char[] uc = it[ieLow+2..ieUp];
+						this.inputErrorCode ~= "\n" ~ uc;
+					} else {
+						ps = ParseState.InputErrorCode;
+						tmp.pushBack(it[ieLow+2..$]);
+						tmp.pushBack("\n");
 					}
 				}
 				break;
@@ -175,8 +189,21 @@ class Input {
 				}
 				break;
 			}
+			case ParseState.InputErrorCode: {
+				int ieLow = userCodeBrace!(true,'%')(it);
+				if(ieLow == -1) {
+					tmp.pushBack(it);
+					tmp.pushBack('\n');
+				} else {
+					tmp.pushBack(it[0..ieLow]);
+					this.inputErrorCode ~= tmp.getString();
+					tmp.clear();
+					ps = ParseState.None;
+				}
+				break;
+			}
 			case ParseState.RegexCode: {
-				int rucUp = userCodeBrace!(true)(it);
+				int rucUp = userCodeBrace!(true,'}')(it);
 				if(rucUp == -1) {
 					tmp.pushBack(it);
 					tmp.pushBack('\n');
