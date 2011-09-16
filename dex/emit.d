@@ -580,6 +580,11 @@ string createTable(MinTable min, ref string stateType) {
 	return ret.getString();
 }
 
+string formatUserCode(string userCode) {
+	StringBuffer!(char) ret = new StringBuffer!(char)(userCode.length*2);
+	return ret.getString();
+}
+
 void emitLexer(MinTable min, Input input, string classname, string filename) {
 	hurt.io.stream.File file = new hurt.io.stream.File(filename, 
 		FileMode.OutNew);
@@ -596,6 +601,7 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 		input);
 	string isAcceptinStateFunction = 
 		createIsAcceptingStateFunction(min,stateType);
+	string userCodeFormatted = formatUserCode(input.getUserCode());
 	file.writeString(stateMapping);
 	file.writeString(table);
 	file.writeString(createInputCharMapping);
