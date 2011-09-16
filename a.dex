@@ -27,14 +27,14 @@
 {%printfln("lex error at character %d of line %d in file %s",
   	this.getCurrentIndexInLine(), this.getCurrentLineCount(),
   	this.getFilename());%}
+"[+-:digit:][:digit:][:digit:_]*" {: int :}
+"0x[+-01234567][01234567][01234567_]*" {: hex :}
+"0b[+-01][01_]*" {: bin :}
 %%
 
 
 %% foobar7 %%
 
-"[:digit:][:digit:_]*" {: int :}
-"[+-:digit:][:digit:][:digit:_]*" {: int :}
-"0x[01234567][01234567_]*" {: hex :}
-"0x[+-01234567][01234567][01234567_]*" {: hex :}
-"0b[01][01_]*" {: bin :}
-"0b[+-01][01_]*" {: bin :}
+"[:digit:][:digit:_]*" {: printfln("int %s", this.getCurrentLex()); :}
+"0x[01234567][01234567_]*" {: printfln("hex %s", this.getCurrentLex()); :}
+"0b[01][01_]*" {: printfln("bin %s", this.getCurrentLex()); :}

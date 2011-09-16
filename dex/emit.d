@@ -327,9 +327,14 @@ string createDefaultRunFunction(MinTable min, string stateType,
 	ret.pushBack("\t\t");
 	ret.pushBack(stateType);
 	ret.pushBack(" nextState = -1;\n");
-	ret.pushBack("\t\tbool needToGetNextState = true;\n\n");
+	ret.pushBack("\t\tbool needToGetNextState = true;\n");
+	ret.pushBack("\t\tbool needToGetNextChar = true;\n\n");
 	ret.pushBack("\t\twhile(!this.isEmpty()) {\n");
-	ret.pushBack("\t\t\tcurrentInputChar = this.getNextChar();\n");
+	ret.pushBack("\t\t\tif(needToGetNextChar) {\n");
+	ret.pushBack("\t\t\t\tcurrentInputChar = this.getNextChar();\n");
+	ret.pushBack("\t\t\t} else {\n");
+	ret.pushBack("\t\t\t\tneedToGetNextChar = true;\n");
+	ret.pushBack("\t\t\t}\n\n");
 	ret.pushBack("\t\t\tif(needToGetNextState) {\n");
 	ret.pushBack("\t\t\t\tnextState = this.getNextState(currentInputChar, ");
 	ret.pushBack("currentState);\n");
@@ -337,8 +342,13 @@ string createDefaultRunFunction(MinTable min, string stateType,
 	ret.pushBack("\t\t\t\tneedToGetNextState = true;\n");
 	ret.pushBack("\t\t\t}\n\n");
 	ret.pushBack("\t\t\tif(nextState != -1) {\n");
+	ret.pushBack("\t\t\t\tthis.lexBuffer.pushBack(currentInputChar);\n");
+	ret.pushBack("\t\t\t}\n");
+	ret.pushBack("\t\t\tif(nextState != -1) {\n");
+	ret.pushBack("\t\t\t\tcurrentState = nextState;\n");
 	ret.pushBack("\t\t\t\tcontinue;\n");
 	ret.pushBack("\t\t\t} else {\n");
+	ret.pushBack("\t\t\t\tneedToGetNextChar = false;\n");
 	ret.pushBack("\t\t\t\tint isAccepting = ");
 	ret.pushBack("this.isAcceptingState(currentState);\n");
 	ret.pushBack("\t\t\t\tif(isAccepting == -1) {\n");
@@ -371,9 +381,41 @@ string createDefaultRunFunction(MinTable min, string stateType,
 		ret.pushBack("\n\t\t\t\t\t\t}\n\t\t\t\t\t\tbreak;\n");
 	}
 
+	ret.pushBack("\t\t\t\t\t}\n");
+	ret.pushBack("\t\t\t\t\tthis.lexBuffer.clear();\n");
+	ret.pushBack("\t\t\t\t\tcurrentState = 0;\n");
 	ret.pushBack("\t\t\t\t}\n");
 	ret.pushBack("\t\t\t}\n");
 
+	ret.pushBack("\t\t}\n");
+	ret.pushBack("\t\tisAccepting = ");
+	ret.pushBack("this.isAcceptingState(currentState);\n");
+	ret.pushBack("\t\tif(isAccepting == -1) {\n");
+
+	if(inputErrorFunction !is null && inputErrorFunction.length > 0) {
+		ret.pushBack(inputErrorFunction);
+		ret.pushBack("\n");
+	} else {
+		ret.pushBack("\t\t\tprintfln(\"lex error at character %d of line");
+		ret.pushBack(" %d in file %s\",\n \t\t\t\t");
+		ret.pushBack("this.getCurrentIndexInLine(),\n\t\t\t\t");
+		ret.pushBack("this.getCurrentLineCount(),\n\t\t\t\t");
+		ret.pushBack("this.getFilename());\n");
+		ret.pushBack("\t\t\tassert(false, \"Lex error\");\n");
+	}
+
+	ret.pushBack("\t\t} else {\n");
+	ret.pushBack("\t\t\tswitch(isAccepting) {\n");
+
+	foreach(RegexCode it; input.getRegExCode()) {
+		ret.pushBack("\t\t\t\tcase ");
+		ret.pushBack(conv!(size_t,string)(it.getPriority()));
+		ret.pushBack(": {\n");
+		ret.pushBack(it.getCode());
+		ret.pushBack("\n\t\t\t\t}\n\t\t\t\tbreak;\n");
+	}
+
+	ret.pushBack("\t\t\t}\n");
 	ret.pushBack("\t\t}\n");
 	ret.pushBack("\t}\n\n");
 
@@ -388,7 +430,11 @@ string createGetNextState(string returnType) {
 	ret.pushBack(" getNextState(dchar inputChar, ");
 	ret.pushBack(returnType);
 	ret.pushBack(" currentState) {\n");
-	ret.pushBack("\t\tsize_t column = *this.charMapping.find(inputChar);\n");
+	ret.pushBack("\t\tMapItem!(dchar,size_t) cm = ");
+	ret.pushBack("this.charMapping.find(inputChar);\n");
+	ret.pushBack("\t\tif(cm is null)\n");
+	ret.pushBack("\t\t\treturn -1;\n\n");
+	ret.pushBack("\t\tsize_t column = *cm;\n");
 	ret.pushBack("\t\tsize_t row = this.stateMapping[currentState];\n");
 	ret.pushBack("\t\treturn this.table[row][column];\n");
 	//ret.pushBack("\t\t}\n\n");
@@ -568,6 +614,7 @@ import hurt.io.file;
 import hurt.io.stdio;
 import hurt.io.stream;
 import hurt.string.utf;
+import hurt.string.strinbuffer;
 
 abstract class Lexer {
 	public void run();
@@ -584,6 +631,7 @@ private string classHeader = ` : Lexer {
 	private size_t lineNumber;
 	private size_t charIdx;
 	private dchar[] currentLine;
+	private StringBuffer!(dchar) lexText;
 
 	private Map!(dchar,size_t) charMapping;
 `;
@@ -601,6 +649,7 @@ private string classBody = `
 		this.charMapping = new Map!(dchar,size_t)();
 
 		this.file = new hurt.io.stream.BufferedFile(this.filename);
+		this.lexText = new StringBuffer!(dchar)(128);
 		this.initCharMapping();
 		this.getNextLine();
 	}
@@ -611,6 +660,10 @@ private string classBody = `
 				print(jt);
 			println();
 		}
+	}
+
+	public dstring getCurrentLex() {
+		return this.lexBuffer.getString();
 	}
 
 	public size_t getCurrentLineCount() const {
