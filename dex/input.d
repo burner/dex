@@ -121,7 +121,7 @@ class Input {
 					if(ucUp != -1) {
 						char[] uc = it[ucLow+2..ucUp];
 						assert(-1 == userCodeParanthesis(uc));
-						this.userCode ~= "\n" ~ uc;
+						this.userCode ~= "\n\n" ~ uc;
 					} else {
 						ps = ParseState.UserCode;
 						tmp.pushBack(it[ucLow+2..$]);
@@ -187,6 +187,7 @@ class Input {
 				} else {
 					tmp.pushBack(it[0..ucLow]);
 					this.userCode ~= tmp.getString();
+					this.userCode ~= '\n';
 					tmp.clear();
 					ps = ParseState.None;
 				}

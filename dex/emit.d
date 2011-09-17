@@ -319,7 +319,7 @@ string createIsAcceptingStateFunction(MinTable min, string stateType) {
 string createDefaultRunFunction(MinTable min, string stateType, 
 		Input input) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(256*4);
-	ret.pushBack("\tprivate void run() {\n");
+	ret.pushBack("\tpublic void run() {\n");
 	ret.pushBack("\t\tdchar currentInputChar;\n");
 	ret.pushBack("\t\t");
 	ret.pushBack(stateType);
@@ -342,7 +342,7 @@ string createDefaultRunFunction(MinTable min, string stateType,
 	ret.pushBack("\t\t\t\tneedToGetNextState = true;\n");
 	ret.pushBack("\t\t\t}\n\n");
 	ret.pushBack("\t\t\tif(nextState != -1) {\n");
-	ret.pushBack("\t\t\t\tthis.lexBuffer.pushBack(currentInputChar);\n");
+	ret.pushBack("\t\t\t\tthis.lexText.pushBack(currentInputChar);\n");
 	ret.pushBack("\t\t\t}\n");
 	ret.pushBack("\t\t\tif(nextState != -1) {\n");
 	ret.pushBack("\t\t\t\tcurrentState = nextState;\n");
@@ -382,13 +382,13 @@ string createDefaultRunFunction(MinTable min, string stateType,
 	}
 
 	ret.pushBack("\t\t\t\t\t}\n");
-	ret.pushBack("\t\t\t\t\tthis.lexBuffer.clear();\n");
+	ret.pushBack("\t\t\t\t\tthis.lexText.clear();\n");
 	ret.pushBack("\t\t\t\t\tcurrentState = 0;\n");
 	ret.pushBack("\t\t\t\t}\n");
 	ret.pushBack("\t\t\t}\n");
 
 	ret.pushBack("\t\t}\n");
-	ret.pushBack("\t\tisAccepting = ");
+	ret.pushBack("\t\tint isAccepting = ");
 	ret.pushBack("this.isAcceptingState(currentState);\n");
 	ret.pushBack("\t\tif(isAccepting == -1) {\n");
 
@@ -581,8 +581,17 @@ string createTable(MinTable min, ref string stateType) {
 }
 
 string formatUserCode(string userCode) {
-	StringBuffer!(char) ret = new StringBuffer!(char)(userCode.length*2);
-	return ret.getString();
+	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(userCode.length*2);
+	foreach(dchar c; conv!(string,dstring)(userCode)) {
+		if(c == '\n') {
+			ret.pushBack('\n');
+			ret.pushBack('\t');
+		} else {
+			ret.pushBack(c);
+		}
+	}
+	ret.pushBack("\n\n");
+	return conv!(dstring,string)(ret.getString());
 }
 
 void emitLexer(MinTable min, Input input, string classname, string filename) {
@@ -609,6 +618,7 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 	file.writeString(defaultRunFunction);
 	file.writeString(isAcceptinStateFunction);
 	file.writeString(classBody);
+	file.writeString(userCodeFormatted);
 	file.writeString("}");
 	file.close();
 }
@@ -620,7 +630,7 @@ import hurt.io.file;
 import hurt.io.stdio;
 import hurt.io.stream;
 import hurt.string.utf;
-import hurt.string.strinbuffer;
+import hurt.string.stringbuffer;
 
 abstract class Lexer {
 	public void run();
@@ -669,7 +679,7 @@ private string classBody = `
 	}
 
 	public dstring getCurrentLex() {
-		return this.lexBuffer.getString();
+		return this.lexText.getString();
 	}
 
 	public size_t getCurrentLineCount() const {

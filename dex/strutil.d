@@ -371,6 +371,20 @@ unittest {
 		conv!(dchar[],string)(unionExtend(":digit:abc:digit:"d.dup)));
 }
 
+/*
+public immutable(dchar)[] whiteSpacePrepare(immutable(dchar)[] str {
+	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(str.length*2);
+	for(size_t i = 0; i < str.length; i++) {
+		if(str[i] == 't' && i > 0 && str[i-1] == '\\') {
+			ret.pushBack('	');
+		} else if(str[i] == '\\' && i > 0str[i-1] 
+		} else {
+			ret.pushBack(str[i])
+	}
+
+	return ret.getString();
+}*/
+
 public immutable(dchar)[] prepareString(immutable(dchar)[] str) {
 	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(str.length*3);	
 	for(size_t i = 0; i < str.length; i++) {
