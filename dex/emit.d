@@ -388,6 +388,8 @@ string createDefaultRunFunction(MinTable min, string stateType,
 	ret.pushBack("\t\t\t}\n");
 
 	ret.pushBack("\t\t}\n");
+	ret.pushBack("\t\tcurrentState = this.getNextState(currentInputChar,");
+	ret.pushBack("currentState);\n");
 	ret.pushBack("\t\tint isAccepting = ");
 	ret.pushBack("this.isAcceptingState(currentState);\n");
 	ret.pushBack("\t\tif(isAccepting == -1) {\n");

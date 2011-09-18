@@ -9,18 +9,18 @@ dchar eofChar() const {
 %%
 
 {%
-					if(currentInputChar == ' ' || currentInputChar == '\r' 
-							|| currentInputChar == '\n') {
-						currentState = 0;
-						needToGetNextChar = true;
-						needToGetNextState = true;
-					} else {
-						printfln("lex error at character %d of line %d in file %s",
-								this.getCurrentIndexInLine(),
-								this.getCurrentLineCount(),
-								this.getFilename());
-						assert(false, "Lex error");
-					}
+			if(currentInputChar == ' ' || currentInputChar == '\r' 
+					|| currentInputChar == '\n') {
+				currentState = 0;
+				needToGetNextChar = true;
+				needToGetNextState = true;
+			} else {
+				printfln("lex error at character %d of line %d in file %s",
+						this.getCurrentIndexInLine(),
+						this.getCurrentLineCount(),
+						this.getFilename());
+				assert(false, "Lex error");
+			}
 %}
 
 "[:digit:][:digit:_]*" {: printfln("int %s", this.getCurrentLex()); :}
@@ -42,3 +42,4 @@ dchar eofChar() const {
 ")" {: printfln("right parenthies"); :}
 "{" {: printfln("left brace"); :}
 "}" {: printfln("right brace"); :}
+" " {: printfln("blank"); :}
