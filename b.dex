@@ -37,3 +37,8 @@ dchar eofChar() const {
 "function" {: printfln("function keyword"); :}
 "template" {: printfln("template keyword"); :}
 "[:alpha:][:word:]*" {: printfln("identifer"); :}
+"." {: printfln("dot"); :}
+"(" {: printfln("left parenthies"); :}
+")" {: printfln("right parenthies"); :}
+"{" {: printfln("left brace"); :}
+"}" {: printfln("right brace"); :}
