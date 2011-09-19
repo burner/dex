@@ -292,7 +292,12 @@ string replaceNewline(string str) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(str.length+2);
 	foreach(it; str) {
 		if(it == '\n') {
-			ret.pushBack("\\n");
+			ret.pushBack("newline");
+		} else if(it == '"') {
+			ret.pushBack("\\");
+			ret.pushBack('"');
+		} else if(it == '\t') {
+			ret.pushBack("tabular");
 		} else {
 			ret.pushBack(it);
 		}
@@ -320,17 +325,18 @@ string createIsAcceptingStateFunction(MinTable min, string stateType) {
 		ret.pushBack(";\n");
 	}
 	ret.pushBack("\t\t\tdefault:\n");
-	ret.pushBack("\t\t\t\tassert(false, \"an invalid state was passed \" ~");
-	ret.pushBack(" conv!(int,string)(state));\n");
+	ret.pushBack("\t\t\t\tassert(false, \"an invalid state was passed \" ~\n");
+	ret.pushBack("\t\t\t\t\tconv!(int,string)(state));\n");
 	ret.pushBack("\t\t}\n");
 	ret.pushBack("\t}\n");
 
 	return ret.getString();
 }
 
-string createDefaultRunFunction(MinTable min, string stateType) {
+string createDefaultRunFunction(MinTable min, string stateType, 
+		Input input) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(256*4);
-	ret.pushBack("\tprivate void run() {\n");
+	ret.pushBack("\tpublic void run() {\n");
 	ret.pushBack("\t\tdchar currentInputChar;\n");
 	ret.pushBack("\t\t");
 	ret.pushBack(stateType);
@@ -338,9 +344,14 @@ string createDefaultRunFunction(MinTable min, string stateType) {
 	ret.pushBack("\t\t");
 	ret.pushBack(stateType);
 	ret.pushBack(" nextState = -1;\n");
-	ret.pushBack("\t\tbool needToGetNextState = true;\n\n");
+	ret.pushBack("\t\tbool needToGetNextState = true;\n");
+	ret.pushBack("\t\tbool needToGetNextChar = true;\n\n");
 	ret.pushBack("\t\twhile(!this.isEmpty()) {\n");
-	ret.pushBack("\t\t\tcurrentInputChar = this.getNextChar();\n");
+	ret.pushBack("\t\t\tif(needToGetNextChar) {\n");
+	ret.pushBack("\t\t\t\tcurrentInputChar = this.getNextChar();\n");
+	ret.pushBack("\t\t\t} else {\n");
+	ret.pushBack("\t\t\t\tneedToGetNextChar = true;\n");
+	ret.pushBack("\t\t\t}\n\n");
 	ret.pushBack("\t\t\tif(needToGetNextState) {\n");
 	ret.pushBack("\t\t\t\tnextState = this.getNextState(currentInputChar, ");
 	ret.pushBack("currentState);\n");
@@ -348,14 +359,80 @@ string createDefaultRunFunction(MinTable min, string stateType) {
 	ret.pushBack("\t\t\t\tneedToGetNextState = true;\n");
 	ret.pushBack("\t\t\t}\n\n");
 	ret.pushBack("\t\t\tif(nextState != -1) {\n");
+	ret.pushBack("\t\t\t\tthis.lexText.pushBack(currentInputChar);\n");
+	ret.pushBack("\t\t\t}\n");
+	ret.pushBack("\t\t\tif(nextState != -1) {\n");
+	ret.pushBack("\t\t\t\tcurrentState = nextState;\n");
 	ret.pushBack("\t\t\t\tcontinue;\n");
 	ret.pushBack("\t\t\t} else {\n");
-	ret.pushBack("\t\t\t\tint isAccepting = this.isAcceptingState(currentState);\n");
+	ret.pushBack("\t\t\t\tneedToGetNextChar = false;\n");
+	ret.pushBack("\t\t\t\tint isAccepting = ");
+	ret.pushBack("this.isAcceptingState(currentState);\n");
 	ret.pushBack("\t\t\t\tif(isAccepting == -1) {\n");
-	ret.pushBack("\t\t\t\t\tassert(0, \"invalid input character for state and ");
-	ret.pushBack("state is not accepting\");\n");
+
+	string inputErrorFunction = input.getInputErrorCode();
+	if(inputErrorFunction !is null && inputErrorFunction.length > 0) {
+		ret.pushBack(inputErrorFunction);
+		ret.pushBack("\n");
+	} else {
+		ret.pushBack("\t\t\t\t\tprintfln(\"lex error at character %d of line");
+		ret.pushBack(" %d in file %s\",\n \t\t\t\t\t\t");
+		ret.pushBack("this.getCurrentIndexInLine(),\n\t\t\t\t\t\t");
+		ret.pushBack("this.getCurrentLineCount(),\n\t\t\t\t\t\t");
+		ret.pushBack("this.getFilename());\n");
+		ret.pushBack("\t\t\t\t\tassert(false, \"Lex error\");\n");
+	}
+
 	ret.pushBack("\t\t\t\t} else {\n");
+	ret.pushBack("\t\t\t\t\tswitch(isAccepting) {\n");
+
+	sortVector!(RegexCode)(input.getRegExCode(),
+		function(in RegexCode a, in RegexCode b) { 
+		return a.getPriority() < b.getPriority(); });
+
+	foreach(RegexCode it; input.getRegExCode()) {
+		ret.pushBack("\t\t\t\t\t\tcase ");
+		ret.pushBack(conv!(size_t,string)(it.getPriority()));
+		ret.pushBack(": {\n");
+		ret.pushBack(it.getCode());
+		ret.pushBack("\n\t\t\t\t\t\t}\n\t\t\t\t\t\tbreak;\n");
+	}
+
+	ret.pushBack("\t\t\t\t\t}\n");
+	ret.pushBack("\t\t\t\t\tthis.lexText.clear();\n");
+	ret.pushBack("\t\t\t\t\tcurrentState = 0;\n");
 	ret.pushBack("\t\t\t\t}\n");
+	ret.pushBack("\t\t\t}\n");
+
+	ret.pushBack("\t\t}\n");
+	//ret.pushBack("\t\tcurrentState = this.getNextState(currentInputChar,");
+	//ret.pushBack("currentState);\n");
+	ret.pushBack("\t\tint isAccepting = ");
+	ret.pushBack("this.isAcceptingState(currentState);\n");
+	ret.pushBack("\t\tif(isAccepting == -1) {\n");
+
+	if(inputErrorFunction !is null && inputErrorFunction.length > 0) {
+		ret.pushBack(inputErrorFunction);
+		ret.pushBack("\n");
+	} else {
+		ret.pushBack("\t\t\tprintfln(\"lex error at character %d of line");
+		ret.pushBack(" %d in file %s\",\n \t\t\t\t");
+		ret.pushBack("this.getCurrentIndexInLine(),\n\t\t\t\t");
+		ret.pushBack("this.getCurrentLineCount(),\n\t\t\t\t");
+		ret.pushBack("this.getFilename());\n");
+		ret.pushBack("\t\t\tassert(false, \"Lex error\");\n");
+	}
+
+	ret.pushBack("\t\t} else {\n");
+	ret.pushBack("\t\t\tswitch(isAccepting) {\n");
+
+	foreach(RegexCode it; input.getRegExCode()) {
+		ret.pushBack("\t\t\t\tcase ");
+		ret.pushBack(conv!(size_t,string)(it.getPriority()));
+		ret.pushBack(": {\n");
+		ret.pushBack(it.getCode());
+		ret.pushBack("\n\t\t\t\t}\n\t\t\t\tbreak;\n");
+	}
 	ret.pushBack("\t\t\t}\n");
 
 	ret.pushBack("\t\t}\n");
@@ -372,7 +449,11 @@ string createGetNextState(string returnType) {
 	ret.pushBack(" getNextState(dchar inputChar, ");
 	ret.pushBack(returnType);
 	ret.pushBack(" currentState) {\n");
-	ret.pushBack("\t\tsize_t column = *this.charMapping.find(inputChar);\n");
+	ret.pushBack("\t\tMapItem!(dchar,size_t) cm = ");
+	ret.pushBack("this.charMapping.find(inputChar);\n");
+	ret.pushBack("\t\tif(cm is null)\n");
+	ret.pushBack("\t\t\treturn -1;\n\n");
+	ret.pushBack("\t\tsize_t column = *cm;\n");
 	ret.pushBack("\t\tsize_t row = this.stateMapping[currentState];\n");
 	ret.pushBack("\t\treturn this.table[row][column];\n");
 	//ret.pushBack("\t\t}\n\n");
@@ -381,18 +462,27 @@ string createGetNextState(string returnType) {
 }
 
 string createCharMapping(MinTable min) {
-	StringBuffer!(dchar) ret = 
-		new StringBuffer!(dchar)(min.inputChar.getSize() * 6);
+	StringBuffer!(char) ret = 
+		new StringBuffer!(char)(min.inputChar.getSize() * 6);
 
 	ret.pushBack("\tprivate void initCharMapping() {\n");
 	ret.pushBack("\t\tthis.charMapping = new Map!(dchar,size_t)();\n\n");
-	ret.pushBack("\t\tdchar inCh[");
-	ret.pushBack(conv!(size_t,dstring)(min.inputChar.getSize()));
+	ret.pushBack("\t\tchar inCh[");
+	ret.pushBack(conv!(size_t,string)(min.inputChar.getSize()));
 	ret.pushBack("] = [");
 	ISRIterator!(MapItem!(dchar,Column)) it = min.inputChar.begin();
 	int count = 0;
 	for(; it.isValid(); it++) {
-		ret.pushBack(format!(dchar,dchar)("'%c',", (*it).getKey()));
+		//ret.pushBack(format!(char,char)("'%c',", (*it).getKey()));
+		ret.pushBack("'");
+		if((*it).getKey() == '\n') {
+			ret.pushBack("\\n");
+		} else if((*it).getKey() == '\t') {
+			ret.pushBack("\\t");
+		} else {
+			ret.pushBack(conv!(dchar,string)((*it).getKey()));
+		}
+		ret.pushBack("',");
 		if(count != 0 && count % 10 == 0) {
 			ret.pushBack("\n");
 			ret.pushBack("\t\t");
@@ -402,12 +492,12 @@ string createCharMapping(MinTable min) {
 	ret.popBack();
 	ret.pushBack("];\n\n");
 	ret.pushBack("\t\tint inInt[");
-	ret.pushBack(conv!(size_t,dstring)(min.inputChar.getSize()));
+	ret.pushBack(conv!(size_t,string)(min.inputChar.getSize()));
 	ret.pushBack("] = [");
 	it = min.inputChar.begin();
 	count = 0;
 	for(; it.isValid(); it++) {
-		ret.pushBack(format!(dchar,dchar)("%3d,", (*it).getData().idx));
+		ret.pushBack(format!(char,char)("%3d,", (*it).getData().idx));
 		if(count != 0 && count % 10 == 0) {
 			ret.pushBack("\n");
 			ret.pushBack("\t\t");
@@ -422,7 +512,7 @@ string createCharMapping(MinTable min) {
 	ret.pushBack("\t\t}\n");
 	ret.pushBack("\t}\n\n");
 
-	return conv!(dstring,string)(ret.getString());
+	return ret.getString();
 }
 
 string createStateMapping(MinTable min) {
@@ -518,6 +608,20 @@ string createTable(MinTable min, ref string stateType) {
 	return ret.getString();
 }
 
+string formatUserCode(string userCode) {
+	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(userCode.length*2);
+	foreach(dchar c; conv!(string,dstring)(userCode)) {
+		if(c == '\n') {
+			ret.pushBack('\n');
+			ret.pushBack('\t');
+		} else {
+			ret.pushBack(c);
+		}
+	}
+	ret.pushBack("\n\n");
+	return conv!(dstring,string)(ret.getString());
+}
+
 void emitLexer(MinTable min, Input input, string classname, string filename) {
 	hurt.io.stream.File file = new hurt.io.stream.File(filename, 
 		FileMode.OutNew);
@@ -530,8 +634,11 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 	string stateMapping = createStateMapping(min);
 	string createInputCharMapping = createCharMapping(min);
 	string getNextState = createGetNextState(stateType);
-	string defaultRunFunction = createDefaultRunFunction(min,stateType);
-	string isAcceptinStateFunction = createIsAcceptingStateFunction(min,stateType);
+	string defaultRunFunction = createDefaultRunFunction(min, stateType, 
+		input);
+	string isAcceptinStateFunction = 
+		createIsAcceptingStateFunction(min,stateType);
+	string userCodeFormatted = formatUserCode(input.getUserCode());
 	file.writeString(stateMapping);
 	file.writeString(table);
 	file.writeString(createInputCharMapping);
@@ -539,6 +646,7 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 	file.writeString(defaultRunFunction);
 	file.writeString(isAcceptinStateFunction);
 	file.writeString(classBody);
+	file.writeString(userCodeFormatted);
 	file.writeString("}");
 	file.close();
 }
@@ -550,6 +658,7 @@ import hurt.io.file;
 import hurt.io.stdio;
 import hurt.io.stream;
 import hurt.string.utf;
+import hurt.string.stringbuffer;
 
 abstract class Lexer {
 	public void run();
@@ -566,6 +675,7 @@ private string classHeader = ` : Lexer {
 	private size_t lineNumber;
 	private size_t charIdx;
 	private dchar[] currentLine;
+	private StringBuffer!(dchar) lexText;
 
 	private Map!(dchar,size_t) charMapping;
 `;
@@ -575,13 +685,15 @@ private string classBody = `
 		this.filename = filename;
 		this.lineNumber = 0;
 
-		if(!exists(this.filename))
+		if(!exists(this.filename)) {
 			throw new Exception(__FILE__ ~ ":" ~ conv!(int,string)(__LINE__) ~
 				this.filename ~ " does not exists");
+		}
 
 		this.charMapping = new Map!(dchar,size_t)();
 
 		this.file = new hurt.io.stream.BufferedFile(this.filename);
+		this.lexText = new StringBuffer!(dchar)(128);
 		this.initCharMapping();
 		this.getNextLine();
 	}
@@ -592,6 +704,10 @@ private string classBody = `
 				print(jt);
 			println();
 		}
+	}
+
+	public dstring getCurrentLex() {
+		return this.lexText.getString();
 	}
 
 	public size_t getCurrentLineCount() const {
@@ -612,7 +728,7 @@ private string classBody = `
 
 	public bool isEmpty() {
 		return this.isEOF() && (this.currentLine is null || 
-			this.charIdx >= this.currentLine.length);
+			this.charIdx > this.currentLine.length);
 	}
 
 	private void getNextLine() {
@@ -624,6 +740,17 @@ private string classBody = `
 			this.currentLine = null;
 		}
 		this.lineNumber++;
+	}
+
+	public dchar getCurrentChar() {
+		if(this.isEmpty()) {
+			return eofChar();
+		} else if(this.charIdx >= this.currentLine.length) {
+			this.getNextLine();
+			return eolChar();
+		} else {
+			return this.currentLine[this.charIdx];
+		}
 	}
 
 	public dchar getNextChar() {

@@ -180,6 +180,7 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 
 public immutable(dchar)[] concatExpand(immutable(dchar)[] str) {
 	//writeln(__LINE__, " ", str);
+	str = whiteSpacePrepare(str);
 	str = prepareString(str);
 	//writeln(__LINE__, " ", str);
 	dchar[] ret = new dchar[str.length*3u];
@@ -369,6 +370,54 @@ unittest {
 	assert("0123456789abc0123456789" == 
 		unionExtend(":digit:abc:digit:"d.dup), 
 		conv!(dchar[],string)(unionExtend(":digit:abc:digit:"d.dup)));
+}
+
+public immutable(dchar)[] whiteSpacePrepare(immutable(dchar)[] str) {
+	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(str.length*2);
+	for(size_t i = 0; i < str.length; i++) {
+		if(str[i] == '\\' && i > 0 && str[i-1] == '\\') {
+			ret.popBack();
+			ret.pushBack('\\');
+		} else if(str[i] == 'b' && i > 0 && str[i-1] == '\\') {
+			dchar bs = cast(dchar)8;
+			ret.popBack();
+			ret.pushBack(bs);
+		} else if(str[i] == 't' && i > 0 && str[i-1] == '\\') {
+			dchar tab = cast(dchar)9;
+			ret.popBack();
+			ret.pushBack(tab);
+		} else if(str[i] == 'n' && i > 0 && str[i-1] == '\\') {
+			dchar nl = cast(dchar)10;
+			ret.popBack();
+			ret.pushBack(nl);
+		} else if(str[i] == 'r' && i > 0 && str[i-1] == '\\') {
+			dchar cr = cast(dchar)13;
+			ret.popBack();
+			ret.pushBack(cr);
+		} else if(str[i] == '"' && i > 0 && str[i-1] == '\\') {
+			ret.popBack();
+			ret.pushBack('"');
+		} else {
+			ret.pushBack(str[i]);
+		}
+	}
+
+	return ret.getString();
+}
+
+unittest {
+	assert("\\" == whiteSpacePrepare("\\\\\\\\"));
+	assert("\t" == whiteSpacePrepare("\\t"));
+	assert("\r" == whiteSpacePrepare("\\r"));
+	assert("\r\t" == whiteSpacePrepare("\\r\\t"));
+	assert("\\ \r\t" == whiteSpacePrepare("\\\\ \\r\\t"),
+		conv!(dstring,string)(whiteSpacePrepare("\\\\ \\r\\t")));
+	assert("\\ \n\t" == whiteSpacePrepare("\\\\ \\n\\t"),
+		conv!(dstring,string)(whiteSpacePrepare("\\\\ \\n\\t")));
+	assert("\b \n\t" == whiteSpacePrepare("\\b \\n\\t"),
+		conv!(dstring,string)(whiteSpacePrepare("\\b \\n\\t")));
+	assert(`"` == whiteSpacePrepare(`\\"`),
+		conv!(dstring,string)(whiteSpacePrepare(`\\"`)));
 }
 
 public immutable(dchar)[] prepareString(immutable(dchar)[] str) {
@@ -575,7 +624,8 @@ public pure int userCodeBrace(bool dir,char br)(in char[] str, int start = 0) {
 
 	static if(!dir) {
 		foreach(idx, it; str[start..$-1]) {
-			if(it == '{' && str[idx+start+1] == ':') {
+			//if(it == '{' && str[idx+start+1] == ':') {
+			if(it == '{' && str[idx+start+1] == br) {
 				return conv!(size_t,int)(idx)+start;	
 			} else if(!(it == ' ' || it == '\t')) {
 				return -1;
@@ -583,7 +633,8 @@ public pure int userCodeBrace(bool dir,char br)(in char[] str, int start = 0) {
 		}
 	} else {
 		foreach_reverse(idx, it; str[start+1..$]) {
-			if(it == '}' && str[start+idx] == ':') {
+			//if(it == '}' && str[start+idx] == ':') {
+			if(it == '}' && str[start+idx] == br) {
 				return conv!(size_t,int)(idx)+start;	
 			} else if(!(it == ' ' || it == '\t')) {
 				return -1;
@@ -594,25 +645,25 @@ public pure int userCodeBrace(bool dir,char br)(in char[] str, int start = 0) {
 }
 
 unittest {
-	assert(-1 != userCodeBrace!(false,'{')("   {:"));
-	assert(3 == userCodeBrace!(false,'{')("   {:"));
-	assert(3 == userCodeBrace!(false,'{')("   {:",2));
-	assert(-1 == userCodeBrace!(false,'{')("    "));
-	assert(-1 == userCodeBrace!(false,'{')("%    %"));
-	assert(-1 != userCodeBrace!(false,'{')("{:  %%"));
-	assert(0 == userCodeBrace!(false,'{')("{:  %%"));
-	assert(-1 == userCodeBrace!(true,'}')("  }:%%"));
-	assert(-1 == userCodeBrace!(true,'}')("  %%"));
-	assert(-1 != userCodeBrace!(true,'}')("%%  %:}"));
-	assert(-1 != userCodeBrace!(true,'}')("%%  %:}", 3));
-	assert(-1 != userCodeBrace!(true,'}')("%%  %:} "));
-	assert(-1 != userCodeBrace!(true,'}')("%%  %:}  ", 3));
-	assert(-1 == userCodeBrace!(true,'}')("%%  %:} t"));
-	assert(-1 == userCodeBrace!(true,'}')("%%  %:} ]", 3));
-	assert(5 == userCodeBrace!(true,'}')("%%  %:}", 3), 
-		conv!(int,string)(userCodeBrace!(true,'}')("%%  %:}", 3)));
-	assert(-1 == userCodeBrace!(true,'}')("%%  :}%", 6));
-	assert(-1 == userCodeBrace!(true,'}')("%%:}  %", 3));
+	assert(-1 != userCodeBrace!(false,':')("   {:"));
+	assert(3 == userCodeBrace!(false,':')("   {:"));
+	assert(3 == userCodeBrace!(false,':')("   {:",2));
+	assert(-1 == userCodeBrace!(false,':')("    "));
+	assert(-1 == userCodeBrace!(false,':')("%    %"));
+	assert(-1 != userCodeBrace!(false,':')("{:  %%"));
+	assert(0 == userCodeBrace!(false,':')("{:  %%"));
+	assert(-1 == userCodeBrace!(true,':')("  }:%%"));
+	assert(-1 == userCodeBrace!(true,':')("  %%"));
+	assert(-1 != userCodeBrace!(true,':')("%%  %:}"));
+	assert(-1 != userCodeBrace!(true,':')("%%  %:}", 3));
+	assert(-1 != userCodeBrace!(true,':')("%%  %:} "));
+	assert(-1 != userCodeBrace!(true,':')("%%  %:}  ", 3));
+	assert(-1 == userCodeBrace!(true,':')("%%  %:} t"));
+	assert(-1 == userCodeBrace!(true,':')("%%  %:} ]", 3));
+	assert(5 == userCodeBrace!(true,':')("%%  %:}", 3), 
+		conv!(int,string)(userCodeBrace!(true,':')("%%  %:}", 3)));
+	assert(-1 == userCodeBrace!(true,':')("%%  :}%", 6));
+	assert(-1 == userCodeBrace!(true,':')("%%:}  %", 3));
 }
 
 public pure int findTick(in char[] str, int start = 0) {
