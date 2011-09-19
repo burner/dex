@@ -269,7 +269,7 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 			strLine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
 			//strLine.pushBack("\t[label=\"epsilon\"];\n");
 			strLine.pushBack("\t[label=\"");
-			strLine.pushBack(toUTF8(tranSb.getString()));
+			strLine.pushBack(replaceNewline(toUTF8(tranSb.getString())));
 			strLine.pushBack("\"];\n");
 			append(strTable, strLine.getString());
 			strLine.clear();
@@ -286,6 +286,18 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 	}
 	file.close();
 	system("dot -Ln1 -T jpg " ~ fileName ~ ".dot > " ~ fileName ~ ".jpg");
+}
+
+string replaceNewline(string str) {
+	StringBuffer!(char) ret = new StringBuffer!(char)(str.length+2);
+	foreach(it; str) {
+		if(it == '\n') {
+			ret.pushBack("\\n");
+		} else {
+			ret.pushBack(it);
+		}
+	}
+	return ret.getString();
 }
 
 string createIsAcceptingStateFunction(MinTable min, string stateType) {
@@ -369,18 +381,18 @@ string createGetNextState(string returnType) {
 }
 
 string createCharMapping(MinTable min) {
-	StringBuffer!(char) ret = 
-		new StringBuffer!(char)(min.inputChar.getSize() * 6);
+	StringBuffer!(dchar) ret = 
+		new StringBuffer!(dchar)(min.inputChar.getSize() * 6);
 
 	ret.pushBack("\tprivate void initCharMapping() {\n");
 	ret.pushBack("\t\tthis.charMapping = new Map!(dchar,size_t)();\n\n");
 	ret.pushBack("\t\tdchar inCh[");
-	ret.pushBack(conv!(size_t,string)(min.inputChar.getSize()));
+	ret.pushBack(conv!(size_t,dstring)(min.inputChar.getSize()));
 	ret.pushBack("] = [");
 	ISRIterator!(MapItem!(dchar,Column)) it = min.inputChar.begin();
 	int count = 0;
 	for(; it.isValid(); it++) {
-		ret.pushBack(format!(char,char)("'%c',", (*it).getKey()));
+		ret.pushBack(format!(dchar,dchar)("'%c',", (*it).getKey()));
 		if(count != 0 && count % 10 == 0) {
 			ret.pushBack("\n");
 			ret.pushBack("\t\t");
@@ -390,12 +402,12 @@ string createCharMapping(MinTable min) {
 	ret.popBack();
 	ret.pushBack("];\n\n");
 	ret.pushBack("\t\tint inInt[");
-	ret.pushBack(conv!(size_t,string)(min.inputChar.getSize()));
+	ret.pushBack(conv!(size_t,dstring)(min.inputChar.getSize()));
 	ret.pushBack("] = [");
 	it = min.inputChar.begin();
 	count = 0;
 	for(; it.isValid(); it++) {
-		ret.pushBack(format!(char,char)("%3d,", (*it).getData().idx));
+		ret.pushBack(format!(dchar,dchar)("%3d,", (*it).getData().idx));
 		if(count != 0 && count % 10 == 0) {
 			ret.pushBack("\n");
 			ret.pushBack("\t\t");
@@ -410,7 +422,7 @@ string createCharMapping(MinTable min) {
 	ret.pushBack("\t\t}\n");
 	ret.pushBack("\t}\n\n");
 
-	return ret.getString();
+	return conv!(dstring,string)(ret.getString());
 }
 
 string createStateMapping(MinTable min) {
