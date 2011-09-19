@@ -1,6 +1,6 @@
 %%
 dchar eolChar() const {
-	return '\r';
+	return '\n';
 }
 
 dchar eofChar() const {
@@ -38,11 +38,13 @@ dchar eofChar() const {
 "function" {: printfln("function keyword"); :}
 "template" {: printfln("template keyword"); :}
 "[:alpha:][:word:]*" {: printfln("identifer"); :}
-"\\"[:word: ]*\\"" {: printfln("string %s",this.getCurrentLex()); :}
+"\\"[:word:äöüß ]*\\"" {: printfln("string %s",this.getCurrentLex()); :}
 "." {: printfln("dot"); :}
 "(" {: printfln("left parenthies"); :}
 ")" {: printfln("right parenthies"); :}
 "{" {: printfln("left brace"); :}
 "}" {: printfln("right brace"); :}
 " " {: printfln("blank"); :}
+"\\t" {: printfln("tab"); :}
+"\\n" {: printfln("newline"); :}
 "\"" {: printfln("tick"); :}

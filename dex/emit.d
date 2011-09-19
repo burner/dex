@@ -456,18 +456,18 @@ string createGetNextState(string returnType) {
 }
 
 string createCharMapping(MinTable min) {
-	StringBuffer!(char) ret = 
-		new StringBuffer!(char)(min.inputChar.getSize() * 6);
+	StringBuffer!(dchar) ret = 
+		new StringBuffer!(dchar)(min.inputChar.getSize() * 6);
 
 	ret.pushBack("\tprivate void initCharMapping() {\n");
 	ret.pushBack("\t\tthis.charMapping = new Map!(dchar,size_t)();\n\n");
 	ret.pushBack("\t\tdchar inCh[");
-	ret.pushBack(conv!(size_t,string)(min.inputChar.getSize()));
+	ret.pushBack(conv!(size_t,dstring)(min.inputChar.getSize()));
 	ret.pushBack("] = [");
 	ISRIterator!(MapItem!(dchar,Column)) it = min.inputChar.begin();
 	int count = 0;
 	for(; it.isValid(); it++) {
-		ret.pushBack(format!(char,char)("'%c',", (*it).getKey()));
+		ret.pushBack(format!(dchar,dchar)("'%c',", (*it).getKey()));
 		if(count != 0 && count % 10 == 0) {
 			ret.pushBack("\n");
 			ret.pushBack("\t\t");
@@ -477,12 +477,12 @@ string createCharMapping(MinTable min) {
 	ret.popBack();
 	ret.pushBack("];\n\n");
 	ret.pushBack("\t\tint inInt[");
-	ret.pushBack(conv!(size_t,string)(min.inputChar.getSize()));
+	ret.pushBack(conv!(size_t,dstring)(min.inputChar.getSize()));
 	ret.pushBack("] = [");
 	it = min.inputChar.begin();
 	count = 0;
 	for(; it.isValid(); it++) {
-		ret.pushBack(format!(char,char)("%3d,", (*it).getData().idx));
+		ret.pushBack(format!(dchar,dchar)("%3d,", (*it).getData().idx));
 		if(count != 0 && count % 10 == 0) {
 			ret.pushBack("\n");
 			ret.pushBack("\t\t");
@@ -497,7 +497,7 @@ string createCharMapping(MinTable min) {
 	ret.pushBack("\t\t}\n");
 	ret.pushBack("\t}\n\n");
 
-	return ret.getString();
+	return conv!(dstring,string)(ret.getString());
 }
 
 string createStateMapping(MinTable min) {
@@ -713,7 +713,7 @@ private string classBody = `
 
 	public bool isEmpty() {
 		return this.isEOF() && (this.currentLine is null || 
-			this.charIdx >= this.currentLine.length);
+			this.charIdx > this.currentLine.length);
 	}
 
 	private void getNextLine() {
