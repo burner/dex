@@ -180,6 +180,7 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 
 public immutable(dchar)[] concatExpand(immutable(dchar)[] str) {
 	//writeln(__LINE__, " ", str);
+	str = whiteSpacePrepare(str);
 	str = prepareString(str);
 	//writeln(__LINE__, " ", str);
 	dchar[] ret = new dchar[str.length*3u];
@@ -371,19 +372,53 @@ unittest {
 		conv!(dchar[],string)(unionExtend(":digit:abc:digit:"d.dup)));
 }
 
-/*
-public immutable(dchar)[] whiteSpacePrepare(immutable(dchar)[] str {
+public immutable(dchar)[] whiteSpacePrepare(immutable(dchar)[] str) {
 	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(str.length*2);
 	for(size_t i = 0; i < str.length; i++) {
-		if(str[i] == 't' && i > 0 && str[i-1] == '\\') {
-			ret.pushBack('	');
-		} else if(str[i] == '\\' && i > 0str[i-1] 
+		if(str[i] == '\\' && i > 0 && str[i-1] == '\\') {
+			ret.popBack();
+			ret.pushBack('\\');
+		} else if(str[i] == 'b' && i > 0 && str[i-1] == '\\') {
+			dchar bs = cast(dchar)8;
+			ret.popBack();
+			ret.pushBack(bs);
+		} else if(str[i] == 't' && i > 0 && str[i-1] == '\\') {
+			dchar tab = cast(dchar)9;
+			ret.popBack();
+			ret.pushBack(tab);
+		} else if(str[i] == 'n' && i > 0 && str[i-1] == '\\') {
+			dchar nl = cast(dchar)10;
+			ret.popBack();
+			ret.pushBack(nl);
+		} else if(str[i] == 'r' && i > 0 && str[i-1] == '\\') {
+			dchar cr = cast(dchar)13;
+			ret.popBack();
+			ret.pushBack(cr);
+		} else if(str[i] == '"' && i > 0 && str[i-1] == '\\') {
+			ret.popBack();
+			ret.pushBack('"');
 		} else {
-			ret.pushBack(str[i])
+			ret.pushBack(str[i]);
+		}
 	}
 
 	return ret.getString();
-}*/
+}
+
+unittest {
+	assert("\\" == whiteSpacePrepare("\\\\\\\\"));
+	assert("\t" == whiteSpacePrepare("\\t"));
+	assert("\r" == whiteSpacePrepare("\\r"));
+	assert("\r\t" == whiteSpacePrepare("\\r\\t"));
+	assert("\\ \r\t" == whiteSpacePrepare("\\\\ \\r\\t"),
+		conv!(dstring,string)(whiteSpacePrepare("\\\\ \\r\\t")));
+	assert("\\ \n\t" == whiteSpacePrepare("\\\\ \\n\\t"),
+		conv!(dstring,string)(whiteSpacePrepare("\\\\ \\n\\t")));
+	assert("\b \n\t" == whiteSpacePrepare("\\b \\n\\t"),
+		conv!(dstring,string)(whiteSpacePrepare("\\b \\n\\t")));
+	assert(`"` == whiteSpacePrepare(`\\"`),
+		conv!(dstring,string)(whiteSpacePrepare(`\\"`)));
+}
 
 public immutable(dchar)[] prepareString(immutable(dchar)[] str) {
 	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(str.length*3);	

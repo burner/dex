@@ -9,18 +9,19 @@ dchar eofChar() const {
 %%
 
 {%
-			if(currentInputChar == ' ' || currentInputChar == '\r' 
-					|| currentInputChar == '\n') {
-				currentState = 0;
-				needToGetNextChar = true;
-				needToGetNextState = true;
-			} else {
-				printfln("lex error at character %d of line %d in file %s",
-						this.getCurrentIndexInLine(),
-						this.getCurrentLineCount(),
-						this.getFilename());
-				assert(false, "Lex error");
-			}
+	if(currentInputChar == ' ' || currentInputChar == '\r' 
+			|| currentInputChar == '\n') {
+		currentState = 0;
+		needToGetNextChar = true;
+		needToGetNextState = true;
+	} else {
+		printfln("lex error with character %c at position %d of line %d in file %s",
+				this.getCurrentChar(),
+				this.getCurrentIndexInLine(),
+				this.getCurrentLineCount(),
+				this.getFilename());
+		assert(false, "Lex error");
+	}
 %}
 
 "[:digit:][:digit:_]*" {: printfln("int %s", this.getCurrentLex()); :}
@@ -37,9 +38,11 @@ dchar eofChar() const {
 "function" {: printfln("function keyword"); :}
 "template" {: printfln("template keyword"); :}
 "[:alpha:][:word:]*" {: printfln("identifer"); :}
+"\\"[:word: ]*\\"" {: printfln("string %s",this.getCurrentLex()); :}
 "." {: printfln("dot"); :}
 "(" {: printfln("left parenthies"); :}
 ")" {: printfln("right parenthies"); :}
 "{" {: printfln("left brace"); :}
 "}" {: printfln("right brace"); :}
 " " {: printfln("blank"); :}
+"\"" {: printfln("tick"); :}

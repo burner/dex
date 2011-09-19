@@ -269,7 +269,18 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 			strLine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
 			//strLine.pushBack("\t[label=\"epsilon\"];\n");
 			strLine.pushBack("\t[label=\"");
-			strLine.pushBack(toUTF8(tranSb.getString()));
+			string checkTick = toUTF8(tranSb.getString());
+			StringBuffer!(char) cTickBuffer = 
+				new StringBuffer!(char)(checkTick.length+2);
+			foreach(mt; checkTick) {
+				if(mt == '"') {
+					cTickBuffer.pushBack(`\"`);
+				} else {
+					cTickBuffer.pushBack(mt);
+				}
+			}
+			//strLine.pushBack(toUTF8(tranSb.getString()));
+			strLine.pushBack(cTickBuffer.getString());
 			strLine.pushBack("\"];\n");
 			append(strTable, strLine.getString());
 			strLine.clear();
@@ -388,8 +399,8 @@ string createDefaultRunFunction(MinTable min, string stateType,
 	ret.pushBack("\t\t\t}\n");
 
 	ret.pushBack("\t\t}\n");
-	ret.pushBack("\t\tcurrentState = this.getNextState(currentInputChar,");
-	ret.pushBack("currentState);\n");
+	//ret.pushBack("\t\tcurrentState = this.getNextState(currentInputChar,");
+	//ret.pushBack("currentState);\n");
 	ret.pushBack("\t\tint isAccepting = ");
 	ret.pushBack("this.isAcceptingState(currentState);\n");
 	ret.pushBack("\t\tif(isAccepting == -1) {\n");
@@ -416,8 +427,8 @@ string createDefaultRunFunction(MinTable min, string stateType,
 		ret.pushBack(it.getCode());
 		ret.pushBack("\n\t\t\t\t}\n\t\t\t\tbreak;\n");
 	}
-
 	ret.pushBack("\t\t\t}\n");
+
 	ret.pushBack("\t\t}\n");
 	ret.pushBack("\t}\n\n");
 
@@ -714,6 +725,17 @@ private string classBody = `
 			this.currentLine = null;
 		}
 		this.lineNumber++;
+	}
+
+	public dchar getCurrentChar() {
+		if(this.isEmpty()) {
+			return eofChar();
+		} else if(this.charIdx >= this.currentLine.length) {
+			this.getNextLine();
+			return eolChar();
+		} else {
+			return this.currentLine[this.charIdx];
+		}
 	}
 
 	public dchar getNextChar() {
