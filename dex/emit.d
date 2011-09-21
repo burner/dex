@@ -622,6 +622,27 @@ string formatUserCode(string userCode) {
 	return conv!(dstring,string)(ret.getString());
 }
 
+string createCharRange(MinTable min) {
+	StringBuffer!(dchar) ret = 
+		new StringBuffer!(dchar)(min.inputChar.getSize()*8);
+
+	Map!(int,Set!(dchar)) sameIdx = new Map!(int,Set!(dchar))();
+	ISRIterator!(MapItem!(dchar,Column)) it = min.inputChar.begin();
+	MapItem!(int,Set!(dchar)) tmp;
+	for(; it. isValid(); it++) {
+		tmp = sameIdx.find((*it).getData().idx);
+		if(tmp !is null) {
+			tmp.getData().insert((*it).getKey());
+		} else {
+			Set!(dchar) tS = new Set!(dchar)();
+			tS.insert((*it).getKey());
+			sameIdx.insert((*it).getData().idx, tS);
+		}
+	}
+
+	return conv!(dstring,string)(ret.getString());
+}
+
 void emitLexer(MinTable min, Input input, string classname, string filename) {
 	hurt.io.stream.File file = new hurt.io.stream.File(filename, 
 		FileMode.OutNew);
@@ -633,6 +654,7 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 	string table = createTable(min, stateType);
 	string stateMapping = createStateMapping(min);
 	string createInputCharMapping = createCharMapping(min);
+	string createInputCharRange = createCharRange(min);
 	string getNextState = createGetNextState(stateType);
 	string defaultRunFunction = createDefaultRunFunction(min, stateType, 
 		input);
