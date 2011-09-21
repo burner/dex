@@ -6,6 +6,7 @@ import dex.minimizer;
 import dex.input;
 
 import hurt.algo.sorting;
+import hurt.algo.binaryrangesearch;
 import hurt.container.isr;
 import hurt.container.iterator;
 import hurt.container.map;
@@ -29,7 +30,8 @@ void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 
 	sortVector!(State)(cast(Vector!(State))states, 
 		function(in State a, in State b) { 
-		return a.getStateId() < b.getStateId(); });
+			return a.getStateId() < b.getStateId(); 
+		});
 
 	int howManyBlanks = 0;
 	size_t size = states.getSize();
@@ -252,7 +254,7 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 					tranSb.pushBack("\r");
 				count++;
 			}*/
-			Vector!(Range) r = makeRanges(kt);
+			Vector!(dex.strutil.Range) r = makeRanges(kt);
 			assert(r.getSize() > 0);
 			foreach(kt; r) {
 				dstring tmp = kt.toDString();
@@ -623,9 +625,10 @@ string formatUserCode(string userCode) {
 }
 
 string createCharRange(MinTable min) {
-	StringBuffer!(dchar) ret = 
-		new StringBuffer!(dchar)(min.inputChar.getSize()*8);
-
+	// first you got to bring Map!(dchar,Column) to Map!(int,Set!(dchar)) 
+	// where the key is the idx variable of the column. I'm not using
+	// a multimap because this way the Set of dchars is in order which makes
+	// it's easier to create the ranges afterwards
 	Map!(int,Set!(dchar)) sameIdx = new Map!(int,Set!(dchar))();
 	ISRIterator!(MapItem!(dchar,Column)) it = min.inputChar.begin();
 	MapItem!(int,Set!(dchar)) tmp;
@@ -640,7 +643,71 @@ string createCharRange(MinTable min) {
 		}
 	}
 
-	return conv!(dstring,string)(ret.getString());
+	// fill the range array
+	Vector!(hurt.algo.binaryrangesearch.Range!(dchar,int)) vec = 
+		new Vector!(hurt.algo.binaryrangesearch.Range!(dchar,int))(32);
+	ISRIterator!(MapItem!(int,Set!(dchar))) jt = sameIdx.begin();
+	size_t sameIdxCnt = 0;
+	for(; jt.isValid(); jt++) {
+		Set!(dchar) sTmp = (*jt).getData();
+		sameIdxCnt += sTmp.getSize();
+		hurt.algo.binaryrangesearch.Range!(dchar,int) rTmp = 
+			hurt.algo.binaryrangesearch.Range!(dchar,int)((*jt).getKey());
+		
+		ISRIterator!(dchar) mt = sTmp.begin();	
+		for(; mt.isValid(); mt++) {
+			if(rTmp.canExpend(*mt)) {
+				rTmp.expend(*mt);
+			} else {
+				//assert(rTmp.first != dchar.init);
+				printfln("%c %c %d", rTmp.first, rTmp.last, rTmp.value);
+				vec.pushBack(rTmp);
+				rTmp = hurt.algo.binaryrangesearch.
+					Range!(dchar,int)((*jt).getKey());
+			}
+		}
+		if(rTmp.isFirstSet()) {
+			printfln("%c %c %d", rTmp.first, rTmp.last, rTmp.value);
+			vec.pushBack(rTmp);
+		}
+	}
+	assert(sameIdxCnt == min.inputChar.getSize(), 
+		conv!(size_t,string)(sameIdxCnt) ~ " " ~ 
+		conv!(size_t,string)(min.inputChar.getSize()));
+
+	StringBuffer!(dchar) ret = 
+		new StringBuffer!(dchar)(min.inputChar.getSize()*8);
+
+	ret.pushBack("\tstatic immutable Range!(dchar,size_t)[");
+	ret.pushBack(conv!(size_t,dstring)(vec.getSize()));
+	ret.pushBack("] = [");
+	int cnt = 0;
+	foreach(kt; vec) {
+		if(cnt % 3 == 0) {
+			ret.pushBack("\n\t\t");
+		}
+		if(!kt.isLastSet()) {
+			ret.pushBack("Range!(dchar,size_t)(");
+			ret.pushBack(kt.first);
+			ret.pushBack(",");
+			ret.pushBack(conv!(int,dstring)(kt.value));
+			ret.pushBack("),");
+		} else {
+			ret.pushBack("Range!(dchar,size_t)(");
+			ret.pushBack(kt.first);
+			ret.pushBack(",");
+			ret.pushBack(kt.last);
+			ret.pushBack(",");
+			ret.pushBack(conv!(int,dstring)(kt.value));
+			ret.pushBack("),");
+		}
+		cnt++;
+	}
+	ret.popBack();
+	ret.pushBack("];\n");
+
+	//return conv!(dstring,string)(ret.getString());
+	return "";
 }
 
 void emitLexer(MinTable min, Input input, string classname, string filename) {
@@ -663,6 +730,7 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 	string userCodeFormatted = formatUserCode(input.getUserCode());
 	file.writeString(stateMapping);
 	file.writeString(table);
+	file.writeString(createInputCharRange);
 	file.writeString(createInputCharMapping);
 	file.writeString(getNextState);
 	file.writeString(defaultRunFunction);
