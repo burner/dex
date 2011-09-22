@@ -632,16 +632,30 @@ string createCharRange(MinTable min) {
 	Map!(int,Set!(dchar)) sameIdx = new Map!(int,Set!(dchar))();
 	ISRIterator!(MapItem!(dchar,Column)) it = min.inputChar.begin();
 	MapItem!(int,Set!(dchar)) tmp;
-	for(; it. isValid(); it++) {
+	for(; it.isValid(); it++) {
 		tmp = sameIdx.find((*it).getData().idx);
 		if(tmp !is null) {
+			assert((*it).getKey() != dchar.init);
 			tmp.getData().insert((*it).getKey());
+			tmp = null;
 		} else {
 			Set!(dchar) tS = new Set!(dchar)();
+			assert((*it).getKey() != dchar.init);
 			tS.insert((*it).getKey());
 			sameIdx.insert((*it).getData().idx, tS);
 		}
 	}
+
+	/*auto ut = sameIdx.begin();
+	for(; ut.isValid(); ut++) {
+		printf("%d",(*ut).getKey());
+		auto qt = (*ut).getData().begin();
+		assert(qt.isValid());
+		for(; qt.isValid(); qt++) {
+			printf(" %c", *qt);
+		}
+		println();
+	}*/
 
 	// fill the range array
 	Vector!(hurt.algo.binaryrangesearch.Range!(dchar,int)) vec = 
@@ -653,21 +667,25 @@ string createCharRange(MinTable min) {
 		sameIdxCnt += sTmp.getSize();
 		hurt.algo.binaryrangesearch.Range!(dchar,int) rTmp = 
 			hurt.algo.binaryrangesearch.Range!(dchar,int)((*jt).getKey());
+		assert(rTmp.value == (*jt).getKey());
+		assert(!rTmp.isFirstSet());
+		assert(!rTmp.isLastSet());
 		
 		ISRIterator!(dchar) mt = sTmp.begin();	
 		for(; mt.isValid(); mt++) {
 			if(rTmp.canExpend(*mt)) {
 				rTmp.expend(*mt);
+				assert(rTmp.first == *mt || rTmp.last == *mt);
 			} else {
 				//assert(rTmp.first != dchar.init);
-				printfln("%c %c %d", rTmp.first, rTmp.last, rTmp.value);
+				//printfln("%c %c %d", rTmp.first, rTmp.last, rTmp.value);
 				vec.pushBack(rTmp);
 				rTmp = hurt.algo.binaryrangesearch.
 					Range!(dchar,int)((*jt).getKey());
 			}
 		}
 		if(rTmp.isFirstSet()) {
-			printfln("%c %c %d", rTmp.first, rTmp.last, rTmp.value);
+			//printfln("%c %c %d", rTmp.first, rTmp.last, rTmp.value);
 			vec.pushBack(rTmp);
 		}
 	}
@@ -680,34 +698,43 @@ string createCharRange(MinTable min) {
 
 	ret.pushBack("\tstatic immutable Range!(dchar,size_t)[");
 	ret.pushBack(conv!(size_t,dstring)(vec.getSize()));
-	ret.pushBack("] = [");
+	ret.pushBack("] inputRange = [");
 	int cnt = 0;
 	foreach(kt; vec) {
 		if(cnt % 3 == 0) {
 			ret.pushBack("\n\t\t");
 		}
 		if(!kt.isLastSet()) {
-			ret.pushBack("Range!(dchar,size_t)(");
-			ret.pushBack(kt.first);
-			ret.pushBack(",");
+			ret.pushBack("Range!(dchar,size_t)('");
+			ret.pushBack(replaceWhiteSpace(kt.first));
+			ret.pushBack("',");
 			ret.pushBack(conv!(int,dstring)(kt.value));
 			ret.pushBack("),");
 		} else {
-			ret.pushBack("Range!(dchar,size_t)(");
-			ret.pushBack(kt.first);
-			ret.pushBack(",");
-			ret.pushBack(kt.last);
-			ret.pushBack(",");
+			ret.pushBack("Range!(dchar,size_t)('");
+			ret.pushBack(replaceWhiteSpace(kt.first));
+			ret.pushBack("','");
+			ret.pushBack(replaceWhiteSpace(kt.last));
+			ret.pushBack("',");
 			ret.pushBack(conv!(int,dstring)(kt.value));
 			ret.pushBack("),");
 		}
 		cnt++;
 	}
 	ret.popBack();
-	ret.pushBack("];\n");
+	ret.pushBack("];\n\n");
 
-	//return conv!(dstring,string)(ret.getString());
-	return "";
+	return conv!(dstring,string)(ret.getString());
+	//return "";
+}
+
+pure dstring replaceWhiteSpace(in dchar c) {
+	if(c == '\n')
+		return "\\n";
+	else if(c == '\t')
+		return "\\t";
+	else 
+		return conv!(dchar,dstring)(c);
 }
 
 void emitLexer(MinTable min, Input input, string classname, string filename) {
@@ -742,6 +769,7 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 }
 
 private string base = `
+import hurt.algo.binaryrangesearch;
 import hurt.conv.conv;
 import hurt.container.map;
 import hurt.io.file;
