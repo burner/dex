@@ -453,8 +453,7 @@ string createGetNextState(string returnType) {
 	ret.pushBack(" currentState) {\n");
 	ret.pushBack("\t\tMapItem!(dchar,size_t) cm = ");
 	ret.pushBack("this.charMapping.find(inputChar);\n");
-	ret.pushBack("\t\tif(cm is null)\n");
-	ret.pushBack("\t\t\treturn -1;\n\n");
+	ret.pushBack("\t\tassert(cm !is null)\n");
 	ret.pushBack("\t\tsize_t column = *cm;\n");
 	ret.pushBack("\t\tsize_t row = this.stateMapping[currentState];\n");
 	ret.pushBack("\t\treturn this.table[row][column];\n");
@@ -624,6 +623,40 @@ string formatUserCode(string userCode) {
 	return conv!(dstring,string)(ret.getString());
 }
 
+bool testIfMappingIsComplete(Map!(int,Set!(dchar)) nm, Map!(dchar,Column) om) {
+	ISRIterator!(MapItem!(int,Set!(dchar))) nmIt = nm.begin();
+	for(; nmIt.isValid(); nmIt++) {
+		ISRIterator!(dchar) jt = (*nmIt).getData().begin();
+		for(; jt.isValid(); jt++) {
+			if(om.find(*jt).getData().idx != (*nmIt).getKey()) {
+				printfln("%d != %d, %c == %c", om.find(*jt).getData().idx,
+					(*nmIt).getKey(), *jt, om.find(*jt).getKey());
+				return false;
+			}
+		}
+	}
+
+	ISRIterator!(MapItem!(dchar,Column)) omIt = om.begin();
+	outer: for(; omIt.isValid(); omIt++) {
+		MapItem!(int,Set!(dchar)) m = nm.find((*omIt).getData().idx);	
+		if(m is null) {
+			printfln("no entry for idx %d", (*omIt).getData().idx);
+			return false;
+		}
+
+		ISRIterator!(dchar) msIt = m.getData().begin();
+		for(; msIt.isValid(); msIt++) {
+			if(*msIt == (*omIt).getKey())
+				continue outer;
+		}
+		printfln("char %c not mapped to idx %d", (*omIt).getKey(), 
+			(*omIt).getData().idx);
+		return false;
+	}
+	
+	return true;
+}
+
 string createCharRange(MinTable min) {
 	// first you got to bring Map!(dchar,Column) to Map!(int,Set!(dchar)) 
 	// where the key is the idx variable of the column. I'm not using
@@ -645,6 +678,8 @@ string createCharRange(MinTable min) {
 			sameIdx.insert((*it).getData().idx, tS);
 		}
 	}
+
+	assert(testIfMappingIsComplete(sameIdx, min.inputChar));
 
 	/*auto ut = sameIdx.begin();
 	for(; ut.isValid(); ut++) {
@@ -677,14 +712,16 @@ string createCharRange(MinTable min) {
 				rTmp.expend(*mt);
 				assert(rTmp.first == *mt || rTmp.last == *mt);
 			} else {
-				//assert(rTmp.first != dchar.init);
+				assert(rTmp.first != dchar.init);
 				//printfln("%c %c %d", rTmp.first, rTmp.last, rTmp.value);
 				vec.pushBack(rTmp);
 				rTmp = hurt.algo.binaryrangesearch.
-					Range!(dchar,int)((*jt).getKey());
+					Range!(dchar,int)(*mt, (*jt).getKey());
+				assert(rTmp.first == *mt);
 			}
 		}
 		if(rTmp.isFirstSet()) {
+			assert(rTmp.isFirstSet());
 			//printfln("%c %c %d", rTmp.first, rTmp.last, rTmp.value);
 			vec.pushBack(rTmp);
 		}
@@ -692,6 +729,50 @@ string createCharRange(MinTable min) {
 	assert(sameIdxCnt == min.inputChar.getSize(), 
 		conv!(size_t,string)(sameIdxCnt) ~ " " ~ 
 		conv!(size_t,string)(min.inputChar.getSize()));
+
+	hurt.algo.binaryrangesearch.Range!(dchar,int)[] tmpArray1 = vec.elements();
+
+	it = min.inputChar.begin();
+	for(; it.isValid(); it++) {
+		try {
+			assert( (*it).getData().idx == 
+				linearSearch!(dchar,int)(tmpArray1, (*it).getKey()));
+		} catch(Exception e) {
+			printfln("couldn't find %c", (*it).getKey());
+			assert(false);
+		}
+	}
+	
+	sortVector!(hurt.algo.binaryrangesearch.Range!(dchar,int))(vec, 
+		function(in hurt.algo.binaryrangesearch.Range!(dchar,int) a, 
+				in hurt.algo.binaryrangesearch.Range!(dchar,int) b) {
+			return a.first < b.first; 
+		});
+
+	// check to see if the mapping has no error
+	hurt.algo.binaryrangesearch.Range!(dchar,int)[] tmpArray = vec.elements();
+
+	it = min.inputChar.begin();
+	for(; it.isValid(); it++) {
+		try {
+			assert( (*it).getData().idx == 
+				linearSearch!(dchar,int)(tmpArray, (*it).getKey()));
+		} catch(Exception e) {
+			printfln("couldn't find %c", (*it).getKey());
+			assert(false);
+		}
+	}
+
+	it = min.inputChar.begin();
+	for(; it.isValid(); it++) {
+		try {
+			assert( (*it).getData().idx == 
+				binarySearch!(dchar,int)(tmpArray, (*it).getKey()));
+		} catch(Exception e) {
+			printfln("couldn't find %c", (*it).getKey());
+			assert(false);
+		}
+	}
 
 	StringBuffer!(dchar) ret = 
 		new StringBuffer!(dchar)(min.inputChar.getSize()*8);
