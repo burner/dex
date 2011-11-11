@@ -104,7 +104,7 @@ class State {
 	}
 
 	void setStateId(in int id) {
-		return this.stateId = id;
+		this.stateId = id;
 	}
 
 	MultiMap!(dchar,State) getTransitions() {

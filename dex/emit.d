@@ -453,7 +453,7 @@ string createGetNextState(string returnType) {
 	ret.pushBack(" currentState) {\n");
 	ret.pushBack("\t\tMapItem!(dchar,size_t) cm = ");
 	ret.pushBack("this.charMapping.find(inputChar);\n");
-	ret.pushBack("\t\tassert(cm !is null)\n");
+	ret.pushBack("\t\tassert(cm !is null);\n");
 	ret.pushBack("\t\tsize_t column = *cm;\n");
 	ret.pushBack("\t\tsize_t row = this.stateMapping[currentState];\n");
 	ret.pushBack("\t\treturn this.table[row][column];\n");
