@@ -112,7 +112,10 @@ class State {
 	}	
 
 	void addTransition(dchar chInput, State state) {
-		assert(state !is null);
+		if(state is null) {
+			Trace.printTrace();
+			assert(false);
+		}
 		debug(StateDebug) writeln(__FILE__,__LINE__, 
 			" addTransition ", chInput , " ", state.stateId);
 		size_t oldSize = this.transition.getSize();

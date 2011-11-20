@@ -19,17 +19,20 @@ import hurt.io.stdio;
 import hurt.string.stringbuffer;
 import hurt.time.stopwatch;
 import hurt.util.array;
+import hurt.util.slog;
 import hurt.util.stacktrace;
 
 //import std.process;
 
 public alias DLinkedList!(State) FSA_Table;
+//public alias Deque!(State) FSA_Table;
 
 class RegEx {
 	FSA_Table globalNfaTable;
 
 	FSA_Table nfaTable;
 	FSA_Table dfaTable;
+	//Deque!(State) dfaTable;
 	Stack!(FSA_Table) operandStack;
 	Stack!(dchar) operatorStack;
 
@@ -65,7 +68,7 @@ class RegEx {
 		dstring pstr = concatExpand(conv!(string,dstring)(str));
 		debug(RegExDebug) println(__FILE__,__LINE__, " ", pstr, " :length ",
 			pstr.length);
-			
+
 		foreach(idx,it;pstr) {
 			debug(RegExDebug) println(__FILE__,__LINE__, " ", it, " ", idx);
 			if(isInput!(dchar)(it)) {
@@ -102,7 +105,7 @@ class RegEx {
 				this.operatorStack.push(it);
 			}
 		}
-
+		
 		while(!operatorStack.empty()) {
 			if(!this.eval()) {
 				return false;
@@ -117,12 +120,14 @@ class RegEx {
 		//this.nfaTable.get(this.nfaTable.getSize() - 1u).acceptingState = true;
 		//this.nfaTable.get(this.nfaTable.getSize()).acceptingState = true;
 		this.nfaTable.get(this.nfaTable.getSize()).setAcceptingState(action);
+		//this.nfaTable.back().setAcceptingState(action);
 
 		// save the current nfaTable to the globalNFATable. 
 		// this is done to create a nfa
 		// from more than one regex. to connect all regex join them 
 		//through the rootState
 		this.rootState.addTransition(0, this.nfaTable.get(0));
+		//this.rootState.addTransition(0, this.nfaTable.front());
 		foreach(it;this.nfaTable) {
 			this.globalNfaTable.pushBack(it);
 		}
@@ -185,6 +190,7 @@ class RegEx {
 
 	void convertNfaToDfa() {
 		scope Trace st = new Trace("convertNfaToDfa");
+		//this.dfaTable = new Deque!(State)();
 		this.dfaTable = new FSA_Table();
 		if(this.globalNfaTable.getSize() == 0) {
 			return;
@@ -314,7 +320,7 @@ class RegEx {
 				}
 			}
 		}
-		DLinkedList!(State) ret = new DLinkedList!(State);
+		FSA_Table ret = new FSA_Table();
 		auto it = table.begin();
 		for(; it.isValid(); it++)
 			ret.pushBack((*it).getData());
@@ -415,6 +421,7 @@ class RegEx {
 		assert(A !is null, "A shouldn't be null");
 		assert(B !is null, "B shouldn't be null");
 		A.get(A.getSize()).addTransition(0, B.get(0));
+		//A.back().addTransition(0, B.front());
 		debug(RegExDebug) println(__FILE__,__LINE__, " after A.get");
 		foreach(it; B) {
 			A.pushBack(it);
@@ -447,12 +454,15 @@ class RegEx {
 	
 		// add epsilon transition from start state to the first state of A
 		pStartState.addTransition(0, A.get(0));
+		//pStartState.addTransition(0, A.front());
 	
 		// add epsilon transition from A last state to end state
 		A.get(A.getSize()).addTransition(0, pEndState);
+		//A.back().addTransition(0, pEndState);
 	
 		// From A last to A first state
 		A.get(A.getSize()).addTransition(0, A.get(0));
+		//A.back().addTransition(0, A.front());
 
 		// construct new DFA and store it onto the stack
 		A.pushBack(pEndState);
@@ -481,8 +491,12 @@ class RegEx {
 		State pEndState	= new State(++nextStateId);
 		pStartState.addTransition(0, A.get(0));
 		pStartState.addTransition(0, B.get(0));
+		//pStartState.addTransition(0, A.front());
+		//pStartState.addTransition(0, B.front());
 		A.get(A.getSize()).addTransition(0, pEndState);
 		B.get(B.getSize()).addTransition(0, pEndState);
+		//A.back().addTransition(0, pEndState);
+		//B.back().addTransition(0, pEndState);
 	
 		// Create new NFA from A
 		B.pushBack(pEndState);

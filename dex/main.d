@@ -10,6 +10,7 @@ import hurt.conv.conv;
 import hurt.util.getopt;
 import hurt.time.stopwatch;
 import hurt.time.time;
+import hurt.util.slog;
 import hurt.util.stacktrace;
 
 void main(string[] args) {
@@ -51,6 +52,7 @@ void main(string[] args) {
 	foreach(it; input.getRegExCode()) {
 		re.createNFA(it.getRegEx(), conv!(size_t,int)(it.getPriority()));
 	}
+
 	re.convertNfaToDfa();
 	re.findErrorState();
 	re.minimize();

@@ -5,6 +5,7 @@ import dex.state;
 import hurt.algo.sorting;
 import hurt.container.dlst;
 import hurt.container.isr;
+import hurt.container.iterator;
 import hurt.container.list;
 import hurt.container.map;
 import hurt.container.multimap;
@@ -14,7 +15,8 @@ import hurt.conv.conv;
 import hurt.io.stdio;
 
 private Vector!(Vector!(State)) makeInitPartitions(
-		DLinkedList!(State) oldStates, Map!(State,long) states) {
+		Iterable!(State) oldStates, Map!(State,long) states) {
+		//Deque!(State) oldStates, Map!(State,long) states) {
 	Vector!(Vector!(State)) ret = new Vector!(Vector!(State))();
 	ret.append(new Vector!(State)());
 	ret.append(new Vector!(State)());
@@ -95,7 +97,8 @@ private void printStates(Map!(State,long) states) {
 	println("}");
 }
 
-public Vector!(State) minimize(T)(DLinkedList!(State) oldStates, 
+public Vector!(State) minimize(T)(Iterable!(State) oldStates, 
+//public Vector!(State) minimize(T)(Deque!(State) oldStates, 
 		Set!(T) inputSet) {
 	Map!(State,long) states = new Map!(State,long)();
 	Vector!(Vector!(State)) groups = makeInitPartitions(oldStates, states);
