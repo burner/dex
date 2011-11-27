@@ -22,28 +22,30 @@ import hurt.util.array;
 import hurt.util.slog;
 import hurt.util.stacktrace;
 
-//import std.process;
-
 public alias DLinkedList!(State) FSA_Table;
 //public alias Deque!(State) FSA_Table;
 
+/** All the logic from a multiple NFAs to a single NFA to a single DFA is
+ *  is implemented in this file.
+ */
 class RegEx {
-	FSA_Table globalNfaTable;
+	private FSA_Table globalNfaTable;
 
-	FSA_Table nfaTable;
-	FSA_Table dfaTable;
-	//Deque!(State) dfaTable;
-	Stack!(FSA_Table) operandStack;
-	Stack!(dchar) operatorStack;
+	private FSA_Table nfaTable;
+	private FSA_Table dfaTable;
+	// private Deque!(State) dfaTable;
+	private Stack!(FSA_Table) operandStack;
+	private Stack!(dchar) operatorStack;
 
-	int nextStateId;
-	Set!(dchar) inputSet;
-	State rootState;
-	int patternIndex;
-	string strText;
-	Vector!(int) vecPos;
-	Vector!(State) minDfa;
+	private int nextStateId;
+	private Set!(dchar) inputSet;
+	private State rootState;
+	private int patternIndex;
+	private string strText;
+	private Vector!(int) vecPos;
+	private Vector!(State) minDfa;
 
+	/// constructor
 	this() {
 		this.nfaTable = new FSA_Table();
 		this.operandStack = new Stack!(FSA_Table)();
@@ -54,6 +56,7 @@ class RegEx {
 		this.globalNfaTable.pushBack(this.rootState);
 	}
 
+	/// prepare for the next nfa
 	void cleanUp() {
 		scope Trace st = new Trace("cleanUp");
 		this.nfaTable = new FSA_Table();
@@ -61,6 +64,7 @@ class RegEx {
 		this.operatorStack = new Stack!(dchar)();
 	}
 
+	/// create a nfa for the passed string and link it into the global nfa
 	bool createNFA(string str, int action) {
 		scope Trace st = new Trace("createNFA");
 		this.cleanUp();
@@ -117,10 +121,7 @@ class RegEx {
 			return false;
 		}
 
-		//this.nfaTable.get(this.nfaTable.getSize() - 1u).acceptingState = true;
-		//this.nfaTable.get(this.nfaTable.getSize()).acceptingState = true;
 		this.nfaTable.get(this.nfaTable.getSize()).setAcceptingState(action);
-		//this.nfaTable.back().setAcceptingState(action);
 
 		// save the current nfaTable to the globalNFATable. 
 		// this is done to create a nfa
@@ -136,6 +137,7 @@ class RegEx {
 		
 	}
 
+	/// epsilon closure
 	Set!(State) epsilonClosure(Set!(State) old) const {
 		scope Trace st = new Trace("epsilonClosure");
 		// Initialize result with old because each state
@@ -170,6 +172,7 @@ class RegEx {
 		return res;	
 	}
 
+	/// move operation
 	Set!(State) move(dchar chInput, Set!(State) t) const {
 		scope Trace st = new Trace("move");
 		Set!(State) res = new Set!(State)(ISRType.HashTable);
@@ -188,6 +191,7 @@ class RegEx {
 		return res;
 	}
 
+	/// convert the global nfa to a single dfa
 	void convertNfaToDfa() {
 		scope Trace st = new Trace("convertNfaToDfa");
 		//this.dfaTable = new Deque!(State)();
@@ -291,6 +295,7 @@ class RegEx {
 		}
 	}
 
+	/// this removes the states with no outgoing states and no accepting states
 	public static FSA_Table removeDeadStates(Iterable!(State) oldTable) {
 		scope Trace st = new Trace("removeDeadStates");
 		Map!(int,State) table = new Map!(int,State)(ISRType.HashTable);
@@ -328,6 +333,7 @@ class RegEx {
 		return ret;
 	}
 
+	/// push operation
 	void push(dchar chInput) {
 		scope Trace st = new Trace("push");
 		State s0 = new State(++nextStateId);
@@ -355,6 +361,7 @@ class RegEx {
 		this.inputSet.insert(chInput);
 	}
 
+	/// pop operation
 	bool pop(ref FSA_Table table) {
 		scope Trace st = new Trace("pop");
 		debug(RegExDebug) println(__FILE__,__LINE__, " this.operandStack.size ",
@@ -369,6 +376,7 @@ class RegEx {
 		return false;
 	}
 
+	/// eval an expression
 	bool eval() {
 		scope Trace st = new Trace("eval");
 		// First pop the operator from the stack
@@ -402,6 +410,7 @@ class RegEx {
 		return false;
 	}
 
+	/// concat operation
 	bool Concat() {
 		scope Trace st = new Trace("Concat");
 		// Pop 2 elements
@@ -433,6 +442,7 @@ class RegEx {
 		return true;
 	}
 	
+	/// star operation
 	bool Star() {
 		scope Trace st = new Trace("Star");
 		// Pop 1 element
@@ -474,6 +484,7 @@ class RegEx {
 		return true;
 	}
 
+	/// union operation
 	bool Union() {
 		scope Trace st = new Trace("Union");
 		// Pop 2 elements
@@ -511,6 +522,7 @@ class RegEx {
 		return true;
 	}
 		
+	/// call the minimizer
 	void minimize() {
 		scope Trace st = new Trace("minimize");
 		println("start to minimize with", this.dfaTable.getSize(), "states");
@@ -519,12 +531,14 @@ class RegEx {
 		println("minimized to", this.minDfa.getSize(), "states");
 	}
 
+	/// write the minimized dfa graph
 	void writeMinDFAGraph(string filename) {
 		scope Trace st = new Trace("writeMinDFAGraph");
 		auto tmp = removeDeadStates(this.minDfa);
 		dex.emit.writeGraph(tmp,this.inputSet, filename);
 	}
 
+	/// write the dfa graph
 	void writeDFAGraph(string filename) {
 		scope Trace st = new Trace("writeDFAGraph");
 		auto tmp = removeDeadStates(this.dfaTable);
@@ -532,17 +546,20 @@ class RegEx {
 		dex.emit.writeGraph(tmp,this.inputSet, filename);
 	}
 
+	/// write the nfa graph
 	void writeNFAGraph(string filename) {
 		scope Trace st = new Trace("writeNFAGraph");
 		auto tmp = removeDeadStates(this.globalNfaTable);
 		dex.emit.writeGraph(tmp,this.inputSet, filename);
 	}
 
+	/// write the table for debugging
 	void writeTable(string filename, MinTable min) {
 		scope Trace st = new Trace("writeTable");
 		dex.emit.writeTable(min, this.minDfa, this.inputSet, filename);
 	}
 
+	/// get the minimized table
 	MinTable minTable() {
 		scope Trace st = new Trace("minTable");
 		println("table minimization started with", 

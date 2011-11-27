@@ -2,26 +2,27 @@ module dex.state;
 
 import dex.strutil;
 
-import hurt.conv.conv;
-import hurt.container.multimap;
 import hurt.container.isr;
+import hurt.container.multimap;
+import hurt.container.rbtree;
 import hurt.container.set;
 import hurt.container.stack;
 import hurt.container.vector;
+import hurt.conv.conv;
+import hurt.string.utf;
 import hurt.util.array;
 import hurt.util.stacktrace;
-import hurt.container.rbtree;
-import hurt.string.utf;
 
-import std.stdio;
-
+/** The states of the nfa as well dfa graph structure is stored in this class.
+ */
 class State {
-	int stateId;
-	bool acceptingState;
-	Set!(int) aStates;
-	MultiMap!(dchar,State) transition;
-	Set!(State) nfaStates;
+	private int stateId;
+	private bool acceptingState;
+	private Set!(int) aStates;
+	private MultiMap!(dchar,State) transition;
+	private Set!(State) nfaStates;
 
+	/// default constructor
 	this(int nId = -1) {
 		this.stateId = nId;
 		this.acceptingState = false;
@@ -30,6 +31,9 @@ class State {
 		this.aStates = new Set!(int)();
 	}
 
+	/** Sort of copy constructor. Set theid and than copy the accepting states
+	 *  of all the states in the set.
+	 */
 	this(int nId, Set!(State) NFAState) {
 		this(nId);
 		this.nfaStates = NFAState.dup();
@@ -42,15 +46,18 @@ class State {
 		}
 	}
 
+	/// Compare two states by their id
 	public bool obEquals(Object o) const {
 		State t = cast(State)o;
 		return t.stateId == this.stateId;
 	}
 
+	/// Make a state placeable in a hashmap
 	public override hash_t toHash() const {
 		return this.stateId;
 	}
 
+	/// Make a state placeable in a tree
 	public override int opCmp(Object o) const {
 		State f = cast(State)o;
 		if(this.toHash() < f.toHash())
@@ -61,28 +68,29 @@ class State {
 			return 0;
 	}
 
-	Set!(State) getNFAStates() {
+	public Set!(State) getNFAStates() {
 		return this.nfaStates;
 	}
 
-	void setAcceptingState(in int sId) {
+	public void setAcceptingState(in int sId) {
 		this.acceptingState = true;
 		this.aStates.insert(sId);;	
 	}
 
-	int getFirstAcceptingState() {
+	public int getFirstAcceptingState() {
 		return *this.aStates.begin();
 	}
 
-	Set!(int) getAcceptingStates() {
+	public Set!(int) getAcceptingStates() {
 		return this.aStates;
 	}
 
-	bool isAccepting() const {
+	public bool isAccepting() const {
 		return this.acceptingState;
 	}
 
-	bool isDeadEnd() {
+	/// check if the state has no outgoing transition and is not accepting
+	public bool isDeadEnd() {
 		scope Trace st = new Trace("isDeadEnd");
 		if(this.acceptingState)
 			return false;
@@ -99,19 +107,20 @@ class State {
 		return true;
 	}
 
-	int getStateId() const {
+	public int getStateId() const {
 		return this.stateId;
 	}
 
-	void setStateId(in int id) {
+	public void setStateId(in int id) {
 		this.stateId = id;
 	}
 
-	MultiMap!(dchar,State) getTransitions() {
+	public MultiMap!(dchar,State) getTransitions() {
 		return this.transition;
 	}	
 
-	void addTransition(dchar chInput, State state) {
+	/// add a transition to the state
+	public void addTransition(dchar chInput, State state) {
 		if(state is null) {
 			Trace.printTrace();
 			assert(false);
@@ -123,7 +132,8 @@ class State {
 		assert(oldSize != this.transition.getSize());
 	}
 
-	void removeTransition(State toRemove) {
+	/// remove a transition from the state
+	public void removeTransition(State toRemove) {
 		auto it = this.transition.begin();
 		while(it.isValid() && (*it) != toRemove) {
 			it++;
@@ -135,7 +145,8 @@ class State {
 		}
 	}
 	
-	State[] getTransition(dchar chInput) {
+	/// get all States for given character
+	public State[] getTransition(dchar chInput) {
 		auto it = this.transition.range(chInput);	
 		State[] ret = new State[10];
 		size_t idx = 0;
@@ -148,7 +159,8 @@ class State {
 		return ret[0..idx];
 	}
 
-	State getSingleTransition(dchar chInput) {
+	/// get a single state for given character. This is for DFAs
+	public State getSingleTransition(dchar chInput) {
 		Iterator!(dchar,State) it = this.transition.range(chInput);
 		return it.isValid() ? *it : null;
 	}

@@ -4,12 +4,12 @@ import dex.parseerror;
 import dex.state;
 
 import hurt.algo.sorting;
+import hurt.container.multimap;
+import hurt.container.vector;
+import hurt.conv.conv;
 import hurt.io.stdio;
 import hurt.string.stringbuffer;
 import hurt.string.stringutil;
-import hurt.conv.conv;
-import hurt.container.vector;
-import hurt.container.multimap;
 import hurt.util.array;
 
 public immutable char LP = '\v';
@@ -116,6 +116,7 @@ unittest {
 }
 */
 
+/// the names says it all
 public immutable(T)[] setUnionSymbol(T)(T[] str) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	//writeln(__FILE__,__LINE__,": ",str);
@@ -178,6 +179,9 @@ public immutable(T)[] expandRangeDirect(T)(immutable(T)[] str)
 	}
 }*/
 
+/** Set the concat symbol. This function also calls function to prepare the
+ *  string.
+ */
 public immutable(dchar)[] concatExpand(immutable(dchar)[] str) {
 	//writeln(__LINE__, " ", str);
 	str = whiteSpacePrepare(str);
@@ -202,6 +206,7 @@ public immutable(dchar)[] concatExpand(immutable(dchar)[] str) {
 	return ret[0..retPtr].idup;
 }
 
+/// debug to display the prepared string
 immutable(T)[] stringWrite(T)(immutable(T)[] str) {
 	T[] ret = new T[str.length];
 	foreach(idx,it;str) {
@@ -282,6 +287,12 @@ public pure bool presedence(T)(T opLeft, T opRight)
 	return true;
 }
 
+/** Replace aliases. 0-9 becomes 0123456789 and so on.
+ *  TODO make more like
+ *  	Madarin
+ *  	Corean
+ *  	...
+ */
 public pure T[] aliases(T)(T[] str) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 	//writeln(__LINE__, " ",str);
@@ -325,7 +336,7 @@ public pure T[] aliases(T)(T[] str)
 		}
 	}
 }
-
+/// more than one alias can be concated with a :
 private pure dchar[] unionExtend(dchar[] str) {
 	dchar[] upperChar = ['A','B','C','D','E','F','G','H','I','J','K','L',
 		'M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
@@ -372,6 +383,7 @@ unittest {
 		conv!(dchar[],string)(unionExtend(":digit:abc:digit:"d.dup)));
 }
 
+/// prepare the string to make the whitestring character not mess out the string
 public immutable(dchar)[] whiteSpacePrepare(immutable(dchar)[] str) {
 	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(str.length*2);
 	for(size_t i = 0; i < str.length; i++) {
@@ -420,6 +432,7 @@ unittest {
 		conv!(dstring,string)(whiteSpacePrepare(`\\"`)));
 }
 
+/// the * regex symbol is implemented as a hack
 public immutable(dchar)[] prepareString(immutable(dchar)[] str) {
 	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(str.length*3);	
 	for(size_t i = 0; i < str.length; i++) {
@@ -546,6 +559,7 @@ unittest {
 	
 }
 
+/// find a :
 private pure int findColon(T)(in T[] str, size_t start = 0) 
 		if(is(T == char) || is(T == wchar) || is(T == dchar)) {
 
@@ -588,6 +602,7 @@ unittest {
 	assert(3 == findColon!(char)("   :  ",3));
 }
 
+// a %% in a string
 public pure int userCodeParanthesis(in char[] str, int start = 0) {
 	int ret = -1;
 	if(start < 0) {
@@ -612,6 +627,7 @@ public pure int userCodeParanthesis(in char[] str, int start = 0) {
 	return -1;
 }
 
+/// this function find some like {br in a given string
 public pure int userCodeBrace(bool dir,char br)(in char[] str, int start = 0) {
 	if(start < 0) {
 		return -1;
@@ -666,6 +682,7 @@ unittest {
 	assert(-1 == userCodeBrace!(true,':')("%%:}  %", 3));
 }
 
+/// find a " in a string
 public pure int findTick(in char[] str, int start = 0) {
 	int ret = -1;
 	if(start < 0) {
@@ -728,6 +745,7 @@ unittest {
 	assert(-1 == userCodeParanthesis("%%  %%", 5));
 }
 
+/// This struct is used to minimize the output for the dot graph
 struct Range {
 	dchar first, last;
 
@@ -748,6 +766,7 @@ struct Range {
 	}
 }
 
+// check if a character extends a Range.
 pure bool extendsRange(Range range, dchar nextChar) {
 	if(range.first == dchar.init)
 		return true;
@@ -791,6 +810,7 @@ unittest {
 	assert(!extendsRange(r, '0'));
 }
 
+/// given a multimap this function return all ranges createable
 Vector!(Range) makeRanges(hurt.container.multimap.Iterator!(State,dchar) it) {
 	Vector!(Range) ret = new Vector!(Range)();
 	Vector!(dchar) chars = new Vector!(dchar)(32);
@@ -819,6 +839,7 @@ Vector!(Range) makeRanges(hurt.container.multimap.Iterator!(State,dchar) it) {
 	return ret;
 }
 
+// test the Ranges for bugs
 bool assertRange(Range r) {
 	if(r.first == dchar.init)
 		return false;

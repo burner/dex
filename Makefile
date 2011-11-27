@@ -33,7 +33,7 @@ dex.input.o: dex/input.d dex.regex.o
 dex.emit.o: dex/emit.d dex.regex.o
 	dmd $(CFLAGS) -c dex/emit.d -ofdex.emit.o
 
-dex.strutil.o: dex/strutil.d
+dex.strutil.o: dex/strutil.d dex/parseerror.d
 	dmd $(CFLAGS) -c dex/strutil.d -ofdex.strutil.o
 
 dex.regex.o: dex/regex.d dex/state.d dex.strutil.o dex.minimizer.o
