@@ -69,6 +69,9 @@ enum ParseState {
 	RegexCode
 }
 
+/** The Input parser class. A given .dex file this class find all defined
+ *  userCode as well as all RegexCode,action pairs.
+ */
 class Input {
 	private string filename;
 	private string userCode;
@@ -76,6 +79,13 @@ class Input {
 	private File ins;
 	private Vector!(RegexCode) regexCode;
 
+	/** This function is called to make sure that the given filename
+	 *  if of form *.dex
+	 *
+	 *  @param filename The filename to check
+	 *
+	 *  @return true if ends on .dex false otherwise
+	 */
 	private static bool isWellFormedFilename(in string filename) {
 		scope Trace st = new Trace("isWellFormedFilename");
 		if(filename.length <= 4)
@@ -87,10 +97,17 @@ class Input {
 		return true;
 	}
 
+	/** The constructor of the Input Parser. If this returns the file is parsed.
+	 *
+	 *  @param filename The filename of the file to parse.
+	 */
 	this(string filename) {
+		// init member
 		scope Trace st = new Trace("input this");
 		this.filename = filename;
 		this.regexCode = new Vector!(RegexCode)(16);
+
+		// test if file has formated name, very bad test if the file is valid
 		if(!isWellFormedFilename(filename))
 			throw new Exception("Filename not well formed");
 	
@@ -99,12 +116,7 @@ class Input {
 
 		this.ins = new File(filename);
 		this.parseFile();
-		/*
-		foreach(it;this.regexCode) {
-			println(it.toString());
-		}
-		println(this.userCode);
-		*/
+
 		if(this.regexCode.getSize() == 0) {
 			throw new Exception(filename ~ " doesn't contain any regex code");
 		}
