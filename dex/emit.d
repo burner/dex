@@ -22,17 +22,34 @@ import hurt.string.utf;
 import hurt.util.array;
 import std.process;
 
+/** This function is used to write the created transition table to a given 
+ *  file. If the file is allready exists it is overwritten.
+ *
+ *  The methode works by using the format function to lay out the state 
+ *  transitions. 
+ *
+ * 	@param min The MinTable returned by the minizer.
+ * 	@param states The Iterable container containing all states of the given
+ * 		regular expressions.
+ *  @param input All input character used.
+ *  @param filename, The name of the output file.
+ */
 void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 		string filename) {
 
+	// Create the file
 	hurt.io.stream.File file = new hurt.io.stream.File(filename ~ ".tab", 
 		FileMode.OutNew);
 
+	// Sort the output, so the states can be iterated in order by their
+	// stateId.
 	sortVector!(State)(cast(Vector!(State))states, 
 		function(in State a, in State b) { 
 			return a.getStateId() < b.getStateId(); 
 		});
 
+	// For every 10 states the length of the output per item must be
+	// increased by one so no two string occupy the same space.
 	int howManyBlanks = 0;
 	size_t size = states.getSize();
 	while(size > 0) {
@@ -43,6 +60,7 @@ void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 
 	StringBuffer!(dchar) sb = new StringBuffer!(dchar)();
 	
+	// Print the first row. The first row contains the input symbols
 	ISRIterator!(dchar) it = inputSet.begin();
 	for(int i = 0; i < howManyBlanks; i++)
 		sb.pushBack(' ');
@@ -67,6 +85,9 @@ void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 	file.write('\n');
 	sb.clear();
 
+	// Print the transitiones for every state on every input character.
+	// If a state has no input character emit a -1 to mark a transistion
+	// to an error state.
 	foreach(it; states) {
 		sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(howManyBlanks)
 			~ "d", it.getStateId()));
@@ -89,6 +110,8 @@ void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 	file.write('\n');
 	file.write('\n');
 
+	// The rest prints information about the minimazation ratio and
+	// other information.
 	sb.pushBack(format!(char,dchar)("%" ~ conv!(int,string)(9)
 		~ "s", "input"));
 
@@ -178,15 +201,22 @@ void writeTable(MinTable min, Iterable!(State) states, Set!(dchar) inputSet,
 	file.close();
 }
 
-/* A function that writes a given graph to a file of name fileName.
- * Iterable is a container that implements opApply. The transitions of
- * the states inside the container should correspond to the character inside
- * the inputSet. Otherwise the transistion will not be displayed.
+/*' A function that writes a given graph to a file of name fileName.
+ *  Iterable is a container that implements opApply. The transitions of
+ *  the states inside the container should correspond to the character inside
+ *  the inputSet. Otherwise the transistion will not be displayed.
+ *
+ *  @param states The States of the graph.
+ *  @param inputSet The transition character.
+ *  @param fileName The filename of the resulting graph. Note that, if the file
+ *  	exists, it will be overwritten.
  */
 void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 		string fileName) {
 	string[] strTable = ["digraph{\n"];
 	StringBuffer!(char) strLine = new StringBuffer!(char)(16);
+
+	// Write which endstates exist.
 	foreach(it;states) {
 		if(it.acceptingState) {
 			strLine.pushBack('\t').pushBack(it.toString());
@@ -203,6 +233,7 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 	foreach(pState;states) {
 		State[] state;	
 
+		// write epsilon transition, this is one interesting for the nfa
 		state = pState.getTransition(0);
 		foreach(jt;state) {
 			string stateId1 = (pState.toString());
@@ -211,24 +242,6 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 			strLine.pushBack("\t[label=\"epsilon\"];\n");
 			append(strTable, strLine.getString());
 			strLine.clear();
-		}
-
-		version(none) {
-		foreach(jt; inputSet) {
-			dchar[1] inChar;
-			inChar[0] = jt;
-			string inputDChar = toUTF8(inChar);
-			state = pState.getTransition(jt);
-			foreach(kt;state) {
-				string stateId1 = (pState.toString());
-				string stateId2 = (kt.toString());
-				strLine.pushBack("\t" ~ stateId1 ~ " -> " ~ stateId2);
-				//strLine.pushBack("\t[label=\"" ~ jt ~ "\"];\n");
-				strLine.pushBack("\t[label=\"" ~ inputDChar ~ "\"];\n");
-				append(strTable, strLine.getString());
-				strLine.clear();
-			}
-		}	
 		}
 
 		MultiMap!(State,dchar) mm = new MultiMap!(State,dchar)();
@@ -242,18 +255,13 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 		for(; it.isValid(); it++) {
 			mm.insert(*it, it.getKey());
 		}
+
+		// write the transitions
 		foreach(jt; mm.keys()) {
 			hurt.container.multimap.Iterator!(State,dchar) kt = mm.range(jt);
 			tranSb.clear();
 			tranSb.pushBack("[");
 			int count = 0;
-			/*for(; kt.isValid(); kt++) {
-				tranSb.pushBack(kt.getData());
-				tranSb.pushBack(",");
-				if(count != 0 && count % 20 == 0)
-					tranSb.pushBack("\r");
-				count++;
-			}*/
 			Vector!(dex.strutil.Range) r = makeRanges(kt);
 			assert(r.getSize() > 0);
 			foreach(kt; r) {
@@ -290,6 +298,13 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 	system("dot -Ln1 -T jpg " ~ fileName ~ ".dot > " ~ fileName ~ ".jpg");
 }
 
+/** The dot language doesn't display whitespace as wanted so it needs
+ *  to be replaced.
+ *
+ *  @param str The string that needs to be processed.
+ *  @returned The string where every \n is replaced by a newline, every \t by a 
+ *		tabular and every " by a \\".
+ */
 string replaceNewline(string str) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(str.length+2);
 	foreach(it; str) {
@@ -307,12 +322,39 @@ string replaceNewline(string str) {
 	return ret.getString();
 }
 
+/** This functions returns a string which is a D function which tells you for a
+ *  given input parameter if the state behind it is a accepting state or not. 
+ *
+ *  Of form:
+ *
+ *  private int isAccepetingState(stateType state) {
+ *		switch(state) {
+ *			case 0:
+ *				return 34; // any positiv integer or -1
+ *			case 1:
+ *				return -1; // If it has no accepting state.
+ *			default:
+ *  			assert(false, "invalid state passed " ~ 
+ *			 		conv!(stateType,string)(state));
+ *		}
+ *  }
+ *
+ *  @param min, The minimized Table comming from the minizer.
+ *  @param stateType If the number of states is below ubyte.max the stateType
+ *  	will be ubyte. You should see the pattern.
+ *
+ *  @return The created isAccepetingState function.
+ */
 string createIsAcceptingStateFunction(MinTable min, string stateType) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(256*4);
+	
+	// function header
 	ret.pushBack("\tprivate int");
 	ret.pushBack(" isAcceptingState(");
 	ret.pushBack(stateType);
 	ret.pushBack(" state) {\n");
+
+	// function body which switch case
 	ret.pushBack("\t\tswitch(state) {\n");
 	foreach(it; min.states) {
 		ret.pushBack("\t\t\tcase ");	
@@ -326,19 +368,81 @@ string createIsAcceptingStateFunction(MinTable min, string stateType) {
 		}
 		ret.pushBack(";\n");
 	}
+
+	// default case
 	ret.pushBack("\t\t\tdefault:\n");
 	ret.pushBack("\t\t\t\tassert(false, \"an invalid state was passed \" ~\n");
-	ret.pushBack("\t\t\t\t\tconv!(int,string)(state));\n");
+	ret.pushBack("\t\t\t\t\tconv!(stateType,string)(state));\n");
 	ret.pushBack("\t\t}\n");
 	ret.pushBack("\t}\n");
 
 	return ret.getString();
 }
 
+/** This functions returns a string which is a D function which defines the
+ *  default run function.
+ *
+ *  Of form:
+ *
+ *	public void run() {
+ *		dchar currentInputChar;
+ *		byte currentState = 0;
+ *
+ *		byte nextState = -1;
+ *		bool needToGetNextState = true;
+ *		bool needToGetNextChar = true;
+ *
+ *		while(!this.isEmpty()) {
+ *			if(needToGetNextChar) {
+ *				currentInputChar = this.getNextChar();
+ *			} else {
+ *				needToGetNextChar = true;
+ *			}
+ *
+ *			if(needToGetNextState) {
+ *				nextState = this.getNextState(currentInputChar, currentState);
+ *			} else {
+ *				needToGetNextState = true;
+ *			}
+ *
+ *			if(nextState != -1) {
+ *				this.lexText.pushBack(currentInputChar);
+ *			}
+ *			if(nextState != -1) {
+ *				currentState = nextState;
+ *				continue;
+ *			} else {
+ *				needToGetNextChar = false;
+ *				int isAccepting = this.isAcceptingState(currentState);
+ *				if(isAccepting == -1) {
+ *					USER DEFINED INPUT ERROR CODE
+ *				} else {
+ *					switch(isAccepting) {
+ *						case 27: {
+ *							USER DEFINED ACTION ON ACCEPTING STATE 27
+ *						}
+ *					}
+ *				}
+ *			}
+ *			...
+ *
+ *
+ *  @param min, The minimized Table comming from the minizer.
+ *  @param stateType If the number of states is below ubyte.max the stateType
+ *  	will be ubyte. You should see the pattern.
+ *  @param input This Input type class is used to get information about the
+ *  	end of line/file character as well as the regex production.
+ *
+ *  @return The created run function.
+ */
 string createDefaultRunFunction(MinTable min, string stateType, 
 		Input input) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(256*4);
+	
+	// header
 	ret.pushBack("\tpublic void run() {\n");
+
+	// local declartion
 	ret.pushBack("\t\tdchar currentInputChar;\n");
 	ret.pushBack("\t\t");
 	ret.pushBack(stateType);
@@ -348,6 +452,8 @@ string createDefaultRunFunction(MinTable min, string stateType,
 	ret.pushBack(" nextState = -1;\n");
 	ret.pushBack("\t\tbool needToGetNextState = true;\n");
 	ret.pushBack("\t\tbool needToGetNextChar = true;\n\n");
+
+	// main loop
 	ret.pushBack("\t\twhile(!this.isEmpty()) {\n");
 	ret.pushBack("\t\t\tif(needToGetNextChar) {\n");
 	ret.pushBack("\t\t\t\tcurrentInputChar = this.getNextChar();\n");
@@ -386,11 +492,14 @@ string createDefaultRunFunction(MinTable min, string stateType,
 	}
 
 	ret.pushBack("\t\t\t\t} else {\n");
+
+	// accepting switch case
 	ret.pushBack("\t\t\t\t\tswitch(isAccepting) {\n");
 
 	sortVector!(RegexCode)(input.getRegExCode(),
 		function(in RegexCode a, in RegexCode b) { 
-		return a.getPriority() < b.getPriority(); });
+			return a.getPriority() < b.getPriority(); 
+		});
 
 	foreach(RegexCode it; input.getRegExCode()) {
 		ret.pushBack("\t\t\t\t\t\tcase ");
@@ -407,8 +516,8 @@ string createDefaultRunFunction(MinTable min, string stateType,
 	ret.pushBack("\t\t\t}\n");
 
 	ret.pushBack("\t\t}\n");
-	//ret.pushBack("\t\tcurrentState = this.getNextState(currentInputChar,");
-	//ret.pushBack("currentState);\n");
+
+	// processing the the rest of the input
 	ret.pushBack("\t\tint isAccepting = ");
 	ret.pushBack("this.isAcceptingState(currentState);\n");
 	ret.pushBack("\t\tif(isAccepting == -1) {\n");
@@ -443,6 +552,28 @@ string createDefaultRunFunction(MinTable min, string stateType,
 	return ret.getString();
 }
 
+/** This functions returns a string which is a D function which defines the
+ *  getNextState function. This function returns the next state depending on
+ *  the current state the input character as well as the state transition 
+ *  table.
+ *
+ *  Of form:
+ *
+ *	private returnTable getNextState(dchar inputChar, 
+ *			returnType currentState) {
+ *		MapItem!(dchar,size_t) cm = this.charMapping.find(inputChar);
+ *		assert(cm !is null);
+ *		size_t column = *cm;
+ *		size_t row = this.stateMapping[currentState];
+ *		return this.table[row][column];
+ *	}
+ *
+ *
+ *  @param returnType If the number of states is below ubyte.max the returnType
+ *  	will be ubyte. You should see the pattern.
+ *
+ *  @return The created getNextState function.
+ */
 string createGetNextState(string returnType) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(256);
 
@@ -462,6 +593,8 @@ string createGetNextState(string returnType) {
 	return ret.getString();
 }
 
+/** Deprecated, succeded by inputrange
+ */
 string createCharMapping(MinTable min) {
 	StringBuffer!(char) ret = 
 		new StringBuffer!(char)(min.inputChar.getSize() * 6);
@@ -516,14 +649,25 @@ string createCharMapping(MinTable min) {
 	return ret.getString();
 }
 
+/** This funciton created the state mapping table. 
+ *  The type of the array depends on how many states there are.
+ *
+ *  @param min The minimized state table mapping comming from the minimizer.
+ *
+ *  @return A string containing the array of state mappings.
+ */
 string createStateMapping(MinTable min) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(min.state.length * 6);
+
+	// get the highest state id
 	int max = 0;
 	foreach(it; min.state) {
 		if(it > max) {
 			max = it;
 		}
 	}
+
+	// define the array
 	if(max < 127) {
 		ret.pushBack("\timmutable byte[] stateMapping = [\n\t");
 	} else if(max < 32768) {
@@ -532,6 +676,7 @@ string createStateMapping(MinTable min) {
 		ret.pushBack("\timmutable int[] stateMapping = [\n\t");
 	}
 
+	// find out how many spaces are need to pretty print
 	int indent = 1;
 	while(max > 0) {
 		indent++;
@@ -539,6 +684,7 @@ string createStateMapping(MinTable min) {
 	}
 	string form = "%" ~ conv!(int,string)(indent) ~ "d,";
 	
+	// print the table
 	int count = 0;
 	foreach(int it; min.state) {
 		ret.pushBack(format!(char,char)(form,it));
@@ -550,18 +696,17 @@ string createStateMapping(MinTable min) {
 	}
 	ret.popBack();
 	ret.pushBack("];\n\n");
-	/*if(max < 127) {
-		ret.pushBack("\tprivate byte currentState;");
-	} else if(max < 32768) {
-		ret.pushBack("\tprivate short currentState;");
-	} else {
-		ret.pushBack("\tprivate int currentState;");
-	}
-	ret.pushBack("\n\n");*/
 	
 	return ret.getString();
 }
 
+/** This funciton creates the state transition table. 
+ *  The type of the array depends on how many states there are.
+ *
+ *  @param min The minimized state table transition comming from the minimizer.
+ *
+ *  @return A string containing the array of state transitions.
+ */
 string createTable(MinTable min, ref string stateType) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(min.table.getSize() * 
 		min.table[0].getSize() * 4);
@@ -609,6 +754,12 @@ string createTable(MinTable min, ref string stateType) {
 	return ret.getString();
 }
 
+/** Pretty print the user code.
+ *
+ * @param userCode The userCode
+ *
+ * @return The pretty printed userCode
+ */
 string formatUserCode(string userCode) {
 	StringBuffer!(dchar) ret = new StringBuffer!(dchar)(userCode.length*2);
 	foreach(dchar c; conv!(string,dstring)(userCode)) {
@@ -623,6 +774,15 @@ string formatUserCode(string userCode) {
 	return conv!(dstring,string)(ret.getString());
 }
 
+/** As written in the function createCharRange, we have created the Map 
+ *  int,Set!(dchar). To be sure the mapping is correct, this functions
+ *  compares the originating map with the created mapping.
+ *
+ *  @param nm The newly created map.
+ *  @param om The old allready created map.
+ *
+ *  @return true if the test was passed false otherwise.
+ */
 bool testIfMappingIsComplete(Map!(int,Set!(dchar)) nm, Map!(dchar,Column) om) {
 	ISRIterator!(MapItem!(int,Set!(dchar))) nmIt = nm.begin();
 	for(; nmIt.isValid(); nmIt++) {
@@ -657,6 +817,19 @@ bool testIfMappingIsComplete(Map!(int,Set!(dchar)) nm, Map!(dchar,Column) om) {
 	return true;
 }
 
+/** This function returns a string containing the sorted Range array for the
+ *  character mapping. This function procedded createCharMapping.
+ *
+ *  Of form:
+ *
+ *	static immutable Range!(dchar,size_t)[59] inputRange = [
+ *		Range!(dchar,size_t)('\t',0),Range!(dchar,size_t)('\n',1),
+ *		Range!(dchar,size_t)(' ',2), ... ];
+ *
+ *  @param min The minimized table.
+ *
+ *  @return The array of sorted Range structs.
+ */
 string createCharRange(MinTable min) {
 	// first you got to bring Map!(dchar,Column) to Map!(int,Set!(dchar)) 
 	// where the key is the idx variable of the column. I'm not using
@@ -680,17 +853,6 @@ string createCharRange(MinTable min) {
 	}
 
 	assert(testIfMappingIsComplete(sameIdx, min.inputChar));
-
-	/*auto ut = sameIdx.begin();
-	for(; ut.isValid(); ut++) {
-		printf("%d",(*ut).getKey());
-		auto qt = (*ut).getData().begin();
-		assert(qt.isValid());
-		for(; qt.isValid(); qt++) {
-			printf(" %c", *qt);
-		}
-		println();
-	}*/
 
 	// fill the range array
 	Vector!(hurt.algo.binaryrangesearch.Range!(dchar,int)) vec = 
@@ -806,9 +968,10 @@ string createCharRange(MinTable min) {
 	ret.pushBack("];\n\n");
 
 	return conv!(dstring,string)(ret.getString());
-	//return "";
 }
 
+/** Process whitespaces to make graphviz not to fuck up.
+ */
 pure dstring replaceWhiteSpace(in dchar c) {
 	if(c == '\n')
 		return "\\n";
@@ -818,6 +981,14 @@ pure dstring replaceWhiteSpace(in dchar c) {
 		return conv!(dchar,dstring)(c);
 }
 
+/** Calling this function will write a lexer to the given filename.
+ *
+ *  @param min The minimized Table, this table comes from the minizer.
+ *  @param input The user created Input.
+ *  @param classname The name of the resulting class containing the lexer
+ *  @param filename The filename of the file the lexer will be written to.
+ *  	If the file exists it will be overwritten.
+ */
 void emitLexer(MinTable min, Input input, string classname, string filename) {
 	hurt.io.stream.File file = new hurt.io.stream.File(filename, 
 		FileMode.OutNew);
@@ -849,6 +1020,7 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 	file.close();
 }
 
+// Static parts of the lexer
 private string base = `
 import hurt.algo.binaryrangesearch;
 import hurt.conv.conv;

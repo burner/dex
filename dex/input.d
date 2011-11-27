@@ -11,6 +11,18 @@ import hurt.string.stringbuffer;
 
 import dex.strutil;
 
+/** The input parser creates objects of regex, useraction for every given regex
+ *  code. An example could look like:
+ *  "[:digit:][:digit:_]*" {: printfln("int %s", this.getCurrentLex()); :}
+ *  
+ *  The RegexCode object member regex will contain the string between the
+ *  ticks. The RegexCode member code will contain everything between {: and :}
+ *  
+ *  The propority member is simple the line the regex code was found in. This is
+ *  importent because the resulting state machine can have multiple accepting
+ *  states for a given input. To resolve this conflict the user code of the
+ *  RegexCode with the lowest priority is run.
+ */
 class RegexCode {
 	private string regex;
 	private string code;
@@ -47,6 +59,9 @@ class RegexCode {
 	}
 }
 
+/** The Input Parser can be in any of the four states. This is used to keep
+ *  track of the parsing of the input file.
+ */
 enum ParseState {
 	None,
 	UserCode,

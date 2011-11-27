@@ -71,7 +71,7 @@ void main(string[] args) {
 
 	MinTable min = re.minTable();
 
-	re.writeTable("dfaTable",min);
+	//re.writeTable("dfaTable",min);
 	emitLexer(min,input,"DLexer",outputFilename);
 
 	//re.minTable();
