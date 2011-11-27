@@ -19,7 +19,7 @@ import hurt.io.stdio;
  *  all none exepting states.
  *
  *  @param oldStates The old unoptimized table.
- *  @param states This map s later used to faster lookup in which Vector a stat
+ *  @param states This map s later used to faster lookup in which Vector a state
  *  resigns.
  *
  *  @return See the description.
@@ -29,6 +29,9 @@ private Vector!(Vector!(State)) makeInitPartitions(
 	Vector!(Vector!(State)) ret = new Vector!(Vector!(State))();
 	ret.append(new Vector!(State)());
 	ret.append(new Vector!(State)());
+
+	// Iterate all states and insert them into the ret vector(vector) and
+	// the map
 	foreach(it; oldStates) {
 		if(it.getStateId() == -1) {
 			states.insert(it, 0);
@@ -54,13 +57,23 @@ private Vector!(Vector!(State)) makeInitPartitions(
 	return ret;
 }
 
+/** After all states are minimized make new States out of it.
+ *
+ *  @param old The old states to work on.
+ *  @param inputSet The input character set.
+ *  @param states The map that basically contains the same information as the
+ *  	old arguments. But the states map has faster access for the group 
+ *  	information.
+ *  
+ * @return The new States.
+ */
 private Vector!(State) finalizeGroups(Vector!(Vector!(State)) old,
 		Set!(dchar) inputSet, Map!(State,long) states) {
 	Vector!(State) ret = new Vector!(State)();
 	// make the states gone fill them later
 	int idCnt = 1;
-	outer: foreach(idx,it; old) {
-		foreach(jt; it) {
+	outer: foreach(size_t idx, Vector!(State) it; old) {
+		foreach(State jt; it) {
 			if(jt.getStateId() == 1) {
 				ret.append(new State(0));
 				continue outer;
@@ -72,24 +85,22 @@ private Vector!(State) finalizeGroups(Vector!(Vector!(State)) old,
 		ret.append(new State(idCnt++));
 	}
 
+	// check that the vectors are the same
 	assert(ret.getSize() == old.getSize(), conv!(size_t,string)(ret.getSize()) 
 		~ " " ~ conv!(size_t,string)(old.getSize()));
 
+	// Fill the states
 	for(size_t i; i < old.getSize(); i++) {
 		if(ret[i].getStateId() == -1)
 			continue;
 		// create the output transition for every input
-		foreach(c; inputSet) {
+		foreach(dchar c; inputSet) {
 			ret[i].addTransition(c, 
 				ret[states.find(old[i][0].getSingleTransition(c)).getData()]);
 		}
 
-		/*if(ret[i].getStateId() == 0)
-			continue;
-		*/
-
-		foreach(it; old[i]) {
-			foreach(jt; it.getAcceptingStates()) {
+		foreach(State it; old[i]) {
+			foreach(int jt; it.getAcceptingStates()) {
 				ret[i].setAcceptingState(jt);
 			}
 		}
@@ -99,39 +110,64 @@ private Vector!(State) finalizeGroups(Vector!(Vector!(State)) old,
 	return ret;
 }
 
+// debug
 private void printStates(Map!(State,long) states) {
 	print("states {");
-	for(auto it = states.begin(); it.isValid(); it++)
+	for(auto it = states.begin(); it.isValid(); it++) {
 		print((*it).getKey(),":",(*it).getData());
+	}
 	println("}");
 }
 
+/** To minimize the Vector!(States) states with the same outgoing transitions
+ *  and accepting states are merged.
+ *
+ *  @param oldStates The unminimized States.
+ *  @param inputSet All input character. The states in combination with the
+ *  	input character make up the 2d array of unminimized states.
+ *
+ *  @param Vector containing the minimized States.
+ */
 public Vector!(State) minimize(T)(Iterable!(State) oldStates, 
-//public Vector!(State) minimize(T)(Deque!(State) oldStates, 
 		Set!(T) inputSet) {
+
+	// init data
 	Map!(State,long) states = new Map!(State,long)();
 	Vector!(Vector!(State)) groups = makeInitPartitions(oldStates, states);
+
 	//printStates(states);
 	size_t oldSize = 0;
 	assert(groups.getSize() > 1, "there should at least 2 partitions by now");
 	assert(inputSet.getSize() > 0);
 	size_t grCnt = groups.getSize();
 	int rounds = 0;
+
+	// while new groups are created continue
 	while(oldSize != grCnt) {
 		oldSize = groups.getSize();
 		for(size_t i = 0; i < grCnt; i++) {
 			Vector!(State) transGroup = groups[i];
 			size_t groupSize = transGroup.getSize();
+				
+			// if a group only holds only one member the group is done
 			if(groupSize == 1)
 				continue;
 			assert(groupSize > 0, "A valid group can't have size 0");
 
 			bool added = false;	
+
+			// create a new group
 			Vector!(State) newGroup = new Vector!(State)();
 			State first = transGroup[0];
+
+			// compare first and next if they are not the same move next
+			// to the new group and than proceed
 			for(size_t j = 1; j < groupSize; j++) {
 				State next = transGroup[j];
 				int cntInner = 0;
+
+				// to compare first and next you need to compare them character
+				// and character
 				foreach(c; inputSet) {
 					State gotoFirst = first.getSingleTransition(c);
 					State gotoNext = next.getSingleTransition(c);
@@ -157,6 +193,7 @@ public Vector!(State) minimize(T)(Iterable!(State) oldStates,
 						states.insert(next, groups.getSize()-1);
 						//printStates(states);
 
+						// test so nothing goes wrong
 						assert(groups.contains(newGroup));
 						assert(groups.contains(transGroup));
 						assert(transGroup.contains(first));
@@ -180,9 +217,12 @@ public Vector!(State) minimize(T)(Iterable!(State) oldStates,
 		}
 		rounds++;
 	}
+	// finalize and return the result
 	return finalizeGroups(groups, inputSet,states);	
 }
 
+/** Return type for minTable to have the result all in one place.
+ */
 struct MinTable {
 	Vector!(Vector!(int)) table;
 	Vector!(State) states;
@@ -190,24 +230,34 @@ struct MinTable {
 	Map!(dchar,Column) inputChar;
 }
 
+/** This class is used to abstract the column and rows of a matrix. Most
+ *  functions are used to make the class useable in a map.
+ */
 class Column {
+	/// the idx of the column
 	int idx;
+
+	/// the column/row itself
 	Vector!(int) row;
 
+	/// constructor
 	this(int idx, size_t size) {
 		this.idx = idx;
 		this.row = new Vector!(int)(size);
 	}
 
+	/// constructor
 	this(int idx, Vector!(int) row) {
 		this.idx = idx;
 		this.row = row;
 	}
 
+	/// toHash to make it placeable in a hashmap
 	override hash_t toHash() const {
 		return this.idx;
 	}
 
+	/// to make it findable in a tree
 	override int opCmp(Object o) const {
 		Row f = cast(Row)o;
 		if(this.idx > f.idx)
@@ -218,6 +268,7 @@ class Column {
 			return 0;
 	}
 
+	/// to check if two column are the same
 	override bool opEquals(Object o) {
 		Row r = cast(Row)o;
 		if(r.row.getSize() != this.row.getSize())
@@ -233,8 +284,18 @@ class Column {
 	}
 }
 
+/// Rows and column are the same.
 alias Column Row;
 
+/** Create a 2d-Array and merge all rows and column that are the same. Not only
+ *  does this return the reduced 2d-Array it only returns a mapping so the 
+ *  access to the Array is the same.
+ *
+ *  @param states The States to make the 2d-Array from in combination with the
+ *  	inputSet.
+ *
+ *  @param input The set and the states make out the 2d-Array.
+ */
 MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	// create the return type and it's members
 	MinTable ret;
@@ -268,6 +329,7 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 		}
 	}
 
+	// make the column reductions
 	columnReduce(ret.table);
 	columnRemap(ret.table, co);
 	ret.inputChar = co;
@@ -278,6 +340,7 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 			new Row(conv!(size_t,int)(idx), it.clone()));	
 	}
 	
+	// make the row reductions
 	rowReduce(ret.table);
 	rowRemap(ret.table, r);
 
@@ -290,6 +353,8 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 
 	//printTable(ret.table);
 	//printMapping(ret.state, ret.inputChar);
+
+	// test the reductions against the old set
 	assert(testReductionOnly(ret.table, ret.state, ret.inputChar));
 	assert(testReduction(ret.table, ret.state, ret.inputChar, states, 
 		inputSet));
@@ -297,6 +362,7 @@ MinTable minTable(Vector!(State) states, Set!(dchar) inputSet) {
 	return ret;
 }
 
+/// set minTable
 bool testReductionOnly(Vector!(Vector!(int)) t, int[] r,
 		Map!(dchar,Column) c) {
 	size_t tS = 0;
@@ -318,6 +384,7 @@ bool testReductionOnly(Vector!(Vector!(int)) t, int[] r,
 	return true;
 }
 
+/// set minTable
 bool testReduction(Vector!(Vector!(int)) t, int[] r, 
 		Map!(dchar,Column) c, Vector!(State) s, Set!(dchar) i) {
 	size_t tS = 0;
@@ -340,6 +407,7 @@ bool testReduction(Vector!(Vector!(int)) t, int[] r,
 	return true;
 }
 
+/// test the columnRemap function
 bool compareColumn(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {
 	assert(r2.getSize > 0);
 	assert(r2[0].getSize() > r2idx);
@@ -353,6 +421,7 @@ bool compareColumn(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {
 	return true;
 }
 
+/// remap the column
 void columnRemap(Vector!(Vector!(int)) t, Map!(dchar,Row) r) {
 	ISRIterator!(MapItem!(dchar, Row)) it = r.begin();
 	for(; it.isValid(); it++) {
@@ -365,6 +434,7 @@ void columnRemap(Vector!(Vector!(int)) t, Map!(dchar,Row) r) {
 	}
 }
 
+/// reduce column
 void columnReduce(Vector!(Vector!(int)) t) {
 	assert(t.getSize() > 0);
 
@@ -380,6 +450,7 @@ void columnReduce(Vector!(Vector!(int)) t) {
 	}
 }
 
+/// check if two column are equal
 bool columnEqual(Vector!(Vector!(int)) t, int i1, int i2) {
 	// check if the given indices i1 and i2 are valid, for all rows
 	assert(t.getSize() > 0);
@@ -395,6 +466,7 @@ bool columnEqual(Vector!(Vector!(int)) t, int i1, int i2) {
 	return true;
 }
 
+/// check if two rows are equal
 bool compareRow(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {
 	assert(r2.getSize() > r2idx);
 	assert(r1.getSize() == r2[0].getSize());
@@ -405,6 +477,7 @@ bool compareRow(Vector!(int) r1, Vector!(Vector!(int)) r2, size_t r2idx) {
 		return true;
 }
 
+/// remap the rows
 void rowRemap(Vector!(Vector!(int)) t, Map!(int,Row) r) {
 	ISRIterator!(MapItem!(int, Row)) it = r.begin();
 	outer: for(; it.isValid(); it++) {
@@ -425,6 +498,7 @@ void rowRemap(Vector!(Vector!(int)) t, Map!(int,Row) r) {
 	}
 }
 
+/// reduce rows
 void rowReduce(Vector!(Vector!(int)) t) {
 	assert(t.getSize() > 0);
 	for(int i = 0; i < t.getSize()-1; i++) {
@@ -437,6 +511,7 @@ void rowReduce(Vector!(Vector!(int)) t) {
 	}
 }
 
+/// check if rows are equals
 bool rowEqual(Vector!(Vector!(int)) t, int i1, int i2) {
 	// check if the given indices i1 and i2 are valid, for all rows
 	assert(t.getSize() > i1);
@@ -465,6 +540,7 @@ bool rowEqual(Vector!(Vector!(int)) t, int i1, int i2) {
 	return true;
 }*/
 
+/// debug output
 void printTable(Vector!(Vector!(int)) table) {
 	printf("    ");
 	for(int i = 0; i < table[0].getSize(); i++) {
@@ -480,6 +556,7 @@ void printTable(Vector!(Vector!(int)) table) {
 	}
 }
 
+/// print everything equals in the 2d-Array
 void printEqual(Vector!(Vector!(int)) table) {
 	println("equal column");
 	for(int i = 0; i < table[0].getSize(); i++) {
@@ -514,6 +591,7 @@ void printEqual(Vector!(Vector!(int)) table) {
 	println();
 }
 
+/// print the mapping on the minimized 2d-array
 void printMapping(int[] r, Map!(dchar,Column) c) {
 	printf("\n%" ~ conv!(int,string)(7) ~ "s", "state");
 	foreach(idx, sit; r) {
