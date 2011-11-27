@@ -15,6 +15,8 @@ import hurt.util.stacktrace;
 
 void main(string[] args) {
 	scope Trace st = new Trace("main");
+
+	// handle the args arguments
 	Args ar = Args(args);
 	ar.setHelpText("dex a lexer generator for the D Programming Langauge");
 	string inputFilename = null;
@@ -39,6 +41,7 @@ void main(string[] args) {
 		return;
 	}
 
+	// parse the input file
 	Input input;
 	try {
 		input = new Input(inputFilename);	
@@ -47,6 +50,7 @@ void main(string[] args) {
 		return;
 	}
 
+	// create the minimized dfa
 	println("please wait ... this can take some time");
 	RegEx re = new RegEx();
 	foreach(it; input.getRegExCode()) {
@@ -57,6 +61,7 @@ void main(string[] args) {
 	re.findErrorState();
 	re.minimize();
 	
+	// print graphs
 	if(mdfaFilename !is null) {
 		re.writeMinDFAGraph(mdfaFilename);
 	}
@@ -71,9 +76,11 @@ void main(string[] args) {
 
 	MinTable min = re.minTable();
 
+	// emit lexer
 	//re.writeTable("dfaTable",min);
 	emitLexer(min,input,"DLexer",outputFilename);
 
+	// cleanup
 	//re.minTable();
 	delete input;
 	delete st;

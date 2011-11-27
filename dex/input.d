@@ -111,12 +111,17 @@ class Input {
 		if(!isWellFormedFilename(filename))
 			throw new Exception("Filename not well formed");
 	
+		// test if the file exists
 		if(!exists(this.filename))
 			throw new Exception("File does not Exist");
 
+		// open the file
 		this.ins = new File(filename);
+
+		//parse the file
 		this.parseFile();
 
+		// check that at least one file exists
 		if(this.regexCode.getSize() == 0) {
 			throw new Exception(filename ~ " doesn't contain any regex code");
 		}
@@ -131,6 +136,15 @@ class Input {
 		assert(!this.ins.isOpen(), "file should not be open");
 	}
 
+	/** File is parse expression by expression so to speak. The parser starts in
+	 *  state None if its encounter a %% it enters the usercode mode. This
+	 *  mode is only left if another %% is found. If in Mode None a " is
+	 *  encountered the mode RegexCode is entered. To leave this mode a ", {:
+	 *  and a :} must be found. If a {% is found the inputError Mode is entered.
+	 *  That means everything till the next %} is placed wherever an error in
+	 *  the lexer must be handled. All these modes are not entered if the end
+	 *  of scope for the mode is on the same line as the start.
+	 */
 	private void parseFile() {
 		scope Trace st = new Trace("parseFile");
 		ParseState ps = ParseState.None;

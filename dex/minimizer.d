@@ -14,9 +14,18 @@ import hurt.container.vector;
 import hurt.conv.conv;
 import hurt.io.stdio;
 
+/** This functions creates a Vector that contains two Vectors.
+ *  The first Vector contains all accepting states, the other
+ *  all none exepting states.
+ *
+ *  @param oldStates The old unoptimized table.
+ *  @param states This map s later used to faster lookup in which Vector a stat
+ *  resigns.
+ *
+ *  @return See the description.
+ */
 private Vector!(Vector!(State)) makeInitPartitions(
 		Iterable!(State) oldStates, Map!(State,long) states) {
-		//Deque!(State) oldStates, Map!(State,long) states) {
 	Vector!(Vector!(State)) ret = new Vector!(Vector!(State))();
 	ret.append(new Vector!(State)());
 	ret.append(new Vector!(State)());
