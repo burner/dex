@@ -144,6 +144,10 @@ class State {
 			assert(oldSize != this.transition.getSize());
 		}
 	}
+
+	public MultiMap!(dchar,State) getTransition() {
+		return this.transition;
+	}
 	
 	/// get all States for given character
 	public State[] getTransition(dchar chInput) {

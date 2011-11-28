@@ -218,7 +218,7 @@ void writeGraph(Iterable!(State) states, Set!(dchar) inputSet,
 
 	// Write which endstates exist.
 	foreach(it;states) {
-		if(it.acceptingState) {
+		if(it.isAccepting()) {
 			strLine.pushBack('\t').pushBack(it.toString());
 			strLine.pushBack("\t[shape=doublecircle];\n");
 			append(strTable, strLine.getString());

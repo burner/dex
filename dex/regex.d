@@ -210,7 +210,7 @@ class RegEx {
 		Set!(State) NFAStartState = new Set!(State)();
 		// the first state should have a stateId equal 0
 		// otherwise something is wrong with the globalNfaTable
-		assert(this.globalNfaTable.get(0).stateId == 0); 
+		assert(this.globalNfaTable.get(0).getStateId() == 0); 
 		NFAStartState.insert(this.globalNfaTable.get(0));
 
 		// Starting state of DFA is epsilon closure of 
@@ -277,11 +277,11 @@ class RegEx {
 		scope Trace st = new Trace("findErrorState");
 		bool found = false;
 		outer: foreach(ref it; this.dfaTable) {
-			if(!it.acceptingState && !it.transition.isEmpty()) {
-				foreach(jt; it.transition.keys()) {
+			if(!it.isAccepting() && !it.getTransition().isEmpty()) {
+				foreach(jt; it.getTransition().keys()) {
 					//foreach(kt; it.transition.find(jt)) {
-					for(auto kt = it.transition.range(jt); kt.isValid(); kt++) {
-						if(it.stateId != (*kt).stateId) {
+					for(auto kt = it.getTransition().range(jt); kt.isValid(); kt++) {
+						if(it.getStateId() != (*kt).getStateId()) {
 							continue outer;	
 						}
 					}
@@ -290,7 +290,7 @@ class RegEx {
 					assert(0, "error a dfa can't have two error states");
 				}
 				found = true;
-				it.stateId = -1;
+				it.setStateId(-1);
 			}
 		}
 	}
