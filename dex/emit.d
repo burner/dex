@@ -929,7 +929,7 @@ string createCharRange(MinTable min) {
 	for(; it.isValid(); it++) {
 		try {
 			assert( (*it).getData().idx == 
-				binarySearch!(dchar,int)(tmpArray, (*it).getKey()));
+				binarySearchRange!(dchar,int)(tmpArray, (*it).getKey(), dchar.init));
 		} catch(Exception e) {
 			printfln("couldn't find %c", (*it).getKey());
 			assert(false);
