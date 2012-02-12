@@ -929,7 +929,8 @@ string createCharRange(MinTable min) {
 	for(; it.isValid(); it++) {
 		try {
 			assert( (*it).getData().idx == 
-				binarySearchRange!(dchar,int)(tmpArray, (*it).getKey(), dchar.init));
+				binarySearchRange!(dchar,int)(tmpArray, (*it).getKey(), 
+					dchar.init));
 		} catch(Exception e) {
 			printfln("couldn't find %c", (*it).getKey());
 			assert(false);
