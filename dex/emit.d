@@ -983,6 +983,24 @@ pure dstring replaceWhiteSpace(in dchar c) {
 		return conv!(dchar,dstring)(c);
 }
 
+private string getTokenAcceptFunction() {
+	StringBuffer!(char) ret = new StringBuffer!(char)(1024);
+	ret.pushBack("public static immutable(string) acceptAction = \"");
+	ret.pushBack("switch(isAccepting) {\n");
+
+	foreach(RegexCode it; input.getRegExCode()) {
+		ret.pushBack("\tcase ");
+		ret.pushBack(conv!(size_t,string)(it.getPriority()));
+		ret.pushBack(": {\n");
+		ret.pushBack(it.getCode());
+		ret.pushBack("\n\t}\n\tbreak;\n");
+	}
+	ret.pushBack("}\n");
+
+	ret.pushBack("}\n");
+	return ret.getString();
+}
+
 /** Calling this function will write a lexer to the given filename.
  *
  *  @param min The minimized Table, this table comes from the minizer.
