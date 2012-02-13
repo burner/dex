@@ -983,7 +983,19 @@ pure dstring replaceWhiteSpace(in dchar c) {
 		return conv!(dchar,dstring)(c);
 }
 
-private string getTokenAcceptFunction() {
+private string escapeTick(string str) {
+	StringBuffer!(char) ret = new StringBuffer!(char)();
+	foreach(char it; str) {
+		if(it == '"') {
+			ret.pushBack("\\\"");
+		} else {
+			ret.pushBack(it);
+		}
+	}
+	return ret.getString();
+}
+
+private string getTokenAcceptFunction(Input input) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(1024);
 	ret.pushBack("public static immutable(string) acceptAction = \"");
 	ret.pushBack("switch(isAccepting) {\n");
@@ -992,9 +1004,12 @@ private string getTokenAcceptFunction() {
 		ret.pushBack("\tcase ");
 		ret.pushBack(conv!(size_t,string)(it.getPriority()));
 		ret.pushBack(": {\n");
-		ret.pushBack(it.getCode());
-		ret.pushBack("\n\t}\n\tbreak;\n");
+		ret.pushBack(escapeTick(it.getCode()));
+		ret.pushBack("\n\t}\n\t\tbreak;\n");
 	}
+	ret.pushBack("\tdefault:\n");
+	ret.pushBack("\t\tassert(false, format(\\\"no action for %d defined\\\")");
+	ret.pushBack(", isAcception);\n");
 	ret.pushBack("}\n");
 
 	ret.pushBack("}\n");
@@ -1047,6 +1062,7 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 	string isAcceptinStateFunction = 
 		createIsAcceptingStateFunction(min,stateType);
 	string charRange = createCharRange(min);
+	string tokenAccept = getTokenAcceptFunction(input);
 
 	hurt.io.stream.File file = new hurt.io.stream.File(filename, 
 		FileMode.OutNew);
@@ -1064,6 +1080,7 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 	file.writeString(table);
 	file.writeString(isAcceptinStateFunction);
 	file.writeString(charRange);
+	file.writeString(tokenAccept);
 	file.close();	
 }
 
