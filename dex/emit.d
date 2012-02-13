@@ -1078,6 +1078,7 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 	file.write('\n');
 	file.writeString(table);
 	file.writeString(isAcceptinStateFunction);
+	file.write('\n');
 	file.writeString(charRange);
 	file.writeString(tokenAccept);
 	file.close();	
