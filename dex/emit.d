@@ -997,22 +997,21 @@ private string escapeTick(string str) {
 
 private string getTokenAcceptFunction(Input input) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(1024);
-	ret.pushBack("public static immutable(string) acceptAction = \"");
+	ret.pushBack("public static immutable(string) acceptAction = \n`");
 	ret.pushBack("switch(isAccepting) {\n");
 
 	foreach(RegexCode it; input.getRegExCode()) {
 		ret.pushBack("\tcase ");
 		ret.pushBack(conv!(size_t,string)(it.getPriority()));
 		ret.pushBack(": {\n");
-		ret.pushBack(escapeTick(it.getCode()));
-		ret.pushBack("\n\t}\n\t\tbreak;\n");
+		ret.pushBack(it.getCode());
+		ret.pushBack("\n\t\t}\n\t\tbreak;\n");
 	}
 	ret.pushBack("\tdefault:\n");
 	ret.pushBack("\t\tassert(false, format(\\\"no action for %d defined\\\")");
 	ret.pushBack(", isAcception);\n");
-	ret.pushBack("}\n");
+	ret.pushBack("}`");
 
-	ret.pushBack("}\n");
 	return ret.getString();
 }
 
