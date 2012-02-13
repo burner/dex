@@ -280,7 +280,8 @@ class RegEx {
 			if(!it.isAccepting() && !it.getTransition().isEmpty()) {
 				foreach(jt; it.getTransition().keys()) {
 					//foreach(kt; it.transition.find(jt)) {
-					for(auto kt = it.getTransition().range(jt); kt.isValid(); kt++) {
+					for(auto kt = it.getTransition().range(jt); kt.isValid(); 
+							kt++) {
 						if(it.getStateId() != (*kt).getStateId()) {
 							continue outer;	
 						}

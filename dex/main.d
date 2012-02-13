@@ -20,21 +20,33 @@ void main(string[] args) {
 	Args ar = Args(args);
 	ar.setHelpText("dex a lexer generator for the D Programming Langauge");
 	string inputFilename = null;
-	string outputFilename = "out.d";
-	string nfaFilename = null;
-	string dfaFilename = null;
-	string mdfaFilename = null;
 	ar.setOption("-i", "--input", "set the input file", inputFilename);
+
+	string outputFilename = "out.d";
 	ar.setOption("-o", "--output", "set the output file", outputFilename);
+
+	string nfaFilename = null;
 	ar.setOption("-ng", "--nfagraph", "set the output file for the nfa graph" ~
 		". if this option is passed the nfa graph will be printed", 
 		nfaFilename);
+
+	string dfaFilename = null;
 	ar.setOption("-dg", "--dfagraph", "set the output file for the dfa graph" ~ 
 		". if this option is passed the dfa graph will be printed", 
 		dfaFilename);
+
+	string mdfaFilename = null;
 	ar.setOption("-mdg", "--mdfagraph", "set the output file for the dfa graph" 
 		~ ". if this option is passed the minimized dfa graph will be printed", 
 		mdfaFilename);
+
+	string nonStatic;
+	ar.setOption("-n", "--nonstatic", "set the filename for the non static part" 		~ " of the lexer", nonStatic);
+
+	string nonStaticModulename;
+	ar.setOption("-nm", "--nonstaticname", "set the modulename for the non " ~
+		"static part of the lexer only usefull is -n(onstatic) is set", 
+		nonStaticModulename);
 
 	if(args.length == 1 || inputFilename is null) {
 		ar.printHelp();
@@ -78,7 +90,10 @@ void main(string[] args) {
 
 	// emit lexer
 	//re.writeTable("dfaTable",min);
-	emitLexer(min,input,"DLexer",outputFilename);
+	//emitLexer(min,input,"DLexer",outputFilename);
+	if(nonStatic !is null && nonStatic.length) {
+		emitNonStatic(min,input,nonStaticModulename, nonStatic);
+	}
 
 	// cleanup
 	//re.minTable();

@@ -346,35 +346,36 @@ string replaceNewline(string str) {
  *  @return The created isAccepetingState function.
  */
 string createIsAcceptingStateFunction(MinTable min, string stateType) {
-	StringBuffer!(char) ret = new StringBuffer!(char)(256*4);
+	StringBuffer!(char) ret = new StringBuffer!(char)(1024);
 	
 	// function header
-	ret.pushBack("\tprivate int");
+	ret.pushBack("public static int");
 	ret.pushBack(" isAcceptingState(");
 	ret.pushBack(stateType);
 	ret.pushBack(" state) {\n");
 
 	// function body which switch case
-	ret.pushBack("\t\tswitch(state) {\n");
+	ret.pushBack("\tswitch(state) {\n");
 	foreach(it; min.states) {
-		ret.pushBack("\t\t\tcase ");	
+		ret.pushBack("\t\tcase ");	
 		ret.pushBack(conv!(int,string)(it.getStateId()));
 		ret.pushBack(":\n");
 		if(it.isAccepting()) {
-			ret.pushBack("\t\t\t\treturn ");
+			ret.pushBack("\t\t\treturn ");
 			ret.pushBack(conv!(int,string)(it.getFirstAcceptingState()));
 		} else {
-			ret.pushBack("\t\t\t\treturn -1");
+			ret.pushBack("\t\t\treturn -1");
 		}
 		ret.pushBack(";\n");
 	}
 
 	// default case
-	ret.pushBack("\t\t\tdefault:\n");
-	ret.pushBack("\t\t\t\tassert(false, \"an invalid state was passed \" ~\n");
-	ret.pushBack("\t\t\t\t\tconv!(stateType,string)(state));\n");
-	ret.pushBack("\t\t}\n");
+	ret.pushBack("\t\tdefault:\n");
+	ret.pushBack("\t\t\tassert(false,"),
+	ret.pushBack(" format(\"an invalid state with id %d was passed\",\n");
+	ret.pushBack("\t\t\t\tstate)\n");
 	ret.pushBack("\t}\n");
+	ret.pushBack("}\n");
 
 	return ret.getString();
 }
@@ -711,7 +712,7 @@ string createTable(MinTable min, ref string stateType) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(min.table.getSize() * 
 		min.table[0].getSize() * 4);
 
-	ret.pushBack("\tprivate");
+	ret.pushBack("public static");
 
 	int max = 0;
 	foreach(it; min.table) {
@@ -722,13 +723,13 @@ string createTable(MinTable min, ref string stateType) {
 		}
 	}
 	if(max < 127) {
-		ret.pushBack(" immutable byte[][] table = [\n");
+		ret.pushBack(" immutable(byte[][]) table = [\n");
 		stateType = "byte";
-	} else if(max < 32768) {
-		ret.pushBack(" immutable short[][] table = [\n");
+	} else if(max < 16384) {
+		ret.pushBack(" immutable(short[][]) table = [\n");
 		stateType = "short";
 	} else {
-		ret.pushBack(" immutable int[][] table = [\n");
+		ret.pushBack(" immutable(int[][]) table = [\n");
 		stateType = "int";
 	}
 
@@ -740,7 +741,7 @@ string createTable(MinTable min, ref string stateType) {
 	string form = "%" ~ conv!(int,string)(indent) ~ "d,";
 
 	foreach(Vector!(int) it; min.table) {
-		ret.pushBack("\t[");
+		ret.pushBack("[");
 		foreach(int jt; it) {
 			ret.pushBack(format!(char,char)(form, jt));
 		}
@@ -940,13 +941,13 @@ string createCharRange(MinTable min) {
 	StringBuffer!(dchar) ret = 
 		new StringBuffer!(dchar)(min.inputChar.getSize()*8);
 
-	ret.pushBack("\tstatic immutable Range!(dchar,size_t)[");
+	ret.pushBack("static immutable(Range!(dchar,size_t)[");
 	ret.pushBack(conv!(size_t,dstring)(vec.getSize()));
-	ret.pushBack("] inputRange = [");
+	ret.pushBack("]) inputRange = [");
 	int cnt = 0;
 	foreach(kt; vec) {
-		if(cnt % 3 == 0) {
-			ret.pushBack("\n\t\t");
+		if(cnt % 2 == 0) {
+			ret.pushBack("\n\t");
 		}
 		if(!kt.isLastSet()) {
 			ret.pushBack("Range!(dchar,size_t)('");
@@ -1019,6 +1020,33 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 	file.writeString(userCodeFormatted);
 	file.writeString("}");
 	file.close();
+}
+
+void emitNonStatic(MinTable min, Input input, string modulename, 
+		string filename) {
+	string stateType;
+	string table = createTable(min, stateType);
+	string isAcceptinStateFunction = 
+		createIsAcceptingStateFunction(min,stateType);
+	string charRange = createCharRange(min);
+
+	hurt.io.stream.File file = new hurt.io.stream.File(filename, 
+		FileMode.OutNew);
+
+	string[] imports = ["hurt.string.formatter","hurt.algo.binarysearchrange"];
+
+	sort!(string)(imports, function(in string a, in string b) {
+		return a < b;});
+
+	file.writeString(format("module %s;\n\n", modulename));
+	foreach(string it; imports) {
+		file.writeString(format("import %s;\n", it));
+	}
+	file.write('\n');
+	file.writeString(table);
+	file.writeString(isAcceptinStateFunction);
+	file.writeString(charRange);
+	file.close();	
 }
 
 // Static parts of the lexer
