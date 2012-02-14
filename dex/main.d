@@ -22,8 +22,11 @@ void main(string[] args) {
 	string inputFilename = null;
 	ar.setOption("-i", "--input", "set the input file", inputFilename);
 
-	string outputFilename = "out.d";
+	string outputFilename = null;
 	ar.setOption("-o", "--output", "set the output file", outputFilename);
+
+	string outputClassname = null;
+	ar.setOption("-oc", "--outputclassname", "set the class name of output file", outputClassname);
 
 	string nfaFilename = null;
 	ar.setOption("-ng", "--nfagraph", "set the output file for the nfa graph" ~
@@ -41,7 +44,8 @@ void main(string[] args) {
 		mdfaFilename);
 
 	string nonStatic;
-	ar.setOption("-n", "--nonstatic", "set the filename for the non static part" 		~ " of the lexer", nonStatic);
+	ar.setOption("-n", "--nonstatic", "set the filename for the non static part" 		
+		~ " of the lexer", nonStatic);
 
 	string nonStaticModulename;
 	ar.setOption("-nm", "--nonstaticname", "set the modulename for the non " ~
@@ -90,7 +94,9 @@ void main(string[] args) {
 
 	// emit lexer
 	//re.writeTable("dfaTable",min);
-	//emitLexer(min,input,"DLexer",outputFilename);
+	if(outputFilename !is null && outputFilename.length) {
+		emitLexer(min,input,outputClassname,outputFilename);
+	}
 	if(nonStatic !is null && nonStatic.length) {
 		emitNonStatic(min,input,nonStaticModulename, nonStatic);
 	}

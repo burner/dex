@@ -345,14 +345,11 @@ string replaceNewline(string str) {
  *
  *  @return The created isAccepetingState function.
  */
-string createIsAcceptingStateFunction(MinTable min, string stateType) {
+string createIsAcceptingStateFunction(MinTable min) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(1024);
 	
 	// function header
-	ret.pushBack("public static int");
-	ret.pushBack(" isAcceptingState(");
-	ret.pushBack(stateType);
-	ret.pushBack(" state) {\n");
+	ret.pushBack("public static int isAcceptingState(stateType state) {\n");
 
 	// function body which switch case
 	ret.pushBack("\tswitch(state) {\n");
@@ -575,13 +572,11 @@ string createDefaultRunFunction(MinTable min, string stateType,
  *
  *  @return The created getNextState function.
  */
-string createGetNextState(string returnType) {
+string createGetNextState() {
 	StringBuffer!(char) ret = new StringBuffer!(char)(256);
 
-	ret.pushBack("\tprivate ");
-	ret.pushBack(returnType);
+	ret.pushBack("\tprivate stateType");
 	ret.pushBack(" getNextState(dchar inputChar, ");
-	ret.pushBack(returnType);
 	ret.pushBack(" currentState) {\n");
 	ret.pushBack("\t\tMapItem!(dchar,size_t) cm = ");
 	ret.pushBack("this.charMapping.find(inputChar);\n");
@@ -589,7 +584,6 @@ string createGetNextState(string returnType) {
 	ret.pushBack("\t\tsize_t column = *cm;\n");
 	ret.pushBack("\t\tsize_t row = this.stateMapping[currentState];\n");
 	ret.pushBack("\t\treturn this.table[row][column];\n");
-	//ret.pushBack("\t\t}\n\n");
 	ret.pushBack("\t}\n\n");
 	return ret.getString();
 }
@@ -658,7 +652,7 @@ string createCharMapping(MinTable min) {
  *  @return A string containing the array of state mappings.
  */
 string createStateMapping(MinTable min) {
-	StringBuffer!(char) ret = new StringBuffer!(char)(min.state.length * 6);
+	StringBuffer!(char) ret = new StringBuffer!(char)(1024);
 
 	// get the highest state id
 	int max = 0;
@@ -670,11 +664,11 @@ string createStateMapping(MinTable min) {
 
 	// define the array
 	if(max < 127) {
-		ret.pushBack("\timmutable byte[] stateMapping = [\n\t");
+		ret.pushBack("immutable byte[] stateMapping = [\n");
 	} else if(max < 32768) {
-		ret.pushBack("\timmutable short[] stateMapping = [\n\t");
+		ret.pushBack("immutable short[] stateMapping = [\n");
 	} else {
-		ret.pushBack("\timmutable int[] stateMapping = [\n\t");
+		ret.pushBack("immutable int[] stateMapping = [\n");
 	}
 
 	// find out how many spaces are need to pretty print
@@ -941,7 +935,7 @@ string createCharRange(MinTable min) {
 	StringBuffer!(dchar) ret = 
 		new StringBuffer!(dchar)(min.inputChar.getSize()*8);
 
-	ret.pushBack("static immutable(Range!(dchar,size_t)[");
+	ret.pushBack("public static immutable(Range!(dchar,size_t)[");
 	ret.pushBack(conv!(size_t,dstring)(vec.getSize()));
 	ret.pushBack("]) inputRange = [");
 	int cnt = 0;
@@ -998,7 +992,6 @@ private string escapeTick(string str) {
 private string getTokenAcceptFunction(Input input) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(1024);
 	ret.pushBack("public static immutable(string) acceptAction = \n`");
-	ret.pushBack("switch(isAccepting) {\n");
 
 	foreach(RegexCode it; input.getRegExCode()) {
 		ret.pushBack("\tcase ");
@@ -1007,9 +1000,6 @@ private string getTokenAcceptFunction(Input input) {
 		ret.pushBack(it.getCode());
 		ret.pushBack("\n\t\t}\n\t\tbreak;\n");
 	}
-	ret.pushBack("\tdefault:\n");
-	ret.pushBack("\t\tassert(false, format(\\\"no action for %d defined\\\")");
-	ret.pushBack(", isAcception);\n");
 	ret.pushBack("}`");
 
 	return ret.getString();
@@ -1028,28 +1018,8 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 		FileMode.OutNew);
 
 	file.writeString(base);
-	string usercode = input.getUserCode();
 	file.writeString("class " ~ classname ~ classHeader);
-	string stateType;
-	string table = createTable(min, stateType);
-	string stateMapping = createStateMapping(min);
-	string createInputCharMapping = createCharMapping(min);
-	string createInputCharRange = createCharRange(min);
-	string getNextState = createGetNextState(stateType);
-	string defaultRunFunction = createDefaultRunFunction(min, stateType, 
-		input);
-	string isAcceptinStateFunction = 
-		createIsAcceptingStateFunction(min,stateType);
-	string userCodeFormatted = formatUserCode(input.getUserCode());
-	file.writeString(stateMapping);
-	file.writeString(table);
-	file.writeString(createInputCharRange);
-	file.writeString(createInputCharMapping);
-	file.writeString(getNextState);
-	file.writeString(defaultRunFunction);
-	file.writeString(isAcceptinStateFunction);
 	file.writeString(classBody);
-	file.writeString(userCodeFormatted);
 	file.writeString("}");
 	file.close();
 }
@@ -1059,9 +1029,10 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 	string stateType;
 	string table = createTable(min, stateType);
 	string isAcceptinStateFunction = 
-		createIsAcceptingStateFunction(min,stateType);
+		createIsAcceptingStateFunction(min);
 	string charRange = createCharRange(min);
 	string tokenAccept = getTokenAcceptFunction(input);
+	string stateMapping = createStateMapping(min);
 
 	hurt.io.stream.File file = new hurt.io.stream.File(filename, 
 		FileMode.OutNew);
@@ -1071,11 +1042,17 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 	sort!(string)(imports, function(in string a, in string b) {
 		return a < b;});
 
+
 	file.writeString(format("module %s;\n\n", modulename));
 	foreach(string it; imports) {
 		file.writeString(format("import %s;\n", it));
 	}
+
 	file.write('\n');
+	file.writeString("alias ");
+	file.writeString(stateType);
+	file.writeString(" stateType\n\n");
+	file.writeString(stateMapping);
 	file.writeString(table);
 	file.writeString(isAcceptinStateFunction);
 	file.write('\n');
@@ -1095,15 +1072,9 @@ import hurt.io.stream;
 import hurt.string.utf;
 import hurt.string.stringbuffer;
 
-abstract class Lexer {
-	public void run();
-	public dchar eolChar() const;
-	public dchar eofChar() const;
-}
-
 `;
 
-private string classHeader = ` : Lexer {
+private string classHeader = ` {
 	private string filename;
 	private hurt.io.stream.BufferedFile file;
 
@@ -1111,8 +1082,6 @@ private string classHeader = ` : Lexer {
 	private size_t charIdx;
 	private dchar[] currentLine;
 	private StringBuffer!(dchar) lexText;
-
-	private Map!(dchar,size_t) charMapping;
 `;
 
 private string classBody = `
@@ -1125,12 +1094,15 @@ private string classBody = `
 				this.filename ~ " does not exists");
 		}
 
-		this.charMapping = new Map!(dchar,size_t)();
-
 		this.file = new hurt.io.stream.BufferedFile(this.filename);
 		this.lexText = new StringBuffer!(dchar)(128);
-		this.initCharMapping();
 		this.getNextLine();
+	}
+
+	~this() {
+		if(this.file !is null && this.file.isOpen()) {
+			this.file.close();
+		}
 	}
 
 	public void printFile() {
@@ -1141,7 +1113,7 @@ private string classBody = `
 		}
 	}
 
-	public dstring getCurrentLex() {
+	public dstring getCurrentLex() const {
 		return this.lexText.getString();
 	}
 
@@ -1159,6 +1131,13 @@ private string classBody = `
 
 	public bool isEOF() {
 		return this.file.eof();	
+	}
+
+	private stateType getNextState(dchar inputChar, stateType currentState) {
+		size_t column = binarySearchRange!(dchar,size_t)(inputRange, inputChar, -2);
+		size_t row = stateMapping[conv!(stateType,size_t)(currentState)];
+		assert(column != -2);
+		return table[row][column];
 	}
 
 	public bool isEmpty() {
@@ -1200,6 +1179,15 @@ private string classBody = `
 				conv!(size_t,string)(this.currentLine.length));
 
 			return this.currentLine[this.charIdx++];
+		}
+	}
+
+	public void acceptingAction(int acceptingState) {
+		switch(acceptingState) {
+				mixin(acceptAction);
+			default:
+				assert(false, format("no action for %d defined"
+					acceptingState));
 		}
 	}
 `;
