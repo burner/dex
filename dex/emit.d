@@ -349,7 +349,7 @@ string createIsAcceptingStateFunction(MinTable min) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(1024);
 	
 	// function header
-	ret.pushBack("public static int isAcceptingState(stateType state) {\n");
+	ret.pushBack("public static stateType isAcceptingState(stateType state) {\n");
 
 	// function body which switch case
 	ret.pushBack("\tswitch(state) {\n");
@@ -370,7 +370,7 @@ string createIsAcceptingStateFunction(MinTable min) {
 	ret.pushBack("\t\tdefault:\n");
 	ret.pushBack("\t\t\tassert(false,"),
 	ret.pushBack(" format(\"an invalid state with id %d was passed\",\n");
-	ret.pushBack("\t\t\t\tstate)\n");
+	ret.pushBack("\t\t\t\tstate));\n");
 	ret.pushBack("\t}\n");
 	ret.pushBack("}\n");
 
@@ -1000,7 +1000,7 @@ private string getTokenAcceptFunction(Input input) {
 		ret.pushBack(it.getCode());
 		ret.pushBack("\n\t\t}\n\t\tbreak;\n");
 	}
-	ret.pushBack("}`");
+	ret.pushBack("`;");
 
 	return ret.getString();
 }
@@ -1037,7 +1037,7 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 	hurt.io.stream.File file = new hurt.io.stream.File(filename, 
 		FileMode.OutNew);
 
-	string[] imports = ["hurt.string.formatter","hurt.algo.binarysearchrange"];
+	string[] imports = ["hurt.string.formatter","hurt.algo.binaryrangesearch"];
 
 	sort!(string)(imports, function(in string a, in string b) {
 		return a < b;});
@@ -1051,7 +1051,7 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 	file.write('\n');
 	file.writeString("alias ");
 	file.writeString(stateType);
-	file.writeString(" stateType\n\n");
+	file.writeString(" stateType;\n\n");
 	file.writeString(stateMapping);
 	file.writeString(table);
 	file.writeString(isAcceptinStateFunction);
@@ -1064,13 +1064,16 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 // Static parts of the lexer
 private string base = `
 import hurt.algo.binaryrangesearch;
-import hurt.conv.conv;
 import hurt.container.map;
+import hurt.container.stack;
+import hurt.conv.conv;
 import hurt.io.file;
 import hurt.io.stdio;
 import hurt.io.stream;
-import hurt.string.utf;
+import hurt.string.format;
 import hurt.string.stringbuffer;
+import hurt.string.utf;
+import hurt.util.slog;
 
 `;
 
@@ -1082,27 +1085,29 @@ private string classHeader = ` {
 	private size_t charIdx;
 	private dchar[] currentLine;
 	private StringBuffer!(dchar) lexText;
+	private Stack!(dchar) inputChar;
+	private immutable dchar eol = '\n';
+	private immutable dchar eof = '\0';
 `;
 
 private string classBody = `
 	this(string filename) {
 		this.filename = filename;
 		this.lineNumber = 0;
+		this.inputChar = new Stack!(dchar)();
 
 		if(!exists(this.filename)) {
 			throw new Exception(__FILE__ ~ ":" ~ conv!(int,string)(__LINE__) ~
 				this.filename ~ " does not exists");
 		}
 
+		this.file = null;
 		this.file = new hurt.io.stream.BufferedFile(this.filename);
 		this.lexText = new StringBuffer!(dchar)(128);
 		this.getNextLine();
 	}
 
 	~this() {
-		if(this.file !is null && this.file.isOpen()) {
-			this.file.close();
-		}
 	}
 
 	public void printFile() {
@@ -1113,15 +1118,15 @@ private string classBody = `
 		}
 	}
 
-	public dstring getCurrentLex() const {
+	private dstring getCurrentLex() const {
 		return this.lexText.getString();
 	}
 
-	public size_t getCurrentLineCount() const {
+	private size_t getCurrentLineCount() const {
 		return this.lineNumber;
 	}
 
-	public size_t getCurrentIndexInLine() const {
+	private size_t getCurrentIndexInLine() const {
 		return this.charIdx;
 	}
 
@@ -1129,18 +1134,20 @@ private string classBody = `
 		return this.filename;
 	}
 
-	public bool isEOF() {
+	private bool isEOF() {
 		return this.file.eof();	
 	}
 
-	private stateType getNextState(dchar inputChar, stateType currentState) {
+	private stateType getNextState(dchar inputChar, stateType currentState) const {
 		size_t column = binarySearchRange!(dchar,size_t)(inputRange, inputChar, -2);
 		size_t row = stateMapping[conv!(stateType,size_t)(currentState)];
-		assert(column != -2);
+		if(column == -2) {
+			return -1;
+		}
 		return table[row][column];
 	}
 
-	public bool isEmpty() {
+	private bool isEmpty() {
 		return this.isEOF() && (this.currentLine is null || 
 			this.charIdx > this.currentLine.length);
 	}
@@ -1156,23 +1163,25 @@ private string classBody = `
 		this.lineNumber++;
 	}
 
-	public dchar getCurrentChar() {
+	private dchar getCurrentChar() {
 		if(this.isEmpty()) {
-			return eofChar();
+			return eof;
 		} else if(this.charIdx >= this.currentLine.length) {
 			this.getNextLine();
-			return eolChar();
+			return eol;
 		} else {
 			return this.currentLine[this.charIdx];
 		}
 	}
 
-	public dchar getNextChar() {
-		if(this.isEmpty()) {
-			return eofChar();
+	private dchar getNextChar() {
+		if(!this.inputChar.isEmpty()) {
+			return this.inputChar.pop();
+		} else if(this.isEmpty()) {
+			return eof;
 		} else if(this.charIdx >= this.currentLine.length) {
 			this.getNextLine();
-			return eolChar();
+			return eol;
 		} else {
 			assert(this.charIdx < this.currentLine.length, 
 				conv!(size_t,string)(this.charIdx) ~ " " ~
@@ -1182,13 +1191,64 @@ private string classBody = `
 		}
 	}
 
-	public void acceptingAction(int acceptingState) {
+	public void acceptingAction(stateType acceptingState) {
 		switch(acceptingState) {
 				mixin(acceptAction);
 			default:
 				assert(false, format("no action for %d defined"
 					acceptingState));
 		}
+	}
+
+	private bool errorFunction(stateType currentState, stateType nextState, dchar input) {
+		return false;
+	}
+
+	public void run() {
+		stateType currentState = 0;
+		stateType nextState = -1;
+		while(!this.isEmpty()) {
+			dchar nextChar = this.getNextChar();
+			nextState = this.getNextState(nextChar, currentState);
+			if(nextState != -1) { // simplie a next state
+				currentState = nextState;
+				lexText.pushBack(nextChar);
+			// accepting state
+			} else if(nextState == -1) { 
+				stateType accept = isAcceptingState(currentState);
+				if(accept != -1) {
+					//log("%2d accept number %d", currentState, accept);
+					inputChar.push(nextChar);
+					this.acceptingAction(accept);
+					this.lexText.clear();
+					currentState = 0;
+				} else {
+					if(this.errorFunction(currentState, nextState, nextChar)) {
+						currentState = 0;
+						this.lexText.clear();
+					} else {
+						assert(false, 
+							format("we failed with state %d and nextstate %d, " ~ 
+							"inputchar was %c", currentState, nextState, nextChar));
+					}
+				}
+			}
+		}
+
+		// we are done but there their might be a state left
+		if(currentState == 0) {
+			//ok I guess
+			return;
+		} else if(isAcceptingState(currentState)) {
+			this.acceptingAction(currentState);
+			this.lexText.clear();
+			return;
+		} else {
+			//hm not so cool
+			assert(false, format("no more input when in state %d", 
+				currentState));
+		}
+		this.file.close();
 	}
 `;
 
