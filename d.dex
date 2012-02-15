@@ -1,0 +1,17 @@
+"[:digit:][:digit:_]*" {: printfln("int %s", lexText.getString()); :}
+"0x[01234567][01234567_]*" {: printfln("hex %s", lexText.getString()); :}
+"0b[01][01_]*" {: printfln("binary %s", lexText.getString()); :}
+"if" {: printfln("for %s", lexText.getString()); :}
+"for" {: printfln("for %s", lexText.getString()); :}
+"int" {: printfln("integer %s", lexText.getString()); :}
+"void" {: printfln("void %s", lexText.getString()); :}
+"function" {: printfln("function %s", lexText.getString()); :}
+"[:alpha:][:word:]*" {: printfln("identifer %s", lexText.getString()); :}
+"\\"[:word:äöüß%?=)(&%$§! ]*\\"" {: printfln("string %s", lexText.getString()); :}
+"." {: printfln("dot %s", lexText.getString()); :}
+"(" {: printfln("left par %s", lexText.getString()); :}
+")" {: printfln("right par %s", lexText.getString()); :}
+"{" {: printfln("left curly %s", lexText.getString()); :}
+"}" {: printfln("right curly %s", lexText.getString()); :}
+"=" {: printfln("equal %s", lexText.getString()); :}
+"[ \\t\\n]*" {: :}
