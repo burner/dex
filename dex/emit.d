@@ -1134,7 +1134,8 @@ private string classBody = `
 	}
 
 	private stateType getNextState(dchar inputChar, stateType currentState) {
-		size_t column = binarySearchRange!(dchar,size_t)(inputRange, inputChar, -2);
+		size_t column = binarySearchRange!(dchar,size_t)(inputRange, inputChar,
+			-2);
 		size_t row = stateMapping[conv!(stateType,size_t)(currentState)];
 		assert(column != -2);
 		return table[row][column];

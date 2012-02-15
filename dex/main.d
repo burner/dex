@@ -26,7 +26,8 @@ void main(string[] args) {
 	ar.setOption("-o", "--output", "set the output file", outputFilename);
 
 	string outputClassname = null;
-	ar.setOption("-oc", "--outputclassname", "set the class name of output file", outputClassname);
+	ar.setOption("-oc", "--outputclassname", "set the class name of output file"
+		, outputClassname);
 
 	string nfaFilename = null;
 	ar.setOption("-ng", "--nfagraph", "set the output file for the nfa graph" ~
@@ -44,7 +45,7 @@ void main(string[] args) {
 		mdfaFilename);
 
 	string nonStatic;
-	ar.setOption("-n", "--nonstatic", "set the filename for the non static part" 		
+	ar.setOption("-n", "--nonstatic", "set the filename for the non static part"
 		~ " of the lexer", nonStatic);
 
 	string nonStaticModulename;
