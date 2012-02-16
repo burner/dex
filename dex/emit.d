@@ -1088,10 +1088,13 @@ private string classHeader = ` {
 	private Stack!(dchar) inputChar;
 	private immutable dchar eol = '\n';
 	private immutable dchar eof = '\0';
+
+	// false means single run, true means step be step
+	private bool kind;
 `;
 
 private string classBody = `
-	this(string filename) {
+	this(string filename, bool kind = false) {
 		this.filename = filename;
 		this.lineNumber = 0;
 		this.inputChar = new Stack!(dchar)();
@@ -1105,6 +1108,8 @@ private string classBody = `
 		this.file = new hurt.io.stream.BufferedFile(this.filename);
 		this.lexText = new StringBuffer!(dchar)(128);
 		this.getNextLine();
+
+		this.kind = false;
 	}
 
 	~this() {
@@ -1149,7 +1154,7 @@ private string classBody = `
 		return table[row][column];
 	}
 
-	private bool isEmpty() {
+	public bool isEmpty() {
 		return this.isEOF() && (this.currentLine is null || 
 			this.charIdx > this.currentLine.length);
 	}
@@ -1235,6 +1240,9 @@ private string classBody = `
 							" ~ "inputchar was %c", currentState, 
 							nextState, nextChar));
 					}
+				}
+				if(this.kind) { // single step
+					return;
 				}
 			}
 		}
