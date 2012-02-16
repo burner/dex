@@ -1070,7 +1070,7 @@ import hurt.conv.conv;
 import hurt.io.file;
 import hurt.io.stdio;
 import hurt.io.stream;
-import hurt.string.format;
+import hurt.string.formatter;
 import hurt.string.stringbuffer;
 import hurt.string.utf;
 import hurt.util.slog;
@@ -1197,12 +1197,13 @@ private string classBody = `
 		switch(acceptingState) {
 				mixin(acceptAction);
 			default:
-				assert(false, format("no action for %d defined"
+				assert(false, format("no action for %d defined",
 					acceptingState));
 		}
 	}
 
-	private bool errorFunction(stateType currentState, stateType nextState, dchar input) {
+	private bool errorFunction(stateType currentState, stateType nextState, 
+			dchar input) {
 		return false;
 	}
 
@@ -1230,8 +1231,9 @@ private string classBody = `
 						this.lexText.clear();
 					} else {
 						assert(false, 
-							format("we failed with state %d and nextstate %d, " ~ 
-							"inputchar was %c", currentState, nextState, nextChar));
+							format("we failed with state %d and nextstate %d, 
+							" ~ "inputchar was %c", currentState, 
+							nextState, nextChar));
 					}
 				}
 			}
