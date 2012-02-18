@@ -1,0 +1,15 @@
+"++" {: this.deque.pushBack(Token(this.getLoc(), termdecrement)); :}
+"--" {: this.deque.pushBack(Token(this.getLoc(), termincrement)); :}
+"/" {: this.deque.pushBack(Token(this.getLoc(), termdiv)); :}
+"[:digit:]+.[:digit:]+ {: 
+	this.deque.pushBack(Token(this.getLoc(), termfloat, this.getCurrentLex())); 
+:}
+
+"[:digit:]+ {: 
+	this.deque.pushBack(Token(this.getLoc(), terminteger, 
+		this.getCurrentLex())); 
+:}
+
+"-" {: this.deque.pushBack(Token(this.getLoc(), termminus)); :}
+"%" {: this.deque.pushBack(Token(this.getLoc(), termmodulo)); :}
+"+" {: this.deque.pushBack(Token(this.getLoc(), termplus)); :}

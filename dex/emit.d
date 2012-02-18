@@ -1074,6 +1074,7 @@ import hurt.string.formatter;
 import hurt.string.stringbuffer;
 import hurt.string.utf;
 import hurt.util.slog;
+import hurt.util.pair;
 
 `;
 
@@ -1133,6 +1134,11 @@ private string classBody = `
 
 	private size_t getCurrentIndexInLine() const {
 		return this.charIdx;
+	}
+
+	public Pair!(int,int) getLoc() const {
+		return Pair!(int,int)(this.getCurrentLineCount(),
+			this.getCurrentIndexInLine());
 	}
 
 	public string getFilename() const {
