@@ -1042,12 +1042,14 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 	sort!(string)(imports, function(in string a, in string b) {
 		return a < b;});
 
-
 	file.writeString(format("module %s;\n\n", modulename));
 	foreach(string it; imports) {
 		file.writeString(format("import %s;\n", it));
 	}
 
+	file.write('\n');
+	file.writeString(locStruct);
+	file.write('\n');
 	file.write('\n');
 	file.writeString("alias ");
 	file.writeString(stateType);
@@ -1089,6 +1091,8 @@ private string classHeader = ` {
 	private Stack!(dchar) inputChar;
 	private immutable dchar eol = '\n';
 	private immutable dchar eof = '\0';
+
+	private Location loc;
 
 	// false means single run, true means step be step
 	private bool kind;
@@ -1134,11 +1138,6 @@ private string classBody = `
 
 	private size_t getCurrentIndexInLine() const {
 		return this.charIdx;
-	}
-
-	public Pair!(int,int) getLoc() const {
-		return Pair!(int,int)(this.getCurrentLineCount(),
-			this.getCurrentIndexInLine());
 	}
 
 	public string getFilename() const {
@@ -1213,6 +1212,15 @@ private string classBody = `
 		}
 	}
 
+	public Location getLoc() {
+		return this.loc;
+	}
+
+	public void saveLocation() {
+		this.loc = Location(this.filename, this.getCurrentLineCount(),
+			this.getCurrentIndexInLine());
+	}
+
 	private bool errorFunction(stateType currentState, stateType nextState, 
 			dchar input) {
 		return false;
@@ -1221,6 +1229,7 @@ private string classBody = `
 	public void run() {
 		stateType currentState = 0;
 		stateType nextState = -1;
+		this.saveLocation();
 		while(!this.isEmpty()) {
 			dchar nextChar = this.getNextChar();
 			nextState = this.getNextState(nextChar, currentState);
@@ -1236,9 +1245,11 @@ private string classBody = `
 					this.acceptingAction(accept);
 					this.lexText.clear();
 					currentState = 0;
+					this.saveLocation();
 				} else {
 					if(this.errorFunction(currentState, nextState, nextChar)) {
 						currentState = 0;
+						this.saveLocation();
 						this.lexText.clear();
 					} else {
 						assert(false, 
@@ -1269,6 +1280,31 @@ private string classBody = `
 		this.file.close();
 	}
 `;
+
+immutable(string) locStruct = 
+`public struct Location {
+	private string file;
+	private size_t row;
+	private size_t column;
+
+	public this(string file, size_t row, size_t column) {
+		this.file = file;
+		this.row = row;
+		this.column = column;
+	}
+	
+	public string getFile() const {
+		return this.file;
+	}
+
+	public size_t getRow() const {
+		return this.row;
+	}
+
+	public size_t getColumn() const {
+		return this.column;
+	}
+}`;
 
 string runFunction = `
 	/*public void run() { // a stupid run methode could look like this »«¢¢ſð@

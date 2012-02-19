@@ -150,7 +150,9 @@ class Input {
 		ParseState ps = ParseState.None;
 		StringBuffer!(char) tmp = new StringBuffer!(char)(32);
 		int braceStack = 0;
+		char[] zzz;
 		foreach(size_t idx, char[] it; this.ins) {
+			zzz = it;
 			final switch(ps) {
 			case ParseState.None: {
 				// check if line contains the start of a user code segment
@@ -263,6 +265,35 @@ class Input {
 			}
 			}
 		}
+		int ucLow = userCodeParanthesis(zzz);
+		int rucUp = userCodeBrace!(true,'}')(zzz);
+		int ieLow = userCodeBrace!(true,'%')(zzz);
+		final switch(ps) {
+			case ParseState.None:
+				break;
+			case ParseState.UserCode:
+				tmp.pushBack(zzz[0..ucLow]);
+				this.userCode ~= tmp.getString();
+				this.userCode ~= '\n';
+				tmp.clear();
+				ps = ParseState.None;
+				break;
+			case ParseState.InputErrorCode:
+				tmp.pushBack(zzz[0..ieLow]);
+				this.inputErrorCode ~= tmp.getString();
+				tmp.clear();
+				ps = ParseState.None;
+				break;
+			case ParseState.RegexCode:
+				assert(rucUp > 0);
+				tmp.pushBack(zzz[0..rucUp]);
+				tmp.pushBack('\n');
+				this.regexCode.peekBack().setCode(tmp.getString());
+				tmp.clear();
+				ps = ParseState.None;
+				break;
+		}
+		assert(ps == ParseState.None);
 	}
 
 	public Vector!(RegexCode) getRegExCode() {

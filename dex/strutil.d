@@ -464,6 +464,9 @@ public immutable(dchar)[] prepareString(immutable(dchar)[] str) {
 				continue;
 			}
 			ret.pushBack(ST);
+		} else if(str[i] == '+' && i > 0 && str[i-1] == '\\') {
+			ret.popBack();
+			ret.pushBack('+');
 		} else if((str[i] == '[' && i > 0 && str[i-1] != '\\')
 				|| (str[i] == '[' && i == 0)) {
 			StringBuffer!(dchar) tmp = new StringBuffer!(dchar)();
