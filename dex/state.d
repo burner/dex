@@ -74,7 +74,7 @@ class State {
 
 	public void setAcceptingState(in int sId) {
 		this.acceptingState = true;
-		this.aStates.insert(sId);;	
+		this.aStates.insert(sId);
 	}
 
 	public int getFirstAcceptingState() {
