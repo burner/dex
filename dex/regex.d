@@ -228,7 +228,7 @@ class RegEx {
 		
 		int count = 0;	
 		while(!unmarkedStates.empty()) {
-			//println(count, " ",unmarkedStates.getSize()); count++;
+			log("%d %u",count,unmarkedStates.getSize()); count++;
 			// process an unprocessed state
 			State processingDFAState = unmarkedStates.popBack();
 

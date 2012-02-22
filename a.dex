@@ -1,40 +1,5 @@
-%%
-	foobar
-	foobar2
-	foobar3
-%%
-
-%% foobar4
-	foobar5
-	foobar6
-"long" {: long :}
-"if" {: if :}
-"for" {: for :}
-"while" {: while :}
-"do" {: do :}
-"int" {: int :}
-"void" {: void :}
-"delegate" {: delegate :}
-"function" {: function :}
-"template" {: template :}
-"&&" {: logicand :}
-"||" {: logicor :}
-"[+-:digit:][:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
-"[+-:digit:][:digit:][:digit:_]*.[:digit:_]*" {: float :}
-"[:digit:][:digit:_]*.[:digit:_]*[fdr]" {: float :}
-"[:digit:][:digit:_]*.[:digit:_]*" {: float :}
-"[:alpha:][:word:]*" {: identifer foobar :}
-{%printfln("lex error at character %d of line %d in file %s",
-  	this.getCurrentIndexInLine(), this.getCurrentLineCount(),
-  	this.getFilename());%}
-"[+-:digit:][:digit:][:digit:_]*" {: int :}
-"0x[+-01234567][01234567][01234567_]*" {: hex :}
-"0b[+-01][01_]*" {: bin :}
-%%
-
-
-%% foobar7 %%
-
 "[:digit:][:digit:_]*" {: printfln("int %s", this.getCurrentLex()); :}
 "0x[01234567][01234567_]*" {: printfln("hex %s", this.getCurrentLex()); :}
 "0b[01][01_]*" {: printfln("bin %s", this.getCurrentLex()); :}
+"[:latinSup:latin:latinExA:]+" {: printfln("printable %s", this.getCurrentLex()); :}
+"if" {: printfln("if"); :}

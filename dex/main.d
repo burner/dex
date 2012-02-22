@@ -66,17 +66,23 @@ void main(string[] args) {
 		println(e.msg);
 		return;
 	}
+	log();
 
 	// create the minimized dfa
 	println("please wait ... this can take some time");
 	RegEx re = new RegEx();
 	foreach(it; input.getRegExCode()) {
+		log("%s", it.getRegEx());
 		re.createNFA(it.getRegEx(), conv!(size_t,int)(it.getPriority()));
 	}
+	log();
 
 	re.convertNfaToDfa();
+	log();
 	re.findErrorState();
+	log();
 	re.minimize();
+	log();
 	
 	// print graphs
 	if(mdfaFilename !is null) {
@@ -106,5 +112,5 @@ void main(string[] args) {
 	//re.minTable();
 	delete input;
 	delete st;
-	//Trace.printStats();
+	Trace.printStats();
 }

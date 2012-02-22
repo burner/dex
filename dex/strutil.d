@@ -7,6 +7,7 @@ import hurt.algo.sorting;
 import hurt.container.multimap;
 import hurt.container.vector;
 import hurt.conv.conv;
+import hurt.conv.tointeger;
 import hurt.io.stdio;
 import hurt.string.stringbuffer;
 import hurt.string.stringutil;
@@ -287,6 +288,31 @@ public pure bool presedence(T)(T opLeft, T opRight)
 	return true;
 }
 
+private pure dstring fill(int from, int till) {
+	dchar[] ret = new dchar[till-from];
+	ulong idx;
+	for(int i = from; i < till; i++, idx++) {
+		ret[idx] = cast(dchar)i;	
+	}
+	assert(idx == ret.length);
+	assert(__ctfe);
+	return ret.idup;
+}
+
+private static immutable(dstring) latin = fill(hexStrToInt("0x0041"),hexStrToInt("0x007F"));
+private static immutable(dstring) latinSup = fill(hexStrToInt("0x00A1"), hexStrToInt("0x00FF"));
+private static immutable(dstring) latinExA = fill(hexStrToInt("0x0100"), hexStrToInt("0x017F"));
+private static immutable(dstring) latinExB = fill(hexStrToInt("0x0180"), hexStrToInt("0x024F"));
+private static immutable(dstring) latinExC = fill(hexStrToInt("0x2C60"), hexStrToInt("0x2C7F"));
+private static immutable(dstring) greek = fill(hexStrToInt("0x0370"),hexStrToInt("0x03FF"));
+private static immutable(dstring) ipa = fill(hexStrToInt("0x0250"), hexStrToInt("0x02AF"));
+private static immutable(dstring) cyrillic = fill(hexStrToInt("0x0400"), hexStrToInt("0x04FF"));
+private static immutable(dstring) hewbrew = fill(hexStrToInt("0x0590"), hexStrToInt("0x05FF"));
+private static immutable(dstring) arabic = fill(hexStrToInt("0x0600"), hexStrToInt("0x06FF"));
+private static immutable(dstring) arabicExA = fill(hexStrToInt("0x08A0"), hexStrToInt("0x08FF"));
+private static immutable(dstring) currencySym = fill(hexStrToInt("0x20A0"), hexStrToInt("0x20CF"));
+private static immutable(dstring) cjk = fill(hexStrToInt("0x2E80"), hexStrToInt("0x9FFF"));
+
 /** Replace aliases. 0-9 becomes 0123456789 and so on.
  *  TODO make more like
  *  	Madarin
@@ -331,6 +357,44 @@ public pure T[] aliases(T)(T[] str)
 			return xdigits.dup;
 		case ":odigit:":
 			return digits[0..8].dup;
+		case ":latinAll:":
+			return (latin ~ latinSup ~ latinExA ~ latinExB ~ latinExC).dup;
+		case ":latin:":
+			return latin.dup;
+		case ":latinSup:":
+			return latinSup.dup;
+		case ":latinExA:":
+			return latinExA.dup;
+		case ":latinExB:":
+			return latinExB.dup;
+		case ":latinExC:":
+			return latinExC.dup;
+		case ":greek:":
+			return greek.dup;
+		case ":ipa:":
+			return ipa.dup;
+		case ":cyrillic:":
+			return cyrillic.dup;
+		case ":hewbrew:":
+			return hewbrew.dup;
+		case ":arabic:":
+			return arabic.dup;
+		case ":arabicExA:":
+			return arabicExA.dup;
+		case ":arabicAll:":
+			return (arabic ~ arabicExA).dup;
+		case ":currencySym:":
+			return currencySym.dup;
+		case ":cjk:":
+			return cjk.dup;
+		case ":alllatin:":
+			return (latin ~ latinSup ~ latinExA ~ latinExB ~ latinExC).dup;
+		case ":mostprintable:":
+			return (latin ~ latinSup ~ latinExA ~ latinExB ~ latinExC ~ greek ~ 
+				ipa ~ cyrillic ~ hewbrew ~ arabic ~ arabicExA ~ currencySym).dup;
+		case ":printable:":
+			return (latin ~ latinSup ~ latinExA ~ latinExB ~ latinExC ~ greek ~ 
+				ipa ~ cyrillic ~ hewbrew ~ arabic ~ arabicExA ~ currencySym ~ cjk).dup;
 		default: {
 			assert(0);
 		}
