@@ -26,9 +26,9 @@ class State {
 	this(int nId = -1) {
 		this.stateId = nId;
 		this.acceptingState = false;
-		this.transition = new MultiMap!(dchar,State)();	
-		this.nfaStates = new Set!(State)();
-		this.aStates = new Set!(int)();
+		this.transition = new MultiMap!(dchar,State)(theType);	
+		this.nfaStates = new Set!(State)(theType);
+		this.aStates = new Set!(int)(theType);
 	}
 
 	/** Sort of copy constructor. Set theid and than copy the accepting states

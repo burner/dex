@@ -1,5 +1,5 @@
 "[:digit:][:digit:_]*" {: printfln("int %s", this.getCurrentLex()); :}
 "0x[01234567][01234567_]*" {: printfln("hex %s", this.getCurrentLex()); :}
 "0b[01][01_]*" {: printfln("bin %s", this.getCurrentLex()); :}
-"[:latinSup:latin:latinExA:]+" {: printfln("printable %s", this.getCurrentLex()); :}
+"[:word:]+" {: printfln("printable %s", this.getCurrentLex()); :}
 "if" {: printfln("if"); :}

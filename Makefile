@@ -1,6 +1,5 @@
 all: fine
 
-#CFLAGS=-m64 -offsm -unittest -d-debug -gc
 #CFLAGS=-m64 -offsm -unittest -debug -gc -debug=RegExDebug -debug=StateDebug
 CFLAGS=-m64 -unittest -debug -gc -I../libhurt/ -wi
 #CFLAGS=-m64 -offsm -O -wi -I../libhurt

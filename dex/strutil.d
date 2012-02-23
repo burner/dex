@@ -4,6 +4,7 @@ import dex.parseerror;
 import dex.state;
 
 import hurt.algo.sorting;
+import hurt.container.isr;
 import hurt.container.multimap;
 import hurt.container.vector;
 import hurt.conv.conv;
@@ -12,6 +13,8 @@ import hurt.io.stdio;
 import hurt.string.stringbuffer;
 import hurt.string.stringutil;
 import hurt.util.array;
+
+public static immutable ISRType theType = ISRType.HashTable;
 
 public immutable char LP = '\v';
 public immutable char RP = '\f';

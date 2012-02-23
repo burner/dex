@@ -142,10 +142,12 @@ class RegEx {
 		scope Trace st = new Trace("epsilonClosure");
 		// Initialize result with old because each state
 		// has epsilon closure to itself
-		Set!(State) res = new Set!(State)(ISRType.HashTable);
+		//Set!(State) res = new Set!(State)(ISRType.HashTable);
+		/*Set!(State) res = new Set!(State)(theType);
 		foreach(it; old) {
 			res.insert(it);
-		}
+		}*/
+		Set!(State) res = old.dup();
 
 		// Push all states to be processes on the stack hence
 		Stack!(State) unprocessedStack = new Stack!(State)(old.getSize()*2);
@@ -175,7 +177,7 @@ class RegEx {
 	/// move operation
 	Set!(State) move(dchar chInput, Set!(State) t) const {
 		scope Trace st = new Trace("move");
-		Set!(State) res = new Set!(State)(ISRType.HashTable);
+		Set!(State) res = new Set!(State)(theType);
 	
 		/* This is very simple since I designed the NFA table
 		   structure in a way that we just need to loop through
@@ -207,7 +209,7 @@ class RegEx {
 		Vector!(State) unmarkedStates = new Vector!(State)(32);
 
 		// starting state of NFA state (set of states)
-		Set!(State) NFAStartState = new Set!(State)();
+		Set!(State) NFAStartState = new Set!(State)(theType);
 		// the first state should have a stateId equal 0
 		// otherwise something is wrong with the globalNfaTable
 		assert(this.globalNfaTable.get(0).getStateId() == 0); 
@@ -299,8 +301,8 @@ class RegEx {
 	/// this removes the states with no outgoing states and no accepting states
 	public static FSA_Table removeDeadStates(Iterable!(State) oldTable) {
 		scope Trace st = new Trace("removeDeadStates");
-		Map!(int,State) table = new Map!(int,State)(ISRType.HashTable);
-		Set!(State) deadEndSet = new Set!(State)();
+		Map!(int,State) table = new Map!(int,State)(theType);
+		Set!(State) deadEndSet = new Set!(State)(theType);
 		foreach(it; oldTable) {
 			if(it.isDeadEnd()) {
 				deadEndSet.insert(it);
