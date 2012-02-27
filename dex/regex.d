@@ -553,7 +553,7 @@ class RegEx {
 	void writeNFAGraph(string filename) {
 		scope Trace st = new Trace("writeNFAGraph");
 		auto tmp = removeDeadStates(this.globalNfaTable);
-		dex.emit.writeGraph(tmp,this.inputSet, filename);
+		dex.emit.writeNfa(tmp,this.inputSet, filename);
 	}
 
 	/// write the table for debugging
