@@ -7,7 +7,7 @@
 "void" {: printfln("void %s", lexText.getString()); :}
 "function" {: printfln("function %s", lexText.getString()); :}
 "[:alpha:][:word:]*" {: printfln("identifer %s", lexText.getString()); :}
-"\\"[:word:äöüß%?=)(&%$§! ]*\\"" {: printfln("string %s", lexText.getString()); :}
+"\\"[:latin:latinSup:blank:digit:greek:]*\\"" {: printfln("string %s", lexText.getString()); :}
 "." {: printfln("dot %s", lexText.getString()); :}
 "(" {: printfln("left par %s", lexText.getString()); :}
 ")" {: printfln("right par %s", lexText.getString()); :}

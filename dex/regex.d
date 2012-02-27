@@ -45,6 +45,10 @@ class RegEx {
 	private Vector!(int) vecPos;
 	private Vector!(State) minDfa;
 
+
+	// unprocessed for epsilon closur
+	Stack!(State) unprocessedStack;
+
 	/// constructor
 	this() {
 		this.nfaTable = new FSA_Table();
@@ -138,7 +142,7 @@ class RegEx {
 	}
 
 	/// epsilon closure
-	Set!(State) epsilonClosure(Set!(State) old) const {
+	Set!(State) epsilonClosure(Set!(State) old) {
 		scope Trace st = new Trace("epsilonClosure");
 		// Initialize result with old because each state
 		// has epsilon closure to itself
@@ -147,22 +151,25 @@ class RegEx {
 		foreach(it; old) {
 			res.insert(it);
 		}*/
+		this.unprocessedStack.clear();
 		Set!(State) res = old.dup();
 
 		// Push all states to be processes on the stack hence
-		Stack!(State) unprocessedStack = new Stack!(State)(old.getSize()*2);
+		//Stack!(State) unprocessedStack = new Stack!(State)(old.getSize()*2);
 		foreach(it; old) {
-			unprocessedStack.push(it);
+			this.unprocessedStack.push(it);
 		}
+
+		State t = null;
 
 		// continue till there are no more events
 		while(!unprocessedStack.empty()) {
-			State t = unprocessedStack.pop();
+			t = this.unprocessedStack.pop();
 
 			foreach(it; t.getTransition(0)) {
 				if(!res.contains(it)) {
 					res.insert(it);
-					unprocessedStack.push(it);
+					this.unprocessedStack.push(it);
 				} else {
 					State i = *res.find(it);
 					foreach(jt; i.getAcceptingStates()) {
@@ -175,9 +182,10 @@ class RegEx {
 	}
 
 	/// move operation
-	Set!(State) move(dchar chInput, Set!(State) t) const {
+	Set!(State) move(dchar chInput, Set!(State) t, Set!(State) passAround) const {
 		scope Trace st = new Trace("move");
-		Set!(State) res = new Set!(State)(theType);
+		//Set!(State) res = new Set!(State)(theType);
+		Set!(State) res = passAround;
 	
 		/* This is very simple since I designed the NFA table
 		   structure in a way that we just need to loop through
@@ -185,9 +193,9 @@ class RegEx {
 		   Then we will put all the results into the set, which
 		   will eliminate duplicates automatically for us. */
 		foreach(iter; t) {
-			State[] states = iter.getTransition(chInput);
-			foreach(jter;states) {
-				res.insert(jter);
+			auto it = iter.getTransitionIt(chInput);
+			for(; it.isValid(); it++) {
+				res.insert(*it);
 			}
 		}
 		return res;
@@ -197,6 +205,7 @@ class RegEx {
 	void convertNfaToDfa() {
 		scope Trace st = new Trace("convertNfaToDfa");
 		//this.dfaTable = new Deque!(State)();
+ 		this.unprocessedStack = new Stack!(State)(256);
 		this.dfaTable = new FSA_Table();
 		if(this.globalNfaTable.getSize() == 0) {
 			return;
@@ -229,6 +238,7 @@ class RegEx {
 		unmarkedStates.append(DFAStartState);
 		
 		int count = 0;	
+		Set!(State) passAround = new Set!(State)(theType);
 		while(!unmarkedStates.empty()) {
 			log("%d %u",count,unmarkedStates.getSize()); count++;
 			// process an unprocessed state
@@ -236,9 +246,12 @@ class RegEx {
 
 			// foreach input signal
 			foreach(it;this.inputSet) {
+				passAround.clear();
 				Set!(State) moveRes = this.move(it, 
-					processingDFAState.getNFAStates());
+					//processingDFAState.getNFAStates(), passAround);
+					processingDFAState.getNFAStates(), passAround);
 				Set!(State) epsilonClosureRes = this.epsilonClosure(moveRes);
+				//Set!(State) epsilonClosureRes = this.epsilonClosure(passAround);
 				
 				// Check is the resulting set (EpsilonClosureSet) in the
 				// set of DFA states (is any DFA state already constructed

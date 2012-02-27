@@ -335,9 +335,14 @@ public pure T[] aliases(T)(T[] str)
 	assert(digits.length == 10);
 	T[] xdigits = ['A','B','C','D','E','F','0','1','2','3','4','5',
 		'6','7','8','9','a','b','c','d','e','f'];
+	T[] whiteSpace = [' ', '\t'];
 	assert(xdigits.length == 22);
 
 	switch(str) {
+		case ":blank:":
+			return [' ', '\t'];	
+		case ":graph:":
+			return lowChar ~ upperChar ~ digits ~ whiteSpace;
 		case ":alnum:": 
 		case ":a-zA-Z0-9:":
 			return lowChar ~ upperChar ~ digits; 

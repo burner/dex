@@ -148,6 +148,10 @@ class State {
 	public MultiMap!(dchar,State) getTransition() {
 		return this.transition;
 	}
+
+	public Iterator!(dchar,State) getTransitionIt(dchar chInput) {
+		return this.transition.range(chInput);
+	}
 	
 	/// get all States for given character
 	public State[] getTransition(dchar chInput) {

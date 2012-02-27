@@ -1,29 +1,3 @@
-%%
-dchar eolChar() const {
-	return '\n';
-}
-
-dchar eofChar() const {
-	return dchar.init;
-}
-%%
-
-{%
-	if(currentInputChar == ' ' || currentInputChar == '\r' 
-			|| currentInputChar == '\n') {
-		currentState = 0;
-		needToGetNextChar = true;
-		needToGetNextState = true;
-	} else {
-		printfln("lex error with character %c at position %d of line %d in file %s",
-				this.getCurrentChar(),
-				this.getCurrentIndexInLine(),
-				this.getCurrentLineCount(),
-				this.getFilename());
-		assert(false, "Lex error");
-	}
-%}
-
 "[:digit:][:digit:_]*" {: printfln("int %s", this.getCurrentLex()); :}
 "0x[01234567][01234567_]*" {: printfln("hex %s", this.getCurrentLex()); :}
 "0b[01][01_]*" {: printfln("bin %s", this.getCurrentLex()); :}
