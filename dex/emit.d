@@ -404,7 +404,8 @@ string createIsAcceptingStateFunction(MinTable min) {
 	StringBuffer!(char) ret = new StringBuffer!(char)(1024);
 	
 	// function header
-	ret.pushBack("public static stateType isAcceptingState(stateType state) {\n");
+	ret.pushBack("public static stateType " ~
+		"isAcceptingState(stateType state) {\n");
 
 	// function body which switch case
 	ret.pushBack("\tswitch(state) {\n");
@@ -1324,7 +1325,7 @@ private string classBody = `
 			//ok I guess
 			return;
 		} else if(isAcceptingState(currentState)) {
-			this.acceptingAction(currentState);
+			this.acceptingAction(isAcceptingState(currentState));
 			this.lexText.clear();
 			return;
 		} else {

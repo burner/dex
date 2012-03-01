@@ -112,5 +112,5 @@ void main(string[] args) {
 	//re.minTable();
 	delete input;
 	delete st;
-	Trace.printStats();
+	//Trace.printStats();
 }
