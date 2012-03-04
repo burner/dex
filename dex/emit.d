@@ -1360,6 +1360,15 @@ immutable(string) locStruct =
 	public size_t getColumn() const {
 		return this.column;
 	}
+
+	public bool isDummyLoc() const {
+		return (this.file is null || this.file == "") &&
+			this.row == 0 || this.column == 0;
+	}
+
+	public string toString() const {
+		return format("%s:%u:%u", this.file, this.row, this.column);
+	}
 }`;
 
 string runFunction = `
