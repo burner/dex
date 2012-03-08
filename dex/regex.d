@@ -240,7 +240,7 @@ class RegEx {
 		int count = 0;	
 		Set!(State) passAround = new Set!(State)(theType);
 		while(!unmarkedStates.empty()) {
-			log("%d %u",count,unmarkedStates.getSize()); count++;
+			//log("%d %u",count,unmarkedStates.getSize()); count++;
 			// process an unprocessed state
 			State processingDFAState = unmarkedStates.popBack();
 
