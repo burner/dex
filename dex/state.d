@@ -81,6 +81,16 @@ class State {
 		return *this.aStates.begin();
 	}
 
+	public int getHighestAcceptingState() {
+		int high = 0;
+		foreach(it; this.aStates) {
+			if(it > high) {
+				high = it;
+			}
+		}
+		return high;
+	}
+
 	public Set!(int) getAcceptingStates() {
 		return this.aStates;
 	}

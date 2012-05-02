@@ -415,7 +415,8 @@ string createIsAcceptingStateFunction(MinTable min) {
 		ret.pushBack(":\n");
 		if(it.isAccepting()) {
 			ret.pushBack("\t\t\treturn ");
-			ret.pushBack(conv!(int,string)(it.getFirstAcceptingState()));
+			//ret.pushBack(conv!(int,string)(it.getFirstAcceptingState()));
+			ret.pushBack(conv!(int,string)(it.getHighestAcceptingState()));
 		} else {
 			ret.pushBack("\t\t\treturn -1");
 		}

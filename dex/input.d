@@ -155,6 +155,11 @@ class Input {
 			zzz = it;
 			final switch(ps) {
 			case ParseState.None: {
+				// is the line a comment
+				size_t comment = findArr!(char)(it, "//");
+				if(comment < it.length) {
+					continue;
+				}
 				// check if line contains the start of a user code segment
 				int ucLow = userCodeParanthesis(it);
 				if(ucLow != -1) {
