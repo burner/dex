@@ -157,7 +157,7 @@ class Input {
 			case ParseState.None: {
 				// is the line a comment
 				size_t comment = findArr!(char)(it, "//");
-				if(comment < it.length) {
+				if(comment < it.length && comment == 0) {
 					continue;
 				}
 				// check if line contains the start of a user code segment

@@ -368,6 +368,8 @@ string replaceNewline(string str) {
 		} else if(it == '"') {
 			ret.pushBack("\\");
 			ret.pushBack('"');
+		} else if(it == '\\') {
+			ret.pushBack("\\");
 		} else if(it == '\t') {
 			ret.pushBack("tabular");
 		} else {
@@ -665,6 +667,8 @@ string createCharMapping(MinTable min) {
 			ret.pushBack("\\n");
 		} else if((*it).getKey() == '\t') {
 			ret.pushBack("\\t");
+		} else if((*it).getKey() == '\\') {
+			ret.pushBack("\\\\");
 		} else {
 			ret.pushBack(conv!(dchar,string)((*it).getKey()));
 		}
@@ -1030,6 +1034,10 @@ pure dstring replaceWhiteSpace(in dchar c) {
 		return "\\n";
 	else if(c == '\t')
 		return "\\t";
+	else if(c == '\\')
+		return "\\\\";
+	else if(c == '\'')
+		return "\\'";
 	else 
 		return conv!(dchar,dstring)(c);
 }

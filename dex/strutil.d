@@ -336,9 +336,14 @@ public pure T[] aliases(T)(T[] str)
 	T[] xdigits = ['A','B','C','D','E','F','0','1','2','3','4','5',
 		'6','7','8','9','a','b','c','d','e','f'];
 	T[] whiteSpace = [' ', '\t'];
+	T[] control = ['!', '\"', '§', '$', '%', '&', '/', '(', ')', '=', '?', '\\', '}', 
+		']', '[', '{', '^', '<', '>', '|', ',', '.', '-', '_', ':', ';', '#', '\'', '*', 
+		'~', '+'];
 	assert(xdigits.length == 22);
 
 	switch(str) {
+		case ":control:":
+			return control;	
 		case ":blank:":
 			return [' ', '\t'];	
 		case ":graph:":
