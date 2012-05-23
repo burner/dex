@@ -15,6 +15,8 @@ import hurt.util.stacktrace;
 
 void main(string[] args) {
 	scope Trace st = new Trace("main");
+	StopWatch sw;
+	sw.start();
 
 	// handle the args arguments
 	Args ar = Args(args);
@@ -122,4 +124,5 @@ void main(string[] args) {
 	delete input;
 	delete st;
 	//Trace.printStats();
+	log(verbose, "it took %f seconds", sw.stop());
 }
