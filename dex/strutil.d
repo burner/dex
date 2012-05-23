@@ -302,6 +302,7 @@ private pure dstring fill(int from, int till) {
 	return ret.idup;
 }
 
+private static immutable(dstring) printable = fill(hexStrToInt("0x0020"),hexStrToInt("0x007F"));
 private static immutable(dstring) latin = fill(hexStrToInt("0x0041"),hexStrToInt("0x007F"));
 private static immutable(dstring) latinSup = fill(hexStrToInt("0x00A1"), hexStrToInt("0x00FF"));
 private static immutable(dstring) latinExA = fill(hexStrToInt("0x0100"), hexStrToInt("0x017F"));
@@ -342,6 +343,8 @@ public pure T[] aliases(T)(T[] str)
 	assert(xdigits.length == 22);
 
 	switch(str) {
+		case ":asciiprint:":
+			return printable.dup;
 		case ":control:":
 			return control;	
 		case ":blank:":
