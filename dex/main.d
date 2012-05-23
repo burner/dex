@@ -48,10 +48,15 @@ void main(string[] args) {
 	ar.setOption("-n", "--nonstatic", "set the filename for the non static part"
 		~ " of the lexer", nonStatic);
 
+	bool verbose = false;
+	ar.setOption("-v", "--verbose", 
+		"if set you get more information about the process"
+		, verbose);
+
 	string nonStaticModulename;
 	ar.setOption("-nm", "--nonstaticname", "set the modulename for the non " ~
 		"static part of the lexer only usefull is -n(onstatic) is set", 
-		nonStaticModulename);
+		nonStaticModulename, true);
 
 	if(args.length == 1 || inputFilename is null) {
 		ar.printHelp();
@@ -71,24 +76,31 @@ void main(string[] args) {
 	println("please wait ... this can take some time");
 	RegEx re = new RegEx();
 	foreach(it; input.getRegExCode()) {
-		//log("%s", it.getRegEx());
+		log(verbose, "%s", it.getRegEx());
 		re.createNFA(it.getRegEx(), conv!(size_t,int)(it.getPriority()));
 	}
 
+	
+	log(verbose, "convertNfaToDfa");
 	re.convertNfaToDfa();
+	log(verbose, "findErrorState");
 	re.findErrorState();
+	log(verbose, "minimize");
 	re.minimize();
 	
 	// print graphs
 	if(mdfaFilename !is null) {
+		log(verbose, "writing min dfa");
 		re.writeMinDFAGraph(mdfaFilename);
 	}
 
 	if(dfaFilename !is null) {
+		log(verbose, "writing dfa");
 		re.writeDFAGraph(dfaFilename);
 	}
 
 	if(nfaFilename !is null) {
+		log(verbose, "writing nfa");
 		re.writeNFAGraph(nfaFilename);
 	}
 
@@ -97,9 +109,11 @@ void main(string[] args) {
 	// emit lexer
 	//re.writeTable("dfaTable",min);
 	if(outputFilename !is null && outputFilename.length) {
+		log(verbose, "emit lexer");
 		emitLexer(min,input,outputClassname,outputFilename);
 	}
 	if(nonStatic !is null && nonStatic.length) {
+		log(verbose, "emit non-static aka lextable");
 		emitNonStatic(min,input,nonStaticModulename, nonStatic);
 	}
 
