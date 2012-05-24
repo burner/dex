@@ -24,7 +24,8 @@ import hurt.util.array;
 import hurt.util.slog;
 import hurt.util.stacktrace;
 
-public alias FDoubleLinkedList!(State) FSA_Table;
+//public alias FDoubleLinkedList!(State) FSA_Table;
+public alias DLinkedList!(State) FSA_Table;
 //public alias Deque!(State) FSA_Table;
 
 /** All the logic from a multiple NFAs to a single NFA to a single DFA is
@@ -75,8 +76,7 @@ class RegEx {
 		this.cleanUp();
 		//str = concatExpand(str);
 		dstring pstr = concatExpand(conv!(string,dstring)(str));
-		debug(RegExDebug) println(__FILE__,__LINE__, " ", pstr, " :length ",
-			pstr.length);
+		//printfln("%s", stringWrite(pstr));
 
 		foreach(idx,it;pstr) {
 			debug(RegExDebug) println(__FILE__,__LINE__, " ", it, " ", idx);
@@ -335,7 +335,13 @@ class RegEx {
 			auto tIt = it.getTransitions().begin();
 			for(; tIt.isValid(); tIt++) {
 				if(!deadEndSet.contains(*tIt)) {
-					State tranState = table.find((*tIt).getStateId()).getData();
+					auto zzz = table.find((*tIt).getStateId());
+					if(zzz is null) {
+						log("bad");
+						continue;
+					}
+					//State tranState = table.find((*tIt).getStateId()).getData();
+					State tranState = zzz.getData();
 					assert(tranState !is null);
 					nIt.addTransition(tIt.getKey, tranState);
 				}

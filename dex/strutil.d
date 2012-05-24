@@ -221,7 +221,7 @@ immutable(T)[] stringWrite(T)(immutable(T)[] str) {
 		} else if(it == '\f') {
 			ret[idx] = ']';
 		} else if(it == ST) {
-			ret[idx] = '*';
+			ret[idx] = 'ä';
 		} else if(it == UN) {
 			ret[idx] = '|';
 		} else {
@@ -337,18 +337,22 @@ public pure T[] aliases(T)(T[] str)
 	T[] xdigits = ['A','B','C','D','E','F','0','1','2','3','4','5',
 		'6','7','8','9','a','b','c','d','e','f'];
 	T[] whiteSpace = [' ', '\t'];
+	T[] whiteSpaceControl = [' ', '\t', '\n'];
 	T[] control = ['!', '\"', '§', '$', '%', '&', '/', '(', ')', '=', '?', '\\', '}', 
-		']', '[', '{', '^', '<', '>', '|', ',', '.', '-', '_', ':', ';', '#', '\'', '*', 
-		'~', '+'];
+		']', '[', '{', '^', '<', '>', '|', ',', '.', '-', '_', ':', ';', '#', '\'', '~'];
 	assert(xdigits.length == 22);
 
 	switch(str) {
 		case ":asciiprint:":
 			return printable.dup;
+		case ":asciiprintwhite:":
+			return printable.dup ~ whiteSpaceControl;
 		case ":control:":
 			return control;	
 		case ":blank:":
 			return [' ', '\t'];	
+		case ":whitespacecontrol:":
+			return whiteSpaceControl;	
 		case ":graph:":
 			return lowChar ~ upperChar ~ digits ~ whiteSpace;
 		case ":alnum:": 
@@ -631,6 +635,9 @@ unittest {
 	assert("rt\va"d~UN~'t'~UN~"h\f[]rt"d 
 		== prepareString("rt[ath]\\[\\]rt"d), 
 		conv!(dstring,string)(prepareString("rt[ath]\\[\\]rt"d)));
+	assert("rt\v0"d~UN~'1'~UN~"2\f"d ~ ST ~ "\v0"d~UN~"1\frt"d == 
+		prepareString("rt[012]*[01]rt"d), 
+		conv!(dstring,string)(prepareString("rt[012]*[01]rt"d)));
 
 	bool rs = false;
 	try {

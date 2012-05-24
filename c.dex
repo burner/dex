@@ -1,76 +1,14 @@
-%%
-
-import hurt.container.vector;
-
-Vector!(int) vector;
-
-this() {
-	this.vector = new Vector!(int)(128);
-}
-
-dchar eolChar() const {
-	return '\n';
-}
-
-dchar eofChar() const {
-	return dchar.init;
-}
-%%
-
-{%
-	if(currentInputChar == ' ' || currentInputChar == '\r' 
-			|| currentInputChar == '\n') {
-		currentState = 0;
-		needToGetNextChar = true;
-		needToGetNextState = true;
-	} else {
-		printfln("lex error with character %c at position %d of line %d in file %s",
-				this.getCurrentChar(),
-				this.getCurrentIndexInLine(),
-				this.getCurrentLineCount(),
-				this.getFilename());
-		assert(false, "Lex error");
-	}
-%}
-
 "[:digit:][:digit:_]*" {: this.vector.pushBack(0); :}
-"0x[01234567][01234567_]*" {: this.vector.pushBack(1); :}
-"0b[01][01_]*" {: this.vector.pushBack(2); :}
 "long" {: this.vector.pushBack(3); :}
 "if" {: this.vector.pushBack(4); :}
 "new" {: this.vector.pushBack(5); :}
-"import" {: this.vector.pushBack(6); :}
-"for" {: this.vector.pushBack(7); :}
-"while" {: this.vector.pushBack(8); :}
-"do" {: this.vector.pushBack(9); :}
-"int" {: this.vector.pushBack(10); :}
-"void" {: this.vector.pushBack(11); :}
-"delegate" {: this.vector.pushBack(12); :}
-"function" {: this.vector.pushBack(13); :}
-"template" {: this.vector.pushBack(14); :}
 "[:alpha:][:word:]*" {: this.vector.pushBack(14); :}
-"\\"[:word:äöüß%?=)(&%$§! ]*\\"" {: this.vector.pushBack(15); :}
+"//[:asciiprint:]*" {: this.vector.pushBack(15); :}
+"/\*[:word:]*\*/" {: this.vector.pushBack(20); :}
 "." {: this.vector.pushBack(16); :}
-"(" {: this.vector.pushBack(17); :}
-")" {: this.vector.pushBack(18); :}
 "{" {: this.vector.pushBack(19); :}
-"}" {: this.vector.pushBack(20); :}
-"!" {: this.vector.pushBack(21); :}
-"," {: this.vector.pushBack(22); :}
-"$" {: this.vector.pushBack(23); :}
 "=" {: this.vector.pushBack(24); :}
-"==" {: this.vector.pushBack(25); :}
-"\\[" {: this.vector.pushBack(26); :}
-"\\]" {: this.vector.pushBack(27); :}
-"?" {: this.vector.pushBack(28); :}
 "*" {: this.vector.pushBack(29); :}
-"+" {: this.vector.pushBack(30); :}
-"-" {: this.vector.pushBack(31); :}
-"%" {: this.vector.pushBack(32); :}
-";" {: this.vector.pushBack(33); :}
-"<" {: this.vector.pushBack(34); :}
+"/" {: this.vector.pushBack(23); :}
 ">" {: this.vector.pushBack(35); :}
-" " {: this.vector.pushBack(36); :}
-"\\t" {: this.vector.pushBack(37); :}
-"\\n" {: this.vector.pushBack(38); :}
-"\"" {: this.vector.pushBack(39); :}
+"[ \\t\\n]+" {: this.vector.pushBack(36); :}
