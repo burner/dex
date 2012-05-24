@@ -6,6 +6,7 @@ import dex.minimizer;
 import dex.emit;
 
 import hurt.container.dlst;
+import hurt.container.fdlist;
 import hurt.container.isr;
 import hurt.container.iterator;
 import hurt.container.list;
@@ -14,6 +15,7 @@ import hurt.container.multimap;
 import hurt.container.set;
 import hurt.container.stack;
 import hurt.container.vector;
+import hurt.container.deque;
 import hurt.conv.conv;
 import hurt.io.stdio;
 import hurt.string.stringbuffer;
@@ -22,7 +24,7 @@ import hurt.util.array;
 import hurt.util.slog;
 import hurt.util.stacktrace;
 
-public alias DLinkedList!(State) FSA_Table;
+public alias FDoubleLinkedList!(State) FSA_Table;
 //public alias Deque!(State) FSA_Table;
 
 /** All the logic from a multiple NFAs to a single NFA to a single DFA is
@@ -44,7 +46,6 @@ class RegEx {
 	private string strText;
 	private Vector!(int) vecPos;
 	private Vector!(State) minDfa;
-
 
 	// unprocessed for epsilon closur
 	Stack!(State) unprocessedStack;
@@ -125,17 +126,15 @@ class RegEx {
 			return false;
 		}
 
-		this.nfaTable.get(this.nfaTable.getSize()).setAcceptingState(action);
+		//this.nfaTable.get(this.nfaTable.getSize()).setAcceptingState(action);
+		this.nfaTable.back().setAcceptingState(action);
 
 		// save the current nfaTable to the globalNFATable. 
 		// this is done to create a nfa
 		// from more than one regex. to connect all regex join them 
 		//through the rootState
-		this.rootState.addTransition(0, this.nfaTable.get(0));
-		//this.rootState.addTransition(0, this.nfaTable.front());
-		foreach(it;this.nfaTable) {
-			this.globalNfaTable.pushBack(it);
-		}
+		//this.rootState.addTransition(0, this.nfaTable.get(0));
+		this.rootState.addTransition(0, this.nfaTable.front());
 
 		return true;
 		
@@ -182,7 +181,8 @@ class RegEx {
 	}
 
 	/// move operation
-	Set!(State) move(dchar chInput, Set!(State) t, Set!(State) passAround) const {
+	Set!(State) move(dchar chInput, Set!(State) t, Set!(State) passAround) 
+			const {
 		scope Trace st = new Trace("move");
 		//Set!(State) res = new Set!(State)(theType);
 		Set!(State) res = passAround;
@@ -221,8 +221,8 @@ class RegEx {
 		Set!(State) NFAStartState = new Set!(State)(theType);
 		// the first state should have a stateId equal 0
 		// otherwise something is wrong with the globalNfaTable
-		assert(this.globalNfaTable.get(0).getStateId() == 0); 
-		NFAStartState.insert(this.globalNfaTable.get(0));
+		assert(this.globalNfaTable.front().getStateId() == 0);
+		NFAStartState.insert(this.globalNfaTable.front());
 
 		// Starting state of DFA is epsilon closure of 
 		Set!(State) DFAStartStateSet = this.epsilonClosure(NFAStartState);
@@ -445,8 +445,8 @@ class RegEx {
 		//A[A.size()-1].AddTransition(0, B[0]);
 		assert(A !is null, "A shouldn't be null");
 		assert(B !is null, "B shouldn't be null");
-		A.get(A.getSize()).addTransition(0, B.get(0));
-		//A.back().addTransition(0, B.front());
+		//A.get(A.getSize()).addTransition(0, B.get(0));
+		A.back().addTransition(0, B.front());
 		debug(RegExDebug) println(__FILE__,__LINE__, " after A.get");
 		foreach(it; B) {
 			A.pushBack(it);
@@ -483,12 +483,12 @@ class RegEx {
 		//pStartState.addTransition(0, A.front());
 	
 		// add epsilon transition from A last state to end state
-		A.get(A.getSize()).addTransition(0, pEndState);
-		//A.back().addTransition(0, pEndState);
+		//A.get(A.getSize()).addTransition(0, pEndState);
+		A.back().addTransition(0, pEndState);
 	
 		// From A last to A first state
-		A.get(A.getSize()).addTransition(0, A.get(0));
-		//A.back().addTransition(0, A.front());
+		//A.get(A.getSize()).addTransition(0, A.get(0));
+		A.back().addTransition(0, A.front());
 
 		// construct new DFA and store it onto the stack
 		A.pushBack(pEndState);
@@ -518,12 +518,10 @@ class RegEx {
 		State pEndState	= new State(++nextStateId);
 		pStartState.addTransition(0, A.get(0));
 		pStartState.addTransition(0, B.get(0));
-		//pStartState.addTransition(0, A.front());
-		//pStartState.addTransition(0, B.front());
-		A.get(A.getSize()).addTransition(0, pEndState);
-		B.get(B.getSize()).addTransition(0, pEndState);
-		//A.back().addTransition(0, pEndState);
-		//B.back().addTransition(0, pEndState);
+		//A.get(A.getSize()).addTransition(0, pEndState);
+		//B.get(B.getSize()).addTransition(0, pEndState);
+		A.back().addTransition(0, pEndState);
+		B.back().addTransition(0, pEndState);
 	
 		// Create new NFA from A
 		B.pushBack(pEndState);
