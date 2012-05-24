@@ -13,6 +13,7 @@ import hurt.container.set;
 import hurt.container.vector;
 import hurt.conv.conv;
 import hurt.io.stdio;
+import hurt.util.slog;
 
 /** This functions creates a Vector that contains two Vectors.
  *  The first Vector contains all accepting states, the other

@@ -11,6 +11,7 @@ import hurt.container.isr;
 import hurt.container.iterator;
 import hurt.container.map;
 import hurt.container.set;
+import hurt.container.crs;
 import hurt.container.vector;
 import hurt.container.multimap;
 import hurt.conv.conv;
@@ -20,6 +21,8 @@ import hurt.string.formatter;
 import hurt.string.stringbuffer;
 import hurt.string.utf;
 import hurt.util.array;
+import hurt.util.slog;
+
 import std.process;
 
 /** This function is used to write the created transition table to a given 
@@ -1070,6 +1073,38 @@ private string getTokenAcceptFunction(Input input) {
 	return ret.getString();
 }
 
+private string csrToString(MinTable min, string stateType) {
+	auto ret = new StringBuffer!(char)(2048);
+	auto csr = CRS!(int)(min.table, -1);
+	log("csr reduction ratio %f", csr.getRatio());
+
+	ret.pushBack("auto csr = new CSR!(%s)(\n", stateType);
+	ret.pushBack("[");
+	foreach(it; csr.getColumn()) {
+		ret.pushBack("%d, ", it);
+	}
+	ret.popBack();
+	ret.popBack();
+	ret.pushBack("],\n[");
+	foreach(it; csr.getRows()) {
+		ret.pushBack("%d, ", it);
+	}
+	ret.popBack();
+	ret.popBack();
+	ret.pushBack("],\n[");
+	foreach(it; csr.getValues()) {
+		ret.pushBack("%d, ", it);
+	}
+	ret.popBack();
+	ret.popBack();
+	ret.pushBack("],\n");
+	ret.popBack();
+	ret.popBack();
+	ret.pushBack(");\n");
+
+	return ret.getString();
+}
+
 /** Calling this function will write a lexer to the given filename.
  *
  *  @param min The minimized Table, this table comes from the minizer.
@@ -1098,6 +1133,8 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 	string charRange = createCharRange(min);
 	string tokenAccept = getTokenAcceptFunction(input);
 	string stateMapping = createStateMapping(min);
+	//string csrTable = csrToString(min, stateType);
+	//log("csrTable %s", csrTable);
 
 	hurt.io.stream.File file = new hurt.io.stream.File(filename, 
 		FileMode.OutNew);
