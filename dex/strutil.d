@@ -292,14 +292,17 @@ public pure bool presedence(T)(T opLeft, T opRight)
 }
 
 private pure dstring fill(int from, int till) {
-	dchar[] ret = new dchar[till-from];
+	dchar[] ret = new dchar[(till-from)+32];
 	ulong idx;
 	for(int i = from; i < till; i++, idx++) {
+		if(i == 42 || i == 43) {
+			ret[idx++] = '\\';
+		}
 		ret[idx] = cast(dchar)i;	
 	}
-	assert(idx == ret.length);
+	//assert(idx == ret.length);
 	assert(__ctfe);
-	return ret.idup;
+	return ret[0 .. idx].idup;
 }
 
 private static immutable(dstring) printable = fill(hexStrToInt("0x0020"),hexStrToInt("0x007F"));
@@ -337,9 +340,9 @@ public pure T[] aliases(T)(T[] str)
 	T[] xdigits = ['A','B','C','D','E','F','0','1','2','3','4','5',
 		'6','7','8','9','a','b','c','d','e','f'];
 	T[] whiteSpace = [' ', '\t'];
-	T[] whiteSpaceControl = [' ', '\t', '\n'];
+	T[] whiteSpaceControl = [' ', '\\','t','\\', 'n'];
 	T[] control = ['!', '\"', '§', '$', '%', '&', '/', '(', ')', '=', '?', '\\', '}', 
-		']', '[', '{', '^', '<', '>', '|', ',', '.', '-', '_', ':', ';', '#', '\'', '~'];
+		']', '[', '{','\\','*','\\','+', '^', '<', '>', '|', ',', '.', '-', '_', ':', ';', '#', '\'', '~'];
 	assert(xdigits.length == 22);
 
 	switch(str) {
@@ -348,11 +351,13 @@ public pure T[] aliases(T)(T[] str)
 		case ":asciiprintwhite:":
 			return printable.dup ~ whiteSpaceControl;
 		case ":control:":
-			return control;	
+			return ['!', '\"', '§', '$', '%', '&', '/', '(', ')', '=', '?', '\\', '}', 
+		']', '[', '{','\\','*','\\','+', '^', '<', '>', '|', ',', '.', '-', '_', ':', ';', '#', '\'', '~'];
 		case ":blank:":
 			return [' ', '\t'];	
 		case ":whitespacecontrol:":
-			return whiteSpaceControl;	
+			return ['!', '\"', '§', '$', '%', '&', '/', '(', ')', '=', '?', '\\', '}', 
+		']', '[', '{', '^', '<', '>', '|', ',', '.', '-', '_', ':', ';', '#', '\'', '~',' ', '\\','t','\\', 'n'];
 		case ":graph:":
 			return lowChar ~ upperChar ~ digits ~ whiteSpace;
 		case ":alnum:": 
@@ -416,7 +421,7 @@ public pure T[] aliases(T)(T[] str)
 			return (latin ~ latinSup ~ latinExA ~ latinExB ~ latinExC ~ greek ~ 
 				ipa ~ cyrillic ~ hewbrew ~ arabic ~ arabicExA ~ currencySym ~ cjk).dup;
 		default: {
-			assert(0);
+			assert(0, conv!(dstring,string)(str.idup));
 		}
 	}
 }

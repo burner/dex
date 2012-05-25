@@ -24,8 +24,8 @@ import hurt.util.array;
 import hurt.util.slog;
 import hurt.util.stacktrace;
 
-//public alias FDoubleLinkedList!(State) FSA_Table;
-public alias DLinkedList!(State) FSA_Table;
+public alias FDoubleLinkedList!(State) FSA_Table;
+//public alias DLinkedList!(State) FSA_Table;
 //public alias Deque!(State) FSA_Table;
 
 /** All the logic from a multiple NFAs to a single NFA to a single DFA is
