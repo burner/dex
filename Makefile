@@ -13,8 +13,12 @@ count:
 	wc -l `find dex -name \*.d`
 
 clean:
-	rm *.o
-	rm fsm
+	#rm *.o
+	#rm fsm
+	scons --clean
+
+scons:
+	scons -j3
 
 crude:
 	dmd $(FILES) $(CFLAGS) ../libhurt/libhurt.a -I../libhurt/ -gc -fsm
