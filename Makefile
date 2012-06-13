@@ -1,4 +1,4 @@
-all: fine
+all: scons
 
 CFLAGS=-m64 -unittest -debug -gc -I../libhurt/ -wi
 #CFLAGS=-m64 -offsm -O -wi -I../libhurt
