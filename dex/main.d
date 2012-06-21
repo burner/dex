@@ -50,6 +50,12 @@ void main(string[] args) {
 	ar.setOption("-n", "--nonstatic", "set the filename for the non static part"
 		~ " of the lexer", nonStatic);
 
+	bool createLocationStruct = true;
+	ar.setOption("-l", "--location", 
+		"if the location struct should be ommited pass false."
+		, createLocationStruct);
+
+
 	bool verbose = false;
 	ar.setOption("-v", "--verbose", 
 		"if set you get more information about the process"
@@ -116,7 +122,8 @@ void main(string[] args) {
 	}
 	if(nonStatic !is null && nonStatic.length) {
 		log(verbose, "emit non-static aka lextable");
-		emitNonStatic(min,input,nonStaticModulename, nonStatic);
+		emitNonStatic(min,input,nonStaticModulename, nonStatic, 
+			createLocationStruct);
 	}
 
 	// cleanup

@@ -1125,7 +1125,7 @@ void emitLexer(MinTable min, Input input, string classname, string filename) {
 }
 
 void emitNonStatic(MinTable min, Input input, string modulename, 
-		string filename) {
+		string filename, bool locationStruct) {
 	string stateType;
 	string table = createTable(min, stateType);
 	string isAcceptinStateFunction = 
@@ -1150,7 +1150,11 @@ void emitNonStatic(MinTable min, Input input, string modulename,
 	}
 
 	file.write('\n');
-	file.writeString(locStruct);
+	if(locationStruct) {
+		file.writeString(locStruct);
+	} else {
+		file.writeString("import location;");
+	}
 	file.write('\n');
 	file.write('\n');
 	file.writeString("alias ");
