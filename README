@@ -1,0 +1,26 @@
+Master thesis Robert Schadek
+	compiler
+		libhurt				// the created library
+		dex					// the lexer generator
+		dalr				// the parser generator
+		dmcd				// the current state of the compiler impl
+		dmcd2				// modified version of compiler for benchmarking
+	MADocu
+		dconference			// documents related to d conference
+		proposel			// proposel
+		progress			// progress briefing
+		text				// master thesis
+		themavorstellung	// thesis introduction
+
+
+To build the compiler:
+cd libhurt && make
+cd dex && make
+cd dalr && make
+cd dmcd && make
+
+Tools needed are dmd (d compiler), gcc, SConstruct and make, graphviz is
+optinal
+
+The binary created binaries are called Dalr, Dex and dmcd. The static linked 
+library is named libhurt.a
